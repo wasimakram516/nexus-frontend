@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nexus Frontend
 
-## Getting Started
+A modern React and Next.js 16+ frontend application for the Nexus platform. This project uses the App Router with TypeScript for a type-safe, scalable user interface.
 
-First, run the development server:
+## Project Structure
+
+```
+src/
+├── app/                  # Next.js App Router
+│   ├── layout.tsx        # Root layout component
+│   ├── page.tsx          # Home page
+│   ├── globals.css       # Global styles
+│   └── page.module.css   # Page-specific styles
+└── ...
+```
+
+## Prerequisites
+
+- Node.js 18+ (includes npm)
+- Git
+
+## Installation & Setup
+
+1. Clone the repository:
+   ```bash
+   git clone <repo-url>
+   cd nexus-frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   - Copy `.env.example` to `.env.local` (if available)
+   - Configure backend API endpoint and other required variables
+
+## Development
+
+Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The page will auto-reload when you make changes to files in `src/app/`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Building for Production
 
-## Learn More
+Build the application:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Start the production server:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm start
+```
 
-## Deploy on Vercel
+## Linting
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Run ESLint to check for code quality issues:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run lint
+```
+
+## Backend Integration
+
+This frontend works in conjunction with the Nexus backend:
+
+**Backend Repository:** `D:\Wisemen Soft\Nexus\nexus-backend`
+
+Ensure the backend server is running before developing or testing the frontend. Refer to the backend README for setup and installation instructions.
+
+## Technologies
+
+- **Next.js 16** - React framework with App Router
+- **React 19** - UI library
+- **TypeScript** - Type safety
+- **ESLint** - Code linting
+- **Babel React Compiler** - Performance optimization
+
+## Deployment
+
+This application can be deployed on [Vercel](https://vercel.com), which is optimized for Next.js applications.
+
+For production deployments:
+1. Build the application: `npm run build`
+2. Deploy to your hosting platform (Vercel, AWS, Docker, etc.)
+
+## Resources
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [React Documentation](https://react.dev)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs)
