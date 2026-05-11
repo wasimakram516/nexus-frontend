@@ -10,24 +10,24 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nexus.wisemensoft.com"),
-  title: "Nexus — Institute Management Platform",
-  description: "Multi-campus institute management platform",
+  title: "Nexus — Education ERP for Schools, Colleges & Universities",
+  description: "The all-in-one ERP for managing students, staff, fees, attendance, examinations, and campuses. Built by Wisemen Soft.",
   icons: {
     icon: "/icons/icon.svg",
   },
   openGraph: {
-    title: "Nexus — Multi-Campus Institute Management Platform",
-    description: "The all-in-one ERP for schools and institutes.",
+    title: "Nexus — Education ERP for Schools, Colleges & Universities",
+    description: "The all-in-one ERP for managing students, staff, fees, attendance, examinations, and campuses.",
     url: "https://nexus.wisemensoft.com",
-    siteName: "Nexus",
-    images: [{ url: "/icons/social-banner.svg", width: 1200, height: 630 }],
+    siteName: "Nexus by Wisemen Soft",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Nexus — Education ERP" }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Nexus — Multi-Campus Institute Management Platform",
-    description: "The all-in-one ERP for schools and institutes.",
-    images: ["/icons/social-banner.svg"],
+    title: "Nexus — Education ERP for Schools, Colleges & Universities",
+    description: "The all-in-one ERP for managing students, staff, fees, attendance, examinations, and campuses.",
+    images: ["/opengraph-image"],
   },
 };
 
