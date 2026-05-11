@@ -63,6 +63,10 @@ export default function LoginPage() {
         },
         data.accessToken
       );
+      // Set a lightweight cookie on the frontend domain so the Next.js middleware
+      // can verify the session (the httpOnly refreshToken lives on the backend domain).
+      const maxAge = 7 * 24 * 60 * 60;
+      document.cookie = `isAuthenticated=1; path=/; max-age=${maxAge}; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
       router.replace(data.user.role === "SUPERADMIN" ? "/platform" : "/dashboard");
     }
     setLoading(false);

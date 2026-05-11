@@ -4,11 +4,11 @@ const protectedRoutes = ["/dashboard", "/platform"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get("refreshToken")?.value;
+  const isAuthenticated = request.cookies.get("isAuthenticated")?.value;
 
   const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
 
-  if (isProtected && !token) {
+  if (isProtected && !isAuthenticated) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

@@ -57,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAccessToken(null);
     sessionStorage.removeItem("nexus-user");
     sessionStorage.removeItem("nexus-token");
+    document.cookie = "isAuthenticated=; path=/; max-age=0";
   }, []);
 
   const updateToken = useCallback((token: string) => {
