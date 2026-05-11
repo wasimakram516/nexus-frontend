@@ -4,6 +4,8 @@ import { Box, Button, Card, CardContent, Container, Grid, Typography } from "@mu
 import {
   AccountBalance,
   ArrowForward,
+  AssignmentTurnedIn,
+  BarChart,
   CheckCircle,
   Groups,
   SchoolOutlined,
@@ -188,6 +190,80 @@ export const modules = [
       {
         heading: "Centralised Admin Oversight",
         body: "Institution admins can view and manage all campuses from a single dashboard. Cross-campus reporting and comparisons are available at the admin level.",
+      },
+    ],
+  },
+  {
+    slug: "examinations",
+    icon: <AssignmentTurnedIn sx={{ fontSize: 40 }} />,
+    title: "Examinations",
+    summary: "Schedule, manage, and evaluate examinations across any class or section with full result tracking, grade sheets, and GPA calculations.",
+    highlights: [
+      "Exam scheduling with date, time, and subject",
+      "Per-student result entry with marks and pass/fail status",
+      "Grade configuration per institution (A, B, C or custom)",
+      "GPA and percentage calculations per exam",
+      "Class-wide and section-wide result comparison",
+      "Result cards and grade sheets per student",
+      "Re-examination and supplementary exam support",
+    ],
+    details: [
+      {
+        heading: "Exam Scheduling",
+        body: "Create exam schedules linked to specific classes, sections, and subjects. Each exam carries a date, time slot, total marks, and passing marks threshold. Teachers see only the exams assigned to their subjects.",
+      },
+      {
+        heading: "Result Entry",
+        body: "Enter obtained marks per student for each exam. The system instantly calculates percentage, pass/fail status, and grade based on the institution's configured grading scale. Bulk result import is also supported.",
+      },
+      {
+        heading: "Grading Scale",
+        body: "Configure your institution's custom grading scale — define grade letters (A+, A, B etc.), minimum score ranges, grade points, and remarks. The same scale applies uniformly across all results.",
+      },
+      {
+        heading: "GPA & Rank Calculation",
+        body: "Nexus automatically calculates cumulative GPA per student based on weighted subject results. Class and section rank is computed after all results are entered, providing instant academic standings.",
+      },
+      {
+        heading: "Result Cards & Reports",
+        body: "Generate formatted result cards per student showing all subject marks, total, percentage, grade, and rank. Export at class or section level for printing or digital distribution to guardians.",
+      },
+    ],
+  },
+  {
+    slug: "reporting",
+    icon: <BarChart sx={{ fontSize: 40 }} />,
+    title: "Reporting",
+    summary: "Institution-wide analytics and exportable reports across every module — attendance, finance, academics, and people — in one unified view.",
+    highlights: [
+      "Attendance reports by student, class, campus, and date range",
+      "Finance summaries: collections, dues, outstanding balances",
+      "Payroll reports per staff member and campus",
+      "Exam result analysis by class, section, and subject",
+      "Student enrollment and demographic breakdowns",
+      "Custom date-range filtering across all reports",
+      "Export to PDF and CSV",
+    ],
+    details: [
+      {
+        heading: "Attendance Analytics",
+        body: "View attendance summaries across any combination of campus, class, section, student, or staff member. Filter by date range to analyse patterns — identify chronically absent students or staff before issues escalate.",
+      },
+      {
+        heading: "Financial Reporting",
+        body: "Pull fee collection summaries showing total billed, collected, and outstanding per class, section, or campus. Payroll reports break down gross salary, deductions, adjustments, and net pay per staff member for any month.",
+      },
+      {
+        heading: "Academic Performance",
+        body: "Cross-subject and cross-class exam performance reports show class averages, top performers, and failure rates. Trend analysis across multiple exams helps identify subjects or sections that need intervention.",
+      },
+      {
+        heading: "Enrollment & Demographics",
+        body: "Track total enrolled students by campus, class, section, gender, and admission cohort. Year-over-year enrollment comparison helps administration plan capacity and resources.",
+      },
+      {
+        heading: "Export & Distribution",
+        body: "Every report can be exported as a formatted PDF or raw CSV. PDF exports include your institution branding — logo and display name — making them ready to share with boards, parents, or regulatory bodies.",
       },
     ],
   },

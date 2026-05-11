@@ -15,6 +15,8 @@ const L = {
   people:       `${SITE}/features/people`,
   attendance:   `${SITE}/features/attendance`,
   finance:      `${SITE}/features/finance`,
+  examinations: `${SITE}/features/examinations`,
+  reporting:    `${SITE}/features/reporting`,
   campuses:     `${SITE}/features/campuses`,
   customFields: `${SITE}/features/custom-fields`,
   pricing:      `${SITE}/pricing`,
@@ -58,11 +60,11 @@ const knowledgeBase: Entry[] = [
     patterns: ["what is nexus", "what does nexus do", "tell me about nexus", "about nexus", "explain nexus", "overview"],
     replies: [
       {
-        reply: `Nexus is an all-in-one Education ERP built for schools, colleges, and universities.\n\nIt covers everything your institution needs:\n\n- Academics — levels, classes, sections, subjects\n- People — students, teachers, guardians\n- Attendance — check-in/out, leaves, auto-absent\n- Finance — fees, payroll, fines, discounts\n- Multi-Campus — unlimited campuses, one platform\n- Custom Fields — extend any entity without code\n\nStarted in 2020 as a desktop app, rebuilt as a full web platform in 2026 by Wisemen Soft.\n\n${L.home}`,
+        reply: `Nexus is an all-in-one Education ERP built for schools, colleges, and universities.\n\nIt covers everything your institution needs:\n\n- Academics — levels, classes, sections, subjects\n- People — students, teachers, guardians\n- Attendance — check-in/out, leaves, auto-absent\n- Finance — fees, payroll, fines, discounts\n- Examinations — scheduling, results, grades, GPA\n- Reporting — analytics and exportable reports\n- Multi-Campus — unlimited campuses, one platform\n- Custom Fields — extend any entity without code\n\nStarted in 2020 as a desktop app, rebuilt as a full web platform in 2026 by Wisemen Soft.\n\n${L.home}`,
         suggestions: ["What are the pricing plans?", "Show me all features", "How do I get a demo?"],
       },
       {
-        reply: `Nexus is the ERP your institution actually needs. Instead of juggling spreadsheets for attendance, separate billing software for fees, and manual payroll — Nexus brings it all into one platform.\n\nKey modules: Academics, People, Attendance, Finance, Multi-Campus, Custom Fields.\n\nBuilt by Wisemen Soft. Available now.\n\nLearn more: ${L.home}`,
+        reply: `Nexus is the ERP your institution actually needs. Instead of juggling spreadsheets for attendance, separate billing software for fees, and manual payroll — Nexus brings it all into one platform.\n\nKey modules: Academics, People, Attendance, Finance, Examinations, Reporting, Multi-Campus, Custom Fields.\n\nBuilt by Wisemen Soft. Available now.\n\nLearn more: ${L.home}`,
         suggestions: ["Tell me about the modules", "What does it cost?", "Who built Nexus?"],
       },
       {
@@ -75,15 +77,15 @@ const knowledgeBase: Entry[] = [
     patterns: ["features", "what can nexus do", "modules", "what modules", "all features", "capabilities", "what does it include"],
     replies: [
       {
-        reply: `Nexus has 6 core modules:\n\n1. Academics — ${L.academics}\n2. People — ${L.people}\n3. Attendance — ${L.attendance}\n4. Finance — ${L.finance}\n5. Multi-Campus — ${L.campuses}\n6. Custom Fields — ${L.customFields}\n\nAll features: ${L.features}`,
-        suggestions: ["Tell me about academics", "How does finance work?", "What is multi-campus?"],
+        reply: `Nexus has 8 core modules:\n\n1. Academics — ${L.academics}\n2. People — ${L.people}\n3. Attendance — ${L.attendance}\n4. Finance — ${L.finance}\n5. Examinations — ${L.examinations}\n6. Reporting — ${L.reporting}\n7. Multi-Campus — ${L.campuses}\n8. Custom Fields — ${L.customFields}\n\nAll features: ${L.features}`,
+        suggestions: ["Tell me about examinations", "How does reporting work?", "Tell me about finance"],
       },
       {
-        reply: `Here's what Nexus covers out of the box:\n\n- Full academic structure (levels, classes, sections, subjects)\n- Student, teacher, and guardian profiles\n- Daily attendance with auto-absent and leave management\n- Fee collection, salary payroll, fines, and discounts\n- Multi-campus data isolation and management\n- Custom fields for any entity — no code needed\n\nSee all: ${L.features}`,
-        suggestions: ["Tell me about finance", "How does attendance work?", "Show me pricing"],
+        reply: `Here's what Nexus covers out of the box:\n\n- Full academic structure (levels, classes, sections, subjects)\n- Student, teacher, and guardian profiles\n- Daily attendance with auto-absent and leave management\n- Fee collection, salary payroll, fines, and discounts\n- Examinations — scheduling, results, grading, GPA\n- Reporting — analytics and exports across all modules\n- Multi-campus data isolation and management\n- Custom fields for any entity — no code needed\n\nSee all: ${L.features}`,
+        suggestions: ["Tell me about examinations", "How does reporting work?", "Show me pricing"],
       },
       {
-        reply: `Nexus modules work together seamlessly:\n\nAcademics sets the structure → People are enrolled into it → Attendance is tracked daily → Finance generates fee vouchers and calculates payroll deductions based on attendance → Custom Fields extend everything to fit your institution.\n\nFull overview: ${L.features}`,
+        reply: `Nexus modules work together seamlessly:\n\nAcademics sets the structure → People are enrolled into it → Attendance is tracked daily → Finance generates fee vouchers and calculates payroll deductions based on attendance → Examinations record results and compute GPA → Reporting pulls everything into exportable analytics → Custom Fields extend everything to fit your institution.\n\nFull overview: ${L.features}`,
         suggestions: ["Tell me about each module", "Show me pricing", "Request a demo"],
       },
     ],
@@ -170,6 +172,40 @@ const knowledgeBase: Entry[] = [
       {
         reply: `Each campus in Nexus is fully self-contained — its own operating hours, attendance thresholds, staff assignments, and financial records. At the same time, institution-level admins can see and manage everything centrally.\n\nData isolation means a teacher at Campus A cannot see Campus B's students or records.\n\n${L.campuses}`,
         suggestions: ["Tell me about data security", "Show me pricing", "Request a demo"],
+      },
+    ],
+  },
+  {
+    patterns: ["examination", "examinations", "exam", "exams", "results", "grades", "grading", "gpa", "grade sheet", "result card", "marks", "pass fail", "assessment"],
+    replies: [
+      {
+        reply: `The Examinations module handles your full assessment lifecycle:\n\n- Schedule exams per class, section, and subject\n- Enter obtained marks per student\n- Automatic pass/fail and grade calculation\n- Configurable grading scale (A+, A, B, C or custom)\n- GPA and percentage computation per student\n- Class and section rank calculation\n- Result cards and grade sheets ready to print or share\n- Supplementary exam support\n\n${L.examinations}`,
+        suggestions: ["How does grading work?", "Tell me about reporting", "Show me pricing"],
+      },
+      {
+        reply: `Running exams in Nexus is straightforward:\n\n1. Schedule an exam — link it to a class, section, and subject with a date and total marks\n2. Enter results — record obtained marks per student after the exam\n3. Nexus does the rest — calculates percentages, applies your grading scale, computes GPA, and ranks the class\n\nResult cards are generated instantly and ready to export.\n\n${L.examinations}`,
+        suggestions: ["Tell me about the grading scale", "How does reporting use exam data?", "Show me pricing"],
+      },
+      {
+        reply: `Nexus Examinations is fully connected to the rest of the platform. Students are pulled from People, subject structure comes from Academics, and exam results feed directly into Reporting for cross-class and trend analysis.\n\nOne system. No double entry.\n\n${L.examinations}`,
+        suggestions: ["Tell me about reporting", "Tell me about academics", "Show me pricing"],
+      },
+    ],
+  },
+  {
+    patterns: ["reporting", "reports", "analytics", "analysis", "export", "insights", "data export", "statistics", "trends", "dashboard reports", "pdf", "csv"],
+    replies: [
+      {
+        reply: `The Reporting module gives you institution-wide analytics across every module:\n\n- Attendance reports by student, class, campus, date range\n- Finance summaries — collections, dues, outstanding balances\n- Payroll breakdowns per staff member\n- Exam result analysis by class, section, and subject\n- Student enrollment and demographic breakdowns\n- Custom date-range filtering\n- Export to PDF and CSV with your institution branding\n\n${L.reporting}`,
+        suggestions: ["Tell me about attendance", "Tell me about finance", "Show me pricing"],
+      },
+      {
+        reply: `Reporting in Nexus pulls live data from every module — attendance, finance, academics, and examinations — into one place.\n\nFilter by campus, class, section, date range, or individual. Export as a branded PDF for boards and parents or raw CSV for further analysis.\n\nNo third-party BI tool needed.\n\n${L.reporting}`,
+        suggestions: ["How do I export reports?", "Tell me about examinations", "Show me pricing"],
+      },
+      {
+        reply: `Every report in Nexus is actionable:\n\n- Spot chronically absent students before it becomes a problem\n- See which classes are underperforming in exams\n- Identify outstanding fee balances at a glance\n- Compare payroll costs across campuses\n\nAll filterable, all exportable.\n\n${L.reporting}`,
+        suggestions: ["Tell me about attendance", "Tell me about finance", "Request a demo"],
       },
     ],
   },

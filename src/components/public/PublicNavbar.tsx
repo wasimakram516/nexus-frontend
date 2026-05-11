@@ -21,6 +21,8 @@ import {
 } from "@mui/material";
 import {
   AccountBalance,
+  AssignmentTurnedIn,
+  BarChart,
   CalendarToday,
   Close as CloseIcon,
   ExpandMore,
@@ -41,6 +43,8 @@ const featureItems = [
   { label: "People", href: "/features/people", icon: <Groups fontSize="small" /> },
   { label: "Attendance", href: "/features/attendance", icon: <CalendarToday fontSize="small" /> },
   { label: "Finance", href: "/features/finance", icon: <AccountBalance fontSize="small" /> },
+  { label: "Examinations", href: "/features/examinations", icon: <AssignmentTurnedIn fontSize="small" /> },
+  { label: "Reporting", href: "/features/reporting", icon: <BarChart fontSize="small" /> },
   { label: "Multi-Campus", href: "/features/campuses", icon: <Verified fontSize="small" /> },
   { label: "Custom Fields", href: "/features/custom-fields", icon: <Tune fontSize="small" /> },
 ];
