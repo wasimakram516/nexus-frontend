@@ -431,3 +431,4 @@ export function getResponse(userInput: string): ChatResponse {
   }
   return pick(fallbackReplies);
 }
+

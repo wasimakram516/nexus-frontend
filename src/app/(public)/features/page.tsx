@@ -1,353 +1,422 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Box, Button, Card, CardContent, Container, Grid, Typography } from "@mui/material";
 import {
-  AccountBalance,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  Grid,
+  Stack,
+  Typography,
+} from "@mui/material";
+import {
   ArrowForward,
-  AssignmentTurnedIn,
-  BarChart,
   CheckCircle,
-  Groups,
-  SchoolOutlined,
-  Tune,
-  Today,
-  Verified,
+  Hub,
+  Insights,
+  RocketLaunch,
 } from "@mui/icons-material";
+import { AI_POSITIONING } from "@/content/ai";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
+import { featureModuleMap, featureModules } from "@/content/features";
+
+export const modules = featureModules;
 
 export const metadata: Metadata = {
-  title: "Features — Nexus Education ERP",
+  title: "Nexus Features | Connected Education ERP for Academics, Attendance, Finance, and Multi-Campus Operations",
   description:
-    "Explore Nexus features: academic management, attendance tracking, finance, people management, multi-campus support, and custom fields.",
+    "Explore the full Nexus feature stack for educational institutions, including AI-powered assistance, connected operations, and AI-ready workflows across academics, attendance, finance, people, campuses, and reporting.",
 };
 
-export const modules = [
+const connectedBenefits = [
+  "Academic structure flows into attendance, finance, and reporting instead of being recreated in every module.",
+  "Student, guardian, and teacher records stay connected to the operational work that depends on them.",
+  "Campus-level scoping, audit trails, and recycle-bin support make the platform safer to run at scale.",
+];
+
+const editorialGroups = [
   {
-    slug: "academics",
-    icon: <SchoolOutlined sx={{ fontSize: 40 }} />,
-    title: "Academics",
-    summary: "Build and manage your full academic structure — from institution-wide levels down to individual subjects and sections.",
-    highlights: [
-      "Academic levels (Primary, Secondary, University etc.)",
-      "Classes linked to levels with full metadata",
-      "Sections within each class for group management",
-      "Subject catalog per class with code and description",
-      "Teacher-to-subject assignments per class",
-      "Student promotion history and academic progression",
-    ],
-    details: [
-      {
-        heading: "Levels & Classes",
-        body: "Define your institution's academic hierarchy — create levels such as Primary, Middle, Secondary, or University, then nest classes under each level. Every class carries its own metadata and links directly to sections and subjects.",
-      },
-      {
-        heading: "Sections",
-        body: "Split classes into sections (A, B, C or custom names) to manage student groupings. Students are assigned to a specific section, and attendance, fees, and reports are all section-aware.",
-      },
-      {
-        heading: "Subjects",
-        body: "Build a subject catalog per class — each subject has a name, code, and description. Subjects are linked to teachers and used across attendance, grading, and reporting modules.",
-      },
-      {
-        heading: "Teacher-Subject Assignment",
-        body: "Assign one or more teachers to a subject within a specific class. This drives teacher dashboards, timetables, and subject-level reporting.",
-      },
-      {
-        heading: "Student Promotion",
-        body: "Record academic promotions as students move between classes or levels. A full promotion history is maintained per student, enabling year-on-year tracking.",
-      },
-    ],
+    eyebrow: "Core operations",
+    title: "The modules institutions use every day",
+    body:
+      "These are the modules that shape day-to-day operational work in a school, college, or multi-campus institution. They keep classes organised, people records connected, daily attendance accurate, and financial workflows tied to what is actually happening on the ground.",
+    slugs: ["academics", "people", "attendance", "finance"],
   },
   {
-    slug: "people",
-    icon: <Groups sx={{ fontSize: 40 }} />,
-    title: "People",
-    summary: "Centralised profiles for every person in your institution — students, teachers, and guardians — with full relationship and contact management.",
-    highlights: [
-      "Student profiles with registration numbers, DOB, CNIC, and admission date",
-      "Section assignment per student",
-      "Guardian profiles with FATHER, MOTHER, UNCLE, AUNT, or OTHER relation types",
-      "Many-to-many student–guardian linking",
-      "Teacher profiles with gender, CNIC, and joining details",
-      "Subject assignments per teacher",
-      "Unified contact records (phone, address) for all people",
-    ],
-    details: [
-      {
-        heading: "Students",
-        body: "Each student has a unique registration number, date of birth, CNIC, admission date, and is assigned to a campus and section. Students carry a complete academic and financial history.",
-      },
-      {
-        heading: "Guardians",
-        body: "Create guardian profiles and link them to one or more students with a relationship type (Father, Mother, Uncle, Aunt, Other). Guardians can receive fee notifications and have their own contact records.",
-      },
-      {
-        heading: "Teachers",
-        body: "Teacher profiles include personal details, gender, CNIC, and employment dates. Teachers are assigned to subjects within classes and their attendance, salary, and performance are tracked across the platform.",
-      },
-      {
-        heading: "Contacts",
-        body: "A shared contact system stores phone numbers and addresses for students, guardians, and teachers. Multiple contact records per person are supported.",
-      },
-    ],
+    eyebrow: "Oversight and outcomes",
+    title: "The modules that turn operations into decisions",
+    body:
+      "Once the operational foundation is clean, Nexus helps institutions schedule assessments, measure academic outcomes, and turn attendance, finance, and growth data into reporting that leadership can actually use.",
+    slugs: ["examinations", "reporting"],
   },
   {
-    slug: "attendance",
-    icon: <Today sx={{ fontSize: 40 }} />,
-    title: "Attendance",
-    summary: "Accurate, real-time attendance tracking for students and staff with automated absent marking, leave management, and summary reporting.",
-    highlights: [
-      "Check-in and check-out time recording",
-      "PRESENT, ABSENT, LATE, and LEAVE statuses",
-      "Half-day tracking flag",
-      "Manual leave marking with reason",
-      "Auto-absent marking for non-arrivals",
-      "Campus-level attendance summaries",
-      "Per-student and per-teacher attendance history",
-    ],
-    details: [
-      {
-        heading: "Check-In & Check-Out",
-        body: "Record the exact check-in and check-out times for students and staff. Campus operating hours and late thresholds are configurable per campus — the system automatically determines PRESENT, LATE, or ABSENT status based on arrival time.",
-      },
-      {
-        heading: "Leave Management",
-        body: "Mark a student or staff member on leave with a reason. Leaves are factored into salary deduction calculations for staff and fee fine calculations for students.",
-      },
-      {
-        heading: "Auto-Absent Marking",
-        body: "Run the auto-absent job at end of day to automatically mark anyone who did not check in as ABSENT. This keeps records clean without manual intervention.",
-      },
-      {
-        heading: "Summaries & Reporting",
-        body: "Pull attendance summaries filtered by campus, class, section, date range, or individual. Summary data feeds directly into finance calculations for deductions and fines.",
-      },
-    ],
-  },
-  {
-    slug: "finance",
-    icon: <AccountBalance sx={{ fontSize: 40 }} />,
-    title: "Finance",
-    summary: "A complete financial engine covering student fee collection, staff payroll, deductions, fines, discounts, and bank account management.",
-    highlights: [
-      "Fee structures per class with JSON-defined breakdown",
-      "Monthly fee voucher generation per student",
-      "Fee payments via cash or bank transfer",
-      "Student discounts: Sibling, Merit, Need-Based, Staff Child",
-      "Student fine rules and monthly fine generation",
-      "Staff salary records with base amount and effective date",
-      "Salary deduction rules for absences, lates, half-days, and leaves",
-      "One-time salary adjustments (bonus or deduction)",
-      "Monthly salary payments with calculated net amount",
-      "Campus bank account management",
-    ],
-    details: [
-      {
-        heading: "Fee Structures & Vouchers",
-        body: "Define fee structures per class with a detailed JSON breakdown (tuition, transport, lab etc.). Monthly fee vouchers are generated per student based on their class fee structure. Voucher statuses are PENDING, PAID, or OVERDUE.",
-      },
-      {
-        heading: "Discounts",
-        body: "Apply student-level discounts by type — Sibling, Merit, Need-Based, or Staff Child. Discounts are factored into voucher calculations automatically.",
-      },
-      {
-        heading: "Fines",
-        body: "Define fine rules per campus and class for absences, late arrivals, half-days, and leaves. Monthly fines are generated per student and tracked separately with PENDING or PAID status.",
-      },
-      {
-        heading: "Staff Payroll",
-        body: "Store base salary records per staff member with joining date and effective date. Define deduction rules by campus and role — the system calculates net pay after applying absence, late, and leave deductions. One-time bonuses or deductions can be added as salary adjustments.",
-      },
-      {
-        heading: "Bank Accounts",
-        body: "Manage campus bank accounts for salary transfers and fee collection. Each campus can have multiple bank accounts on record.",
-      },
-    ],
-  },
-  {
-    slug: "campuses",
-    icon: <Verified sx={{ fontSize: 40 }} />,
-    title: "Multi-Campus",
-    summary: "Run unlimited campuses from one platform with full data isolation, per-campus user access, and centralised oversight.",
-    highlights: [
-      "Unlimited campus locations per institution",
-      "Per-campus operating hours (student & staff start/end times)",
-      "Late arrival and early departure thresholds per campus",
-      "User-to-campus assignments with role scoping",
-      "Campus-scoped data access — users only see their campus",
-      "Centralised admin view across all campuses",
-      "Soft-delete and restore campuses without data loss",
-    ],
-    details: [
-      {
-        heading: "Campus Configuration",
-        body: "Each campus has its own operating hours for students and staff, configurable late thresholds, and contact details. This drives attendance logic, deduction rules, and fine calculations independently per campus.",
-      },
-      {
-        heading: "User Assignment",
-        body: "Assign administrators, teachers, and accountants to specific campuses. A user's data access is automatically scoped to their assigned campuses — they cannot see or modify data from other campuses.",
-      },
-      {
-        heading: "Centralised Admin Oversight",
-        body: "Institution admins can view and manage all campuses from a single dashboard. Cross-campus reporting and comparisons are available at the admin level.",
-      },
-    ],
-  },
-  {
-    slug: "examinations",
-    icon: <AssignmentTurnedIn sx={{ fontSize: 40 }} />,
-    title: "Examinations",
-    summary: "Schedule, manage, and evaluate examinations across any class or section with full result tracking, grade sheets, and GPA calculations.",
-    highlights: [
-      "Exam scheduling with date, time, and subject",
-      "Per-student result entry with marks and pass/fail status",
-      "Grade configuration per institution (A, B, C or custom)",
-      "GPA and percentage calculations per exam",
-      "Class-wide and section-wide result comparison",
-      "Result cards and grade sheets per student",
-      "Re-examination and supplementary exam support",
-    ],
-    details: [
-      {
-        heading: "Exam Scheduling",
-        body: "Create exam schedules linked to specific classes, sections, and subjects. Each exam carries a date, time slot, total marks, and passing marks threshold. Teachers see only the exams assigned to their subjects.",
-      },
-      {
-        heading: "Result Entry",
-        body: "Enter obtained marks per student for each exam. The system instantly calculates percentage, pass/fail status, and grade based on the institution's configured grading scale. Bulk result import is also supported.",
-      },
-      {
-        heading: "Grading Scale",
-        body: "Configure your institution's custom grading scale — define grade letters (A+, A, B etc.), minimum score ranges, grade points, and remarks. The same scale applies uniformly across all results.",
-      },
-      {
-        heading: "GPA & Rank Calculation",
-        body: "Nexus automatically calculates cumulative GPA per student based on weighted subject results. Class and section rank is computed after all results are entered, providing instant academic standings.",
-      },
-      {
-        heading: "Result Cards & Reports",
-        body: "Generate formatted result cards per student showing all subject marks, total, percentage, grade, and rank. Export at class or section level for printing or digital distribution to guardians.",
-      },
-    ],
-  },
-  {
-    slug: "reporting",
-    icon: <BarChart sx={{ fontSize: 40 }} />,
-    title: "Reporting",
-    summary: "Institution-wide analytics and exportable reports across every module — attendance, finance, academics, and people — in one unified view.",
-    highlights: [
-      "Attendance reports by student, class, campus, and date range",
-      "Finance summaries: collections, dues, outstanding balances",
-      "Payroll reports per staff member and campus",
-      "Exam result analysis by class, section, and subject",
-      "Student enrollment and demographic breakdowns",
-      "Custom date-range filtering across all reports",
-      "Export to PDF and CSV",
-    ],
-    details: [
-      {
-        heading: "Attendance Analytics",
-        body: "View attendance summaries across any combination of campus, class, section, student, or staff member. Filter by date range to analyse patterns — identify chronically absent students or staff before issues escalate.",
-      },
-      {
-        heading: "Financial Reporting",
-        body: "Pull fee collection summaries showing total billed, collected, and outstanding per class, section, or campus. Payroll reports break down gross salary, deductions, adjustments, and net pay per staff member for any month.",
-      },
-      {
-        heading: "Academic Performance",
-        body: "Cross-subject and cross-class exam performance reports show class averages, top performers, and failure rates. Trend analysis across multiple exams helps identify subjects or sections that need intervention.",
-      },
-      {
-        heading: "Enrollment & Demographics",
-        body: "Track total enrolled students by campus, class, section, gender, and admission cohort. Year-over-year enrollment comparison helps administration plan capacity and resources.",
-      },
-      {
-        heading: "Export & Distribution",
-        body: "Every report can be exported as a formatted PDF or raw CSV. PDF exports include your institution branding — logo and display name — making them ready to share with boards, parents, or regulatory bodies.",
-      },
-    ],
-  },
-  {
-    slug: "custom-fields",
-    icon: <Tune sx={{ fontSize: 40 }} />,
-    title: "Custom Fields",
-    summary: "Extend any entity in Nexus with institution-specific fields — no code changes required.",
-    highlights: [
-      "15+ input types: text, textarea, number, email, phone, date, datetime, select, multi-select, checkbox, radio, boolean, file, image, URL",
-      "Define fields per module and entity type",
-      "Fields appear inline on the relevant entity page",
-      "Values stored and retrievable per entity record",
-      "Institution-scoped — custom fields are private to your institution",
-      "Create, update, and manage fields without developer involvement",
-    ],
-    details: [
-      {
-        heading: "Field Definitions",
-        body: "Create custom field definitions scoped to a specific module (Students, Teachers, Guardians, etc.) and entity. Each definition has a label, input type, and optional configuration like select options or validation rules.",
-      },
-      {
-        heading: "Input Types",
-        body: "Nexus supports 15+ field types: Text, Textarea, Number, Email, Phone, Date, DateTime, Select (single), Multi-Select, Checkbox, Radio, Boolean toggle, File upload, Image upload, and URL. This covers virtually any institutional data requirement.",
-      },
-      {
-        heading: "Inline Management",
-        body: "Custom fields appear directly on the relevant entity page — when editing a student profile, all custom fields for students are shown alongside the standard fields. No navigation to a separate settings page required.",
-      },
-      {
-        heading: "Data Privacy",
-        body: "All custom field definitions and their values are scoped to your institution. Other institutions cannot see your fields or data.",
-      },
-    ],
+    eyebrow: "Scale and adaptability",
+    title: "The modules that make Nexus fit real institutions",
+    body:
+      "Institutions rarely stay simple for long. Multi-campus control and custom-field flexibility make Nexus more practical for growing organisations that need stronger boundaries, cleaner control, and space for institution-specific workflows.",
+    slugs: ["campuses", "custom-fields"],
   },
 ];
+
+function getModules(slugs: string[]) {
+  return slugs
+    .map((slug) => featureModuleMap.get(slug))
+    .filter((module): module is NonNullable<typeof module> => Boolean(module));
+}
 
 export default function FeaturesPage() {
   return (
     <>
-      <Box sx={{ py: { xs: 8, md: 12 }, textAlign: "left", backgroundColor: "background.paper", borderBottom: "1px solid", borderColor: "divider" }}>
+      <Box
+        sx={{
+          py: { xs: 8, md: 12 },
+          background:
+            "linear-gradient(180deg, rgba(5,150,105,0.10) 0%, rgba(255,255,255,0) 100%)",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+        }}
+      >
         <Container maxWidth="xl">
           <PageBreadcrumbs crumbs={[{ label: "Features" }]} />
-          <Typography variant="h3" sx={{ fontWeight: 100, mb: 2 }}>
-            Built for how education{" "}
-            <Box component="span" sx={{ fontWeight: 800, color: "primary.main" }}>actually works</Box>
-          </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
-            Every module in Nexus was designed around real institutional operations — not retrofitted generic software.
-          </Typography>
+          <Grid container spacing={6} sx={{ alignItems: "center" }}>
+            <Grid size={{ xs: 12, md: 7 }}>
+              <Chip label="Education ERP Modules" color="primary" sx={{ mb: 2 }} />
+              <Typography variant="h2" sx={{ fontWeight: 200, mb: 2, maxWidth: 920 }}>
+                The Nexus feature stack built for{" "}
+                <Box component="span" sx={{ color: "primary.main", fontWeight: 800 }}>
+                  real institutional operations
+                </Box>
+              </Typography>
+              <Typography
+                variant="h6"
+                color="text.secondary"
+                sx={{ fontWeight: 400, lineHeight: 1.8, maxWidth: 920, mb: 2.5 }}
+              >
+                Nexus is designed for the way education actually works. Academics, people,
+                attendance, finance, reporting, and multi-campus controls are not isolated tools
+                here. They share the same structure, context, and operational logic.
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ lineHeight: 1.9, maxWidth: 880, mb: 3.5 }}
+              >
+                That means fewer duplicate records, fewer spreadsheet handoffs, and a much clearer
+                path from daily activity to leadership insight. If you are evaluating education ERP
+                software for a school, college, or campus network, this page gives you a grounded
+                view of how the Nexus modules fit together.
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ lineHeight: 1.9, maxWidth: 880, mb: 3.5 }}
+              >
+                {AI_POSITIONING.long}
+              </Typography>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <Link href="/contact">
+                  <Button variant="contained" size="large" startIcon={<RocketLaunch />}>
+                    Request a Demo
+                  </Button>
+                </Link>
+                <Link href="/pricing">
+                  <Button variant="outlined" size="large">
+                    View Pricing
+                  </Button>
+                </Link>
+              </Stack>
+            </Grid>
+            <Grid size={{ xs: 12, md: 5 }}>
+              <Card
+                sx={{
+                  border: "1px solid",
+                  borderColor: "divider",
+                  backgroundColor: "background.paper",
+                  boxShadow: "0 24px 60px rgba(2, 6, 23, 0.08)",
+                }}
+              >
+                <CardContent sx={{ p: 4 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                    <Hub sx={{ color: "primary.main" }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                      Why Nexus feels different
+                    </Typography>
+                  </Box>
+                  <Stack spacing={2}>
+                    {connectedBenefits.map((item) => (
+                      <Box key={item} sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+                        <CheckCircle sx={{ color: "success.main", fontSize: 18, mt: 0.3 }} />
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ lineHeight: 1.8 }}
+                        >
+                          {item}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
         </Container>
       </Box>
 
-      <Box sx={{ py: { xs: 6, md: 10 }, backgroundColor: "background.default" }}>
+      <Box sx={{ py: { xs: 6, md: 9 }, backgroundColor: "background.paper" }}>
         <Container maxWidth="xl">
-          <Grid container spacing={4}>
-            {modules.map((mod) => (
-              <Grid size={{ xs: 12, md: 6 }} key={mod.slug}>
-                <Card sx={{ height: "100%", p: 1, backgroundColor: "background.paper", border: "1px solid", borderColor: "divider", "&:hover": { borderColor: "primary.main" }, transition: "border-color 0.2s" }}>
-                  <CardContent>
-                    <Box sx={{ color: "primary.main", mb: 2 }}>{mod.icon}</Box>
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-                      {mod.title}
+          <Grid container spacing={5}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+                <Insights sx={{ color: "primary.main" }} />
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                  A connected platform, not a tool bundle
+                </Typography>
+              </Box>
+              <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.9 }}>
+                Most institutions do not struggle because they lack software. They struggle because
+                their software is fragmented. Attendance sits in one place, billing in another,
+                staff records somewhere else, and reporting becomes a manual monthly exercise.
+              </Typography>
+            </Grid>
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Stack spacing={2.25}>
+                <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.95 }}>
+                  Nexus is built so each module strengthens the others. Academic structure informs
+                  student placement. Student and guardian records stay available to operations and
+                  finance. Attendance becomes useful beyond a daily register because it feeds salary
+                  deductions, fine logic, and reporting. Campus configuration affects the real
+                  policies each branch follows.
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.95 }}>
+                  That connection is what makes an ERP valuable. It reduces duplicate setup, avoids
+                  mismatched data across teams, and gives leadership a cleaner view of what is
+                  happening across the institution.
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.95 }}>
+                  Nexus AI sits on top of that connected foundation as an AI-powered assistance
+                  layer. It gives institutions a credible path toward AI-assisted operations,
+                  smarter visibility, and AI-ready workflows because the underlying academic,
+                  people, attendance, finance, and campus context already lives in one place.
+                </Typography>
+              </Stack>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+
+      <Box sx={{ py: { xs: 6, md: 10 }, backgroundColor: "background.default", borderTop: "1px solid", borderColor: "divider" }}>
+        <Container maxWidth="xl">
+          <Stack spacing={8}>
+            {editorialGroups.map((group, groupIndex) => {
+              const groupModules = getModules(group.slugs);
+
+              return (
+                <Box key={group.title}>
+                  <Box sx={{ maxWidth: 940, mb: 4.5 }}>
+                    <Chip label={group.eyebrow} size="small" color="primary" sx={{ mb: 2 }} />
+                    <Typography variant="h3" sx={{ fontWeight: 200, mb: 1.5 }}>
+                      {group.title}
                     </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                      {mod.summary}
+                    <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.9 }}>
+                      {group.body}
                     </Typography>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 3 }}>
-                      {mod.highlights.slice(0, 4).map((h) => (
-                        <Box key={h} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <CheckCircle sx={{ fontSize: 16, color: "success.main", flexShrink: 0 }} />
-                          <Typography variant="body2">{h}</Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                    <Link href={`/features/${mod.slug}`}>
-                      <Button endIcon={<ArrowForward />} size="small">
-                        Learn more
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
+                  </Box>
+
+                  <Stack spacing={3}>
+                    {groupModules.map((mod, index) => (
+                      <Card
+                        key={mod.slug}
+                        sx={{
+                          border: "1px solid",
+                          borderColor: "divider",
+                          backgroundColor: "background.paper",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+                          <Grid
+                            container
+                            spacing={4}
+                            sx={{
+                              alignItems: "flex-start",
+                              flexDirection: {
+                                xs: "column",
+                                md:
+                                  index % 2 === 1 && groupIndex !== 2
+                                    ? "row-reverse"
+                                    : "row",
+                              },
+                            }}
+                          >
+                            <Grid size={{ xs: 12, md: 4 }}>
+                              <Box sx={{ color: "primary.main", mb: 2 }}>{mod.icon}</Box>
+                              <Typography variant="h4" sx={{ fontWeight: 800, mb: 1.25 }}>
+                                {mod.title}
+                              </Typography>
+                              <Stack direction="row" spacing={1} useFlexGap sx={{ mb: 2, flexWrap: "wrap" }}>
+                                {mod.audience.slice(0, 3).map((role) => (
+                                  <Chip key={role} label={role} size="small" variant="outlined" />
+                                ))}
+                              </Stack>
+                              <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.9 }}>
+                                {mod.summary}
+                              </Typography>
+                            </Grid>
+
+                            <Grid size={{ xs: 12, md: 8 }}>
+                              <Stack spacing={2.25}>
+                                {mod.heroIntro.slice(0, 2).map((paragraph) => (
+                                  <Typography
+                                    key={paragraph}
+                                    variant="body1"
+                                    color="text.secondary"
+                                    sx={{ lineHeight: 1.95 }}
+                                  >
+                                    {paragraph}
+                                  </Typography>
+                                ))}
+                                {mod.aiAssist ? (
+                                  <Typography
+                                    variant="body1"
+                                    color="text.secondary"
+                                    sx={{ lineHeight: 1.95 }}
+                                  >
+                                    {mod.aiAssist.body}
+                                  </Typography>
+                                ) : null}
+                              </Stack>
+
+                              <Grid container spacing={2.5} sx={{ mt: 1 }}>
+                                <Grid size={{ xs: 12, lg: 7 }}>
+                                  <Box
+                                    sx={{
+                                      p: 2.5,
+                                      borderRadius: 3,
+                                      backgroundColor: "background.default",
+                                      border: "1px solid",
+                                      borderColor: "divider",
+                                    }}
+                                  >
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.5 }}>
+                                      What this module helps you do
+                                    </Typography>
+                                    <Stack spacing={1.15}>
+                                      {mod.highlights.slice(0, 4).map((item) => (
+                                        <Box
+                                          key={item}
+                                          sx={{
+                                            display: "flex",
+                                            alignItems: "flex-start",
+                                            gap: 1.25,
+                                          }}
+                                        >
+                                          <CheckCircle
+                                            sx={{
+                                              fontSize: 16,
+                                              color: "success.main",
+                                              mt: 0.35,
+                                            }}
+                                          />
+                                          <Typography variant="body2" sx={{ lineHeight: 1.75 }}>
+                                            {item}
+                                          </Typography>
+                                        </Box>
+                                      ))}
+                                    </Stack>
+                                  </Box>
+                                </Grid>
+
+                                <Grid size={{ xs: 12, lg: 5 }}>
+                                  <Box
+                                    sx={{
+                                      p: 2.5,
+                                      borderRadius: 3,
+                                      backgroundColor: "background.default",
+                                      border: "1px solid",
+                                      borderColor: "divider",
+                                    }}
+                                  >
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.5 }}>
+                                      Why it matters operationally
+                                    </Typography>
+                                    <Stack spacing={1.15}>
+                                      {mod.operationalWins.slice(0, 3).map((item) => (
+                                        <Typography
+                                          key={item}
+                                          variant="body2"
+                                          color="text.secondary"
+                                          sx={{ lineHeight: 1.75 }}
+                                        >
+                                          {item}
+                                        </Typography>
+                                      ))}
+                                    </Stack>
+                                  </Box>
+                                </Grid>
+                              </Grid>
+
+                              <Box
+                                sx={{
+                                  mt: 3,
+                                  display: "flex",
+                                  gap: 2,
+                                  flexWrap: "wrap",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Link href={`/features/${mod.slug}`}>
+                                  <Button endIcon={<ArrowForward />} size="small">
+                                    Read more about {mod.title}
+                                  </Button>
+                                </Link>
+                              </Box>
+                            </Grid>
+                          </Grid>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Stack>
+                </Box>
+              );
+            })}
+          </Stack>
+        </Container>
+      </Box>
+
+      <Box sx={{ py: { xs: 6, md: 9 }, backgroundColor: "background.paper", borderTop: "1px solid", borderColor: "divider" }}>
+        <Container maxWidth="xl">
+          <Grid container spacing={4} sx={{ alignItems: "center" }}>
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Typography variant="h3" sx={{ fontWeight: 200, mb: 1.5 }}>
+                Want to see how these modules fit{" "}
+                <Box component="span" sx={{ color: "primary.main", fontWeight: 800 }}>
+                  your institution
+                </Box>
+                ?
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.9, maxWidth: 860 }}>
+                We can walk through the exact workflows your school, college, or campus network
+                cares about, from setup and admissions to attendance, fee operations, reporting,
+                and role-based access.
+              </Typography>
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Stack direction={{ xs: "column", sm: "row", md: "column" }} spacing={2}>
+                <Link href="/contact">
+                  <Button variant="contained" size="large" fullWidth startIcon={<RocketLaunch />}>
+                    Request a Demo
+                  </Button>
+                </Link>
+                <Link href="/pricing">
+                  <Button variant="outlined" size="large" fullWidth>
+                    View Pricing
+                  </Button>
+                </Link>
+              </Stack>
+            </Grid>
           </Grid>
         </Container>
       </Box>

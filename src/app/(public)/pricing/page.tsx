@@ -3,17 +3,16 @@ import PricingClient from "@/components/public/PricingClient";
 import env from "@/config/env";
 
 export const metadata: Metadata = {
-  title: "Pricing — Nexus Education ERP",
+  title: "Pricing - Nexus Education ERP for Schools, Colleges & Campuses",
   description:
-    "Simple, transparent pricing for educational institutions of all sizes. Choose the plan that fits your campus count and feature needs.",
+    "Explore Nexus Education ERP pricing for schools, colleges, and multi-campus institutions. Compare plans, billing options, included modules, AI-powered assistance, and rollout paths with clearer pricing guidance.",
 };
 
 async function getPlans() {
   try {
-    const res = await fetch(
-      `${env.apiBaseUrl}/api/${env.apiVersion}/platform/plans`,
-      { cache: "no-store" }
-    );
+    const res = await fetch(`${env.apiBaseUrl}/api/${env.apiVersion}/platform/plans`, {
+      cache: "no-store",
+    });
     if (!res.ok) return [];
     const json = await res.json();
     return json?.data ?? [];

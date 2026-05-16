@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import { modules } from "./(public)/features/page";
+import { featureModules } from "@/content/features";
 
 const BASE = "https://nexus.wisemensoft.com";
 
@@ -20,7 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: "monthly" as const,
   }));
 
-  const moduleRoutes = modules.map((m) => ({
+  const moduleRoutes = featureModules.map((m) => ({
     url: `${BASE}/features/${m.slug}`,
     lastModified: new Date(),
     changeFrequency: "monthly" as const,

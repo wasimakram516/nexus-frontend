@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -63,8 +63,6 @@ export default function LoginPage() {
         },
         data.accessToken
       );
-      // Set a lightweight cookie on the frontend domain so the Next.js middleware
-      // can verify the session (the httpOnly refreshToken lives on the backend domain).
       const maxAge = 7 * 24 * 60 * 60;
       document.cookie = `isAuthenticated=1; path=/; max-age=${maxAge}; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
       router.replace(data.user.role === "SUPERADMIN" ? "/platform" : "/dashboard");
@@ -74,8 +72,6 @@ export default function LoginPage() {
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "background.default" }}>
-
-      {/* Left panel — branding */}
       <Box
         sx={{
           display: { xs: "none", md: "flex" },
@@ -88,17 +84,14 @@ export default function LoginPage() {
           overflow: "hidden",
         }}
       >
-        {/* Background circles */}
         <Box sx={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.05)" }} />
         <Box sx={{ position: "absolute", bottom: -60, left: -60, width: 250, height: 250, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.05)" }} />
         <Box sx={{ position: "absolute", top: "40%", right: -40, width: 180, height: 180, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.03)" }} />
 
-        {/* Logo — links home */}
         <Box component={Link} href="/" sx={{ textDecoration: "none", display: "inline-flex" }}>
           <NexusLogo size={36} variant="full" white />
         </Box>
 
-        {/* Center content */}
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 100, color: "#fff", mb: 1, lineHeight: 1.3 }}>
             Everything your{" "}
@@ -107,7 +100,7 @@ export default function LoginPage() {
             <Box component="span" sx={{ fontWeight: 800 }}>unified.</Box>
           </Typography>
           <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.7)", mb: 5, maxWidth: 380 }}>
-            Manage academics, attendance, finance, and people across every campus — from one platform.
+            Manage academics, attendance, finance, and people across every campus - from one platform.
           </Typography>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -124,13 +117,11 @@ export default function LoginPage() {
           </Box>
         </Box>
 
-        {/* Footer */}
         <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.4)" }}>
           © {new Date().getFullYear()} Nexus by Wisemen Soft
         </Typography>
       </Box>
 
-      {/* Right panel — form */}
       <Box
         sx={{
           width: { xs: "100%", md: 480 },
@@ -144,7 +135,6 @@ export default function LoginPage() {
           borderColor: "divider",
         }}
       >
-        {/* Mobile logo */}
         <Box sx={{ display: { xs: "flex", md: "none" }, justifyContent: "center", mb: 4 }}>
           <NexusLogo size={32} variant="full" />
         </Box>
@@ -207,8 +197,8 @@ export default function LoginPage() {
         <Box sx={{ mt: "auto", pt: 6, textAlign: "center" }}>
           <Typography variant="caption" color="text.disabled">
             Having trouble? Contact{" "}
-            <Box component="a" href="mailto:support@wisemensoft.com" sx={{ color: "primary.main", textDecoration: "none" }}>
-              support@wisemensoft.com
+            <Box component="a" href="mailto:nexus@wisemensoft.com" sx={{ color: "primary.main", textDecoration: "none" }}>
+              nexus@wisemensoft.com
             </Box>
           </Typography>
         </Box>
