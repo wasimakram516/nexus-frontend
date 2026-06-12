@@ -29,8 +29,10 @@ import {
   Person,
 } from "@mui/icons-material";
 import NexusLogo from "@/components/shared/NexusLogo";
+import ProfileDialog from "@/components/shared/ProfileDialog";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { authService } from "@/services/auth.service";
@@ -48,13 +50,23 @@ const navItems = [
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { user, clearAuth } = useAuth();
+  const confirm = useConfirm();
   const { showMessage } = useMessage();
   const drawerWidth = collapsed ? DRAWER_COLLAPSED : DRAWER_EXPANDED;
 
   const handleLogout = async () => {
+    const ok = await confirm({
+      title: "Sign Out",
+      message: "Are you sure you want to sign out of the platform console?",
+      confirmLabel: "Sign Out",
+      confirmColor: "warning",
+      confirmIcon: <Logout fontSize="small" />,
+    });
+    if (!ok) return;
     await apiHandler(() => authService.logout(), { showMessage, silent: true });
     clearAuth();
     router.replace("/login");
@@ -186,7 +198,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
           <Box sx={{ display: "flex", gap: 0.5, justifyContent: collapsed ? "center" : "flex-start", flexDirection: collapsed ? "column" : "row", alignItems: "center" }}>
             <ThemeToggle />
             <Tooltip title="Profile" placement="right">
-              <IconButton size="small">
+              <IconButton size="small" onClick={() => setProfileOpen(true)}>
                 <Person fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -198,6 +210,8 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
           </Box>
         </Box>
       </Drawer>
+
+      <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
 
       {/* Main content */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, transition: "all 0.2s ease" }}>
