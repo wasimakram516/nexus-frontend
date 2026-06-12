@@ -35,10 +35,16 @@ export const peopleService = {
   // Relations
   linkGuardianToStudent: (payload: Record<string, unknown>) =>
     apiClient.post("/people/student-guardians", payload),
+  unlinkGuardian: (linkId: string) =>
+    apiClient.delete(`/people/student-guardians/${linkId}`),
   recordStudentPromotion: (payload: Record<string, unknown>) =>
     apiClient.post("/people/student-history", payload),
   assignTeacherToSubject: (payload: Record<string, unknown>) =>
     apiClient.post("/people/teacher-subjects", payload),
+  getTeacherSubjects: (params?: Record<string, unknown>) =>
+    apiClient.get("/people/teacher-subjects", { params }),
+  removeTeacherSubject: (assignmentId: string) =>
+    apiClient.delete(`/people/teacher-subjects/${assignmentId}`),
   createContact: (payload: Record<string, unknown>) =>
     apiClient.post("/people/contacts", payload),
 };

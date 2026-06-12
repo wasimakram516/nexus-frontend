@@ -13,6 +13,12 @@ export const attendanceService = {
   autoAbsent: (payload: Record<string, unknown>) =>
     apiClient.post("/attendance/auto-absent", payload),
 
+  bulkMark: (payload: {
+    campusId: string;
+    date: string;
+    entries: Array<{ userId: string; status: string; halfDay?: boolean; remarks?: string }>;
+  }) => apiClient.post("/attendance/bulk-mark", payload),
+
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get("/attendance", { params }),
 
