@@ -31,7 +31,11 @@ export async function apiHandler<T>(
     const message =
       error.response?.data?.message ?? error.message ?? "Something went wrong";
 
-    showMessage(message, "error");
+    // Silent background loads routinely hit permission 403s for restricted
+    // roles — don't nag the user about data they were never meant to see.
+    if (!(silent && error.response?.status === 403)) {
+      showMessage(message, "error");
+    }
     return { data: null, success: false };
   }
 }
