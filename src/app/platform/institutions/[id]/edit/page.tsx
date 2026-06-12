@@ -44,6 +44,7 @@ function deepUnwrapSetting(value: unknown, depth = 0): string {
 const defaultData: WizardData = {
   name: "", slug: "", status: "ACTIVE", deploymentMode: "SHARED_HOSTED",
   contactEmail: "", contactPhone: "", primaryDomain: "", notes: "",
+  adminName: "", adminEmail: "", adminPassword: "", skipAdmin: true,
   planId: "", planName: "", billingCycle: "MONTHLY", agreedPrice: "", currency: "PKR", setupFee: "",
   displayName: "", logoUrl: "", primaryColor: "#059669", secondaryColor: "#6366F1", accentColor: "#34D399", theme: "default",
   modules: {},
@@ -99,6 +100,7 @@ export default function EditInstitutionWizard() {
         contactPhone: String(inst?.contactPhone ?? ""),
         primaryDomain: String(inst?.primaryDomain ?? ""),
         notes: String(inst?.notes ?? ""),
+        adminName: "", adminEmail: "", adminPassword: "", skipAdmin: true,
         planId: String(sub?.planId ?? ""),
         planName: String(sub?.planName ?? ""),
         billingCycle: "MONTHLY",
