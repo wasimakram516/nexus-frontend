@@ -7,28 +7,35 @@ import {
 } from "@mui/material";
 import {
   AccountBalance, AccountTree, AssignmentTurnedIn, AutoStories,
-  Description, Forum, Group, ManageAccounts, QueryStats, School,
+  Description, Forum, Group, ManageAccounts, QueryStats, School, Tune,
 } from "@mui/icons-material";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
 import PlatformBreadcrumbs from "@/components/shared/PlatformBreadcrumbs";
-import InstitutionCampusesTab from "@/components/platform/InstitutionCampusesTab";
+import AcademicsManager from "@/components/dashboard/AcademicsManager";
+import CampusesManager from "@/components/dashboard/CampusesManager";
+import AttendanceManager from "@/components/dashboard/AttendanceManager";
+import CustomFieldsManager from "@/components/dashboard/CustomFieldsManager";
+import FinanceManager from "@/components/dashboard/FinanceManager";
+import PeopleManager from "@/components/dashboard/PeopleManager";
+import UsersManager from "@/components/dashboard/UsersManager";
 
 const MODULE_META: Record<string, { label: string; description: string; icon: React.JSX.Element; accent: string }> = {
-  campuses:     { label: "Campuses",     description: "Manage campuses, operating hours, and attendance thresholds.", icon: <AccountTree sx={{ fontSize: 40 }} />,       accent: "#10b981" },
-  people:       { label: "People",       description: "Manage students, teachers, and guardians.",                    icon: <Group sx={{ fontSize: 40 }} />,             accent: "#3b82f6" },
-  academics:    { label: "Academics",    description: "Levels, classes, sections, subjects, and teacher assignments.",icon: <School sx={{ fontSize: 40 }} />,            accent: "#8b5cf6" },
-  attendance:   { label: "Attendance",   description: "Daily attendance records, leave management, and reports.",    icon: <AssignmentTurnedIn sx={{ fontSize: 40 }} />, accent: "#f59e0b" },
-  finance:      { label: "Finance",      description: "Fees, vouchers, salaries, payroll, and payments.",            icon: <AccountBalance sx={{ fontSize: 40 }} />,    accent: "#ef4444" },
-  users:        { label: "Users",        description: "Staff user accounts, roles, and campus assignments.",         icon: <ManageAccounts sx={{ fontSize: 40 }} />,    accent: "#06b6d4" },
-  reports:      { label: "Reports",      description: "Analytics, insights, trends, and data exports.",              icon: <QueryStats sx={{ fontSize: 40 }} />,        accent: "#64748b" },
-  examinations: { label: "Examinations", description: "Exam scheduling, grading, and result sheets.",               icon: <AutoStories sx={{ fontSize: 40 }} />,       accent: "#d946ef" },
-  documents:    { label: "Documents",    description: "Institution documents, templates, and file management.",      icon: <Description sx={{ fontSize: 40 }} />,       accent: "#0ea5e9" },
-  realtime:     { label: "Real-time",    description: "Live notifications, socket events, and activity feeds.",      icon: <Forum sx={{ fontSize: 40 }} />,             accent: "#22c55e" },
+  campuses:        { label: "Campuses",      description: "Manage campuses, operating hours, and attendance thresholds.", icon: <AccountTree sx={{ fontSize: 40 }} />,       accent: "#10b981" },
+  people:          { label: "People",        description: "Manage students, teachers, and guardians.",                    icon: <Group sx={{ fontSize: 40 }} />,             accent: "#3b82f6" },
+  academics:       { label: "Academics",     description: "Levels, classes, sections, subjects, and teacher assignments.",icon: <School sx={{ fontSize: 40 }} />,            accent: "#8b5cf6" },
+  attendance:      { label: "Attendance",    description: "Daily attendance records, leave management, and reports.",    icon: <AssignmentTurnedIn sx={{ fontSize: 40 }} />, accent: "#f59e0b" },
+  finance:         { label: "Finance",       description: "Fees, vouchers, salaries, payroll, and payments.",            icon: <AccountBalance sx={{ fontSize: 40 }} />,    accent: "#ef4444" },
+  users:           { label: "Users",         description: "Staff user accounts, roles, and campus assignments.",         icon: <ManageAccounts sx={{ fontSize: 40 }} />,    accent: "#06b6d4" },
+  "custom-fields": { label: "Custom Fields", description: "Institution-specific fields on built-in records.",            icon: <Tune sx={{ fontSize: 40 }} />,              accent: "#a855f7" },
+  reports:         { label: "Reports",       description: "Analytics, insights, trends, and data exports.",              icon: <QueryStats sx={{ fontSize: 40 }} />,        accent: "#64748b" },
+  examinations:    { label: "Examinations",  description: "Exam scheduling, grading, and result sheets.",               icon: <AutoStories sx={{ fontSize: 40 }} />,       accent: "#d946ef" },
+  documents:       { label: "Documents",     description: "Institution documents, templates, and file management.",      icon: <Description sx={{ fontSize: 40 }} />,       accent: "#0ea5e9" },
+  realtime:        { label: "Real-time",     description: "Live notifications, socket events, and activity feeds.",      icon: <Forum sx={{ fontSize: 40 }} />,             accent: "#22c55e" },
 };
 
-const IMPLEMENTED = new Set(["campuses"]);
+const IMPLEMENTED = new Set(["campuses", "people", "academics", "attendance", "finance", "users", "custom-fields"]);
 
 export default function ModulePage() {
   const { id: slugOrId, module } = useParams<{ id: string; module: string }>();
@@ -57,6 +64,27 @@ export default function ModulePage() {
     );
   }
 
+  const renderModule = () => {
+    switch (module) {
+      case "campuses":
+        return <CampusesManager institutionId={institutionId} />;
+      case "people":
+        return <PeopleManager institutionId={institutionId} />;
+      case "academics":
+        return <AcademicsManager institutionId={institutionId} />;
+      case "attendance":
+        return <AttendanceManager institutionId={institutionId} />;
+      case "finance":
+        return <FinanceManager institutionId={institutionId} />;
+      case "users":
+        return <UsersManager institutionId={institutionId} />;
+      case "custom-fields":
+        return <CustomFieldsManager institutionId={institutionId} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <Box sx={{ flex: 1, overflow: "auto" }}>
       <Container maxWidth="xl" sx={{ py: { xs: 2.5, sm: 4 }, px: { xs: 2, sm: 3, md: 4 } }}>
@@ -67,13 +95,13 @@ export default function ModulePage() {
           { label: meta.label },
         ]} />
 
-        {IMPLEMENTED.has(module) ? (
+        {IMPLEMENTED.has(module) && institutionId ? (
           <>
             <Box sx={{ mb: 3 }}>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>{meta.label}</Typography>
               <Typography variant="body2" color="text.secondary">{meta.description}</Typography>
             </Box>
-            {module === "campuses" && <InstitutionCampusesTab institutionId={institutionId} />}
+            {renderModule()}
           </>
         ) : (
           <Card sx={{ border: "1px solid", borderColor: "divider" }}>

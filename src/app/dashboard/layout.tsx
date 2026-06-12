@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Avatar,
   Box,
+  Chip,
   Divider,
   Drawer,
   IconButton,
@@ -17,38 +18,67 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  AccountTree,
-  Assessment,
+  createTheme,
+  ThemeProvider as BrandThemeProvider,
+  useTheme,
+} from "@mui/material/styles";
+import {
+  AccountBalance,
+  Business,
   ChevronLeft,
   ChevronRight,
   Dashboard,
-  Delete,
-  Layers,
+  Groups,
   Language,
   Logout,
+  ManageAccounts,
   Person,
+  SchoolOutlined,
+  Today,
+  Tune,
 } from "@mui/icons-material";
 import NexusLogo from "@/components/shared/NexusLogo";
 import ProfileDialog from "@/components/shared/ProfileDialog";
 import ThemeToggle from "@/components/shared/ThemeToggle";
-import { useAuth } from "@/contexts/AuthContext";
+import TrialBanner from "@/components/dashboard/TrialBanner";
+import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
+import {
+  ModuleKey,
+  RuntimeConfigProvider,
+  useRuntimeConfig,
+} from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { authService } from "@/services/auth.service";
 
 const DRAWER_EXPANDED = 240;
 const DRAWER_COLLAPSED = 64;
 
-const navItems = [
-  { label: "Overview",       href: "/platform",              icon: <Dashboard /> },
-  { label: "Institutions",   href: "/platform/institutions", icon: <AccountTree /> },
-  { label: "Plans",          href: "/platform/plans",        icon: <Layers /> },
-  { label: "Audit Logs",     href: "/platform/audit-logs",   icon: <Assessment /> },
-  { label: "Recycle Bin",    href: "/platform/recycle-bin",  icon: <Delete /> },
+const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+  module?: ModuleKey;
+  roles?: UserRole[];
+}
+
+const navItems: NavItem[] = [
+  { label: "Overview",      href: "/dashboard",               icon: <Dashboard /> },
+  // Module items are permission-driven: visible when the institution has the
+  // module AND the user can at least view it (templates/overrides included).
+  { label: "People",        href: "/dashboard/people",        icon: <Groups />,         module: "PEOPLE" },
+  { label: "Academics",     href: "/dashboard/academics",     icon: <SchoolOutlined />, module: "ACADEMICS" },
+  { label: "Attendance",    href: "/dashboard/attendance",    icon: <Today />,          module: "ATTENDANCE" },
+  { label: "Finance",       href: "/dashboard/finance",       icon: <AccountBalance />, module: "FINANCE" },
+  { label: "Campuses",      href: "/dashboard/campuses",      icon: <Business />,       roles: ["ADMIN"] },
+  { label: "Users",         href: "/dashboard/users",         icon: <ManageAccounts />, roles: ["ADMIN"] },
+  { label: "Custom Fields", href: "/dashboard/custom-fields", icon: <Tune />,           roles: ["ADMIN"] },
 ];
 
-export default function PlatformLayout({ children }: { children: React.ReactNode }) {
+function DashboardShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
@@ -56,12 +86,35 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   const { user, clearAuth } = useAuth();
   const confirm = useConfirm();
   const { showMessage } = useMessage();
+  const { config, isModuleEnabled, can } = useRuntimeConfig();
   const drawerWidth = collapsed ? DRAWER_COLLAPSED : DRAWER_EXPANDED;
+  const outerTheme = useTheme();
+
+  // Institution branding tints the dashboard: valid hex colors from the
+  // branding config override the default palette (light/dark base kept).
+  const brandedTheme = useMemo(() => {
+    const branding = config?.branding;
+    const primary =
+      branding?.primaryColor && HEX_COLOR.test(branding.primaryColor)
+        ? branding.primaryColor
+        : undefined;
+    const secondary =
+      branding?.secondaryColor && HEX_COLOR.test(branding.secondaryColor)
+        ? branding.secondaryColor
+        : undefined;
+    if (!primary && !secondary) return outerTheme;
+    return createTheme(outerTheme, {
+      palette: {
+        ...(primary ? { primary: { main: primary } } : {}),
+        ...(secondary ? { secondary: { main: secondary } } : {}),
+      },
+    });
+  }, [outerTheme, config?.branding]);
 
   const handleLogout = async () => {
     const ok = await confirm({
       title: "Sign Out",
-      message: "Are you sure you want to sign out of the platform console?",
+      message: "Are you sure you want to sign out of Nexus?",
       confirmLabel: "Sign Out",
       confirmColor: "warning",
       confirmIcon: <Logout fontSize="small" />,
@@ -73,9 +126,19 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   };
 
   const isActive = (href: string) =>
-    href === "/platform" ? pathname === "/platform" : pathname.startsWith(href);
+    href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+
+  const visibleItems = navItems.filter((item) => {
+    if (item.module && (!isModuleEnabled(item.module) || !can(item.module, "view"))) return false;
+    if (item.roles && user && !item.roles.includes(user.role)) return false;
+    return true;
+  });
+
+  const institutionName = config?.branding?.displayName ?? "Institution";
+  const logoUrl = config?.branding?.logoUrl || null;
 
   return (
+    <BrandThemeProvider theme={brandedTheme}>
     <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "background.default" }}>
       {/* Sidebar */}
       <Drawer
@@ -95,7 +158,16 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         {/* Logo + collapse toggle */}
         {collapsed ? (
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 1.5, gap: 1 }}>
-            <NexusLogo size={28} variant="icon" />
+            {logoUrl ? (
+              <Box
+                component="img"
+                src={logoUrl}
+                alt={institutionName}
+                sx={{ width: 28, height: 28, objectFit: "contain", borderRadius: 1 }}
+              />
+            ) : (
+              <NexusLogo size={28} variant="icon" />
+            )}
             <Tooltip title="Expand sidebar" placement="right">
               <IconButton size="small" onClick={() => setCollapsed(false)}>
                 <ChevronRight fontSize="small" />
@@ -104,7 +176,18 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
           </Box>
         ) : (
           <Box sx={{ px: 2.5, py: 2, display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 64 }}>
-            <NexusLogo size={28} variant="full" />
+            {logoUrl ? (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                <Box
+                  component="img"
+                  src={logoUrl}
+                  alt={institutionName}
+                  sx={{ height: 32, maxWidth: 150, objectFit: "contain", borderRadius: 1 }}
+                />
+              </Box>
+            ) : (
+              <NexusLogo size={28} variant="full" />
+            )}
             <Tooltip title="Collapse sidebar" placement="right">
               <IconButton size="small" onClick={() => setCollapsed(true)}>
                 <ChevronLeft fontSize="small" />
@@ -115,9 +198,19 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
         {!collapsed && (
           <Box sx={{ px: 2.5, pb: 2 }}>
-            <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
-              Platform Console
+            <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }} noWrap>
+              {institutionName}
             </Typography>
+            {config?.subscription?.planName && (
+              <Box sx={{ mt: 0.5 }}>
+                <Chip
+                  label={`${config.subscription.planName} · ${config.subscription.status}`}
+                  size="small"
+                  color={config.subscription.status === "ACTIVE" || config.subscription.status === "TRIAL" ? "success" : "warning"}
+                  sx={{ fontSize: 10, height: 20 }}
+                />
+              </Box>
+            )}
           </Box>
         )}
 
@@ -125,7 +218,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
         {/* Nav items */}
         <List sx={{ px: collapsed ? 1 : 1.5, py: 1, flex: 1 }}>
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const active = isActive(item.href);
             return (
               <Tooltip key={item.href} title={collapsed ? item.label : ""} placement="right">
@@ -186,11 +279,11 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
           {!collapsed && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, borderRadius: 2, backgroundColor: "background.default", mb: 1 }}>
               <Avatar sx={{ width: 32, height: 32, backgroundColor: "primary.main", fontSize: 13, fontWeight: 700 }}>
-                {user?.name?.charAt(0) ?? "S"}
+                {user?.name?.charAt(0) ?? "U"}
               </Avatar>
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }} noWrap>{user?.name ?? "Superadmin"}</Typography>
-                <Typography variant="caption" color="text.secondary" noWrap>{user?.email}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }} noWrap>{user?.name ?? "User"}</Typography>
+                <Typography variant="caption" color="text.secondary" noWrap>{user?.role}</Typography>
               </Box>
             </Box>
           )}
@@ -215,8 +308,18 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
       {/* Main content */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, transition: "all 0.2s ease" }}>
+        <TrialBanner />
         {children}
       </Box>
     </Box>
+    </BrandThemeProvider>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <RuntimeConfigProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </RuntimeConfigProvider>
   );
 }

@@ -9,7 +9,7 @@ import {
 import {
   AccountBalance, AccountTree, ArrowForwardIos, AssignmentTurnedIn,
   AutoStories, Block, CheckCircle, Description, Forum,
-  Group, ManageAccounts, QueryStats, School,
+  Group, ManageAccounts, QueryStats, School, Tune,
 } from "@mui/icons-material";
 import PlatformBreadcrumbs from "@/components/shared/PlatformBreadcrumbs";
 import { useMessage } from "@/contexts/MessageContext";
@@ -33,6 +33,7 @@ const MODULE_DEFS: ModuleDef[] = [
   { key: "ATTENDANCE",   label: "Attendance",  description: "Daily attendance records and summaries.",      icon: <AssignmentTurnedIn />, accent: "#f59e0b", route: "attendance" },
   { key: "FINANCE",      label: "Finance",     description: "Fees, vouchers, salaries, and payments.",      icon: <AccountBalance />,    accent: "#ef4444", route: "finance" },
   { key: null,           label: "Users",       description: "Staff accounts and role assignments.",         icon: <ManageAccounts />,    accent: "#06b6d4", route: "users" },
+  { key: null,           label: "Custom Fields", description: "Institution-specific fields on records.",    icon: <Tune />,              accent: "#a855f7", route: "custom-fields" },
   { key: "REPORTING",    label: "Reports",     description: "Analytics, trends, and data exports.",         icon: <QueryStats />,        accent: "#64748b", route: "reports" },
   { key: "EXAMINATIONS", label: "Examinations",description: "Exams, results, and grade sheets.",            icon: <AutoStories />,       accent: "#d946ef", route: "examinations" },
   { key: "DOCUMENTS",    label: "Documents",   description: "Institution documents and templates.",         icon: <Description />,       accent: "#0ea5e9", route: "documents" },

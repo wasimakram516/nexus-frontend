@@ -1,7 +1,12 @@
 import apiClient from "@/lib/axios";
 
 export const platformService = {
+  // Institution self-service (any authenticated institution user)
+  getMyRuntimeConfig: () => apiClient.get("/platform/me/runtime-config"),
+  getMyPermissionTemplates: () => apiClient.get("/platform/me/permission-templates"),
+
   // Plans
+  getPlans: () => apiClient.get("/platform/plans"),
   createPlan: (payload: Record<string, unknown>) =>
     apiClient.post("/platform/plans", payload),
   updatePlan: (planId: string, payload: Record<string, unknown>) =>

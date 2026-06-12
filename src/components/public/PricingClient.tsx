@@ -439,7 +439,10 @@ export default function PricingClient({ apiPlans }: { apiPlans: Plan[] }) {
                       </Box>
                     )}
 
-                    <Link href="/contact" style={{ display: "block", marginBottom: "24px" }}>
+                    <Link
+                      href={price !== null && plan.billingCycle !== "CUSTOM" ? "/signup" : "/contact"}
+                      style={{ display: "block", marginBottom: "24px" }}
+                    >
                       <Button
                         variant={isPopular ? "contained" : "outlined"}
                         fullWidth
@@ -448,7 +451,7 @@ export default function PricingClient({ apiPlans }: { apiPlans: Plan[] }) {
                         sx={{ py: 1.5, borderRadius: 2 }}
                       >
                         {price !== null && plan.billingCycle !== "CUSTOM"
-                          ? "Get Started"
+                          ? "Start Free Trial"
                           : "Contact Sales"}
                       </Button>
                     </Link>
@@ -713,14 +716,14 @@ export default function PricingClient({ apiPlans }: { apiPlans: Plan[] }) {
                   flexWrap: "wrap",
                 }}
               >
-                <Link href="/contact">
+                <Link href="/signup">
                   <Button variant="contained" size="large" startIcon={<RocketLaunch />}>
-                    Request pricing help
+                    Start free trial
                   </Button>
                 </Link>
-                <Link href="/features">
+                <Link href="/contact">
                   <Button variant="outlined" size="large">
-                    Explore features
+                    Request pricing help
                   </Button>
                 </Link>
               </Box>
