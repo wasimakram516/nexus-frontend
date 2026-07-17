@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
-  Card,
   Chip,
   CircularProgress,
   Dialog,
@@ -28,6 +27,8 @@ import {
 } from "@mui/material";
 import { Add, Delete, Edit, Search } from "@mui/icons-material";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import DataTableCard from "@/components/shared/DataTableCard";
+import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -341,7 +342,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
         </Button>
       </Box>
 
-      <Card sx={{ border: "1px solid", borderColor: "divider", overflow: "auto" }}>
+      <DataTableCard>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
         ) : (
@@ -349,13 +350,13 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Access</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Created</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
+                  <TableHeaderCell>Name</TableHeaderCell>
+                  <TableHeaderCell>Email</TableHeaderCell>
+                  <TableHeaderCell>Role</TableHeaderCell>
+                  <TableHeaderCell>Access</TableHeaderCell>
+                  <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell>Created</TableHeaderCell>
+                  <TableHeaderCell align="right">Actions</TableHeaderCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -443,7 +444,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
             />
           </>
         )}
-      </Card>
+      </DataTableCard>
 
       <ConfirmDialog
         open={!!confirmDelete}
@@ -535,9 +536,9 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 700 }}>Module</TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 700 }}>View</TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 700 }}>Manage</TableCell>
+                        <TableHeaderCell>Module</TableHeaderCell>
+                        <TableHeaderCell align="center">View</TableHeaderCell>
+                        <TableHeaderCell align="center">Manage</TableHeaderCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>

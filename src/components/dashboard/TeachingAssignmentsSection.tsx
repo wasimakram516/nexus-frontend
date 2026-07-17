@@ -25,6 +25,8 @@ import {
   Typography,
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
+import DataTableCard from "@/components/shared/DataTableCard";
+import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -201,17 +203,17 @@ export default function TeachingAssignmentsSection({
           </CardContent>
         </Card>
       ) : (
-        <Card sx={{ border: "1px solid", borderColor: "divider", overflow: "auto" }}>
+        <DataTableCard>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Teacher</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Subject</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Class</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Section</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Campus</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Assigned</TableCell>
-                {canManage && <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>}
+                <TableHeaderCell>Teacher</TableHeaderCell>
+                <TableHeaderCell>Subject</TableHeaderCell>
+                <TableHeaderCell>Class</TableHeaderCell>
+                <TableHeaderCell>Section</TableHeaderCell>
+                <TableHeaderCell>Campus</TableHeaderCell>
+                <TableHeaderCell>Assigned</TableHeaderCell>
+                {canManage && <TableHeaderCell align="right">Actions</TableHeaderCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -240,7 +242,7 @@ export default function TeachingAssignmentsSection({
               ))}
             </TableBody>
           </Table>
-        </Card>
+        </DataTableCard>
       )}
 
       <Dialog open={dialogOpen} onClose={saving ? undefined : () => setDialogOpen(false)} maxWidth="xs" fullWidth>

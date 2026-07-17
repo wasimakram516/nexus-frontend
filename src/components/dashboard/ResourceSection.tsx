@@ -25,6 +25,8 @@ import {
 } from "@mui/material";
 import { Add, Delete, Edit } from "@mui/icons-material";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import DataTableCard from "@/components/shared/DataTableCard";
+import TableHeaderCell from "@/components/shared/TableHeaderCell";
 
 export interface Option {
   value: string;
@@ -217,14 +219,14 @@ export default function ResourceSection<T extends { id: string }>({
           </CardContent>
         </Card>
       ) : (
-        <Card sx={{ border: "1px solid", borderColor: "divider", overflow: "auto" }}>
+        <DataTableCard>
           <Table size="small">
             <TableHead>
               <TableRow>
                 {columns.map((col) => (
-                  <TableCell key={col.key} sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>{col.label}</TableCell>
+                  <TableHeaderCell key={col.key} sx={{ whiteSpace: "nowrap" }}>{col.label}</TableHeaderCell>
                 ))}
-                {hasActions && <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>}
+                {hasActions && <TableHeaderCell align="right">Actions</TableHeaderCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -256,7 +258,7 @@ export default function ResourceSection<T extends { id: string }>({
               ))}
             </TableBody>
           </Table>
-        </Card>
+        </DataTableCard>
       )}
 
       <ConfirmDialog

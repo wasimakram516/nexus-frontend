@@ -44,6 +44,8 @@ import {
   VisibilityOff,
 } from "@mui/icons-material";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import DataTableCard from "@/components/shared/DataTableCard";
+import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -1051,21 +1053,21 @@ export default function PeopleTab({
           </CardContent>
         </Card>
       ) : (
-        <Card sx={{ border: "1px solid", borderColor: "divider", overflow: "auto" }}>
+        <DataTableCard>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                {kind === "students" && <TableCell sx={{ fontWeight: 700 }}>Reg No</TableCell>}
-                {kind === "students" && <TableCell sx={{ fontWeight: 700 }}>Class</TableCell>}
-                {kind === "students" && <TableCell sx={{ fontWeight: 700 }}>Guardians</TableCell>}
-                {kind !== "guardians" && <TableCell sx={{ fontWeight: 700 }}>Gender</TableCell>}
-                {kind === "guardians" && <TableCell sx={{ fontWeight: 700 }}>Relation</TableCell>}
-                {kind === "guardians" && <TableCell sx={{ fontWeight: 700 }}>Students</TableCell>}
-                <TableCell sx={{ fontWeight: 700 }}>Campus</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Added</TableCell>
-                {canManage && <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>}
+                <TableHeaderCell>Name</TableHeaderCell>
+                <TableHeaderCell>Email</TableHeaderCell>
+                {kind === "students" && <TableHeaderCell>Reg No</TableHeaderCell>}
+                {kind === "students" && <TableHeaderCell>Class</TableHeaderCell>}
+                {kind === "students" && <TableHeaderCell>Guardians</TableHeaderCell>}
+                {kind !== "guardians" && <TableHeaderCell>Gender</TableHeaderCell>}
+                {kind === "guardians" && <TableHeaderCell>Relation</TableHeaderCell>}
+                {kind === "guardians" && <TableHeaderCell>Students</TableHeaderCell>}
+                <TableHeaderCell>Campus</TableHeaderCell>
+                <TableHeaderCell>Added</TableHeaderCell>
+                {canManage && <TableHeaderCell align="right">Actions</TableHeaderCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -1134,7 +1136,7 @@ export default function PeopleTab({
               })}
             </TableBody>
           </Table>
-        </Card>
+        </DataTableCard>
       )}
 
       <ConfirmDialog

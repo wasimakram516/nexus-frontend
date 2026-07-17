@@ -43,6 +43,8 @@ import {
   Search,
 } from "@mui/icons-material";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
+import DataTableCard from "@/components/shared/DataTableCard";
+import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
@@ -625,15 +627,15 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
             </CardContent>
           </Card>
         ) : (
-          <Card sx={{ border: "1px solid", borderColor: "divider", overflow: "auto" }}>
+          <DataTableCard>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Check In</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Check Out</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Remarks</TableCell>
+                  <TableHeaderCell>Date</TableHeaderCell>
+                  <TableHeaderCell>Check In</TableHeaderCell>
+                  <TableHeaderCell>Check Out</TableHeaderCell>
+                  <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell>Remarks</TableHeaderCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -654,7 +656,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
                 ))}
               </TableBody>
             </Table>
-          </Card>
+          </DataTableCard>
         )}
       </>
     );
@@ -811,17 +813,17 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
             </CardContent>
           </Card>
         ) : (
-          <Card sx={{ border: "1px solid", borderColor: "divider", overflow: "auto" }}>
+          <DataTableCard>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Check In</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Check Out</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Remarks</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
+                  <TableHeaderCell>Name</TableHeaderCell>
+                  <TableHeaderCell>Role</TableHeaderCell>
+                  <TableHeaderCell>Check In</TableHeaderCell>
+                  <TableHeaderCell>Check Out</TableHeaderCell>
+                  <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell>Remarks</TableHeaderCell>
+                  <TableHeaderCell align="right">Actions</TableHeaderCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -861,7 +863,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
                 ))}
               </TableBody>
             </Table>
-          </Card>
+          </DataTableCard>
         )}
 
         {/* Record punch dialog */}
@@ -1048,7 +1050,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
           </CardContent>
         </Card>
       ) : (
-        <Card sx={{ border: "1px solid", borderColor: "divider", overflow: "auto" }}>
+        <DataTableCard>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -1060,13 +1062,13 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
                     onChange={toggleAll}
                   />
                 </TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>{mode === "students" ? "Reg · Class" : "Role"}</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>In</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Out</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Remarks</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>Mark</TableCell>
+                <TableHeaderCell>Name</TableHeaderCell>
+                <TableHeaderCell>{mode === "students" ? "Reg · Class" : "Role"}</TableHeaderCell>
+                <TableHeaderCell>Status</TableHeaderCell>
+                <TableHeaderCell>In</TableHeaderCell>
+                <TableHeaderCell>Out</TableHeaderCell>
+                <TableHeaderCell>Remarks</TableHeaderCell>
+                <TableHeaderCell align="right" sx={{ whiteSpace: "nowrap" }}>Mark</TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -1131,7 +1133,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
               })}
             </TableBody>
           </Table>
-        </Card>
+        </DataTableCard>
       )}
 
       {renderEditDialog()}
