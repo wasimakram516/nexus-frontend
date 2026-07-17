@@ -149,13 +149,13 @@ export default function PublicNavbar() {
 
       {/* Mobile drawer */}
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-        <Box sx={{ width: 280, pt: 2 }}>
+        <Box sx={{ width: 280, height: "100%", display: "flex", flexDirection: "column", pt: 2 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 2, mb: 1 }}>
             <NexusLogo size={28} variant="full" />
             <IconButton onClick={() => setDrawerOpen(false)}><CloseIcon /></IconButton>
           </Box>
           <Divider />
-          <List dense>
+          <List dense sx={{ flex: 1, overflowY: "auto" }}>
             <ListItemButton component={Link} href="/features" onClick={() => setDrawerOpen(false)}>
               <ListItemText primary="Features" slotProps={{ primary: { sx: { fontWeight: 600 } } }} />
             </ListItemButton>
