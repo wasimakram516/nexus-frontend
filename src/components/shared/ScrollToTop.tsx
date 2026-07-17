@@ -21,9 +21,9 @@ export default function ScrollToTop() {
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           sx={{
             position: "fixed",
-            bottom: 90,
-            right: 88,
-            zIndex: 1300,
+            bottom: 80,
+            right: 24,
+            zIndex: 1050,
             backgroundColor: "background.paper",
             color: "text.secondary",
             border: "1px solid",

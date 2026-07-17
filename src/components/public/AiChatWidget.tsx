@@ -120,7 +120,7 @@ export default function AiChatWidget() {
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            zIndex: 1300,
+            zIndex: 1050,
             border: "1px solid",
             borderColor: "divider",
           }}
@@ -333,6 +333,7 @@ export default function AiChatWidget() {
 
       <Tooltip title={AI_POSITIONING.chatTooltip} placement="left">
         <Fab
+          size="small"
           onClick={() => {
             const next = !open;
             setOpen(next);
@@ -346,7 +347,7 @@ export default function AiChatWidget() {
             position: "fixed",
             bottom: 24,
             right: 24,
-            zIndex: 1300,
+            zIndex: 1050,
             background: "linear-gradient(135deg, #059669, #047857)",
             color: "#fff",
             boxShadow: "0 4px 20px rgba(5, 150, 105, 0.4)",
