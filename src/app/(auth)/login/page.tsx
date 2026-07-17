@@ -89,7 +89,7 @@ export default function LoginPage() {
         <Box sx={{ position: "absolute", top: "40%", right: -40, width: 180, height: 180, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.03)" }} />
 
         <Box component={Link} href="/" sx={{ textDecoration: "none", display: "inline-flex" }}>
-          <NexusLogo size={36} variant="full" white />
+          <NexusLogo size={36} variant="full" theme="white" />
         </Box>
 
         <Box>

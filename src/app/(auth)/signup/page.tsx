@@ -87,7 +87,7 @@ export default function SignupPage() {
         <Box sx={{ position: "absolute", bottom: -60, left: -60, width: 250, height: 250, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.05)" }} />
 
         <Box component={Link} href="/" sx={{ textDecoration: "none", display: "inline-flex" }}>
-          <NexusLogo size={36} variant="full" white />
+          <NexusLogo size={36} variant="full" theme="white" />
         </Box>
 
         <Box>
