@@ -2,37 +2,50 @@
 
 import { createTheme, ThemeOptions } from "@mui/material/styles";
 
+const displayFont = "var(--font-display), Georgia, serif";
+
 const baseTypography: ThemeOptions["typography"] = {
-  fontFamily: '"DM Sans", "Roboto", "Helvetica", "Arial", sans-serif',
-  h1: { fontWeight: 800 },
-  h2: { fontWeight: 800 },
-  h3: { fontWeight: 700 },
-  h4: { fontWeight: 700 },
-  h5: { fontWeight: 600 },
-  h6: { fontWeight: 600 },
-  body1: { fontWeight: 300 },
-  body2: { fontWeight: 300 },
-  caption: { fontWeight: 200 },
-  overline: { fontWeight: 200, letterSpacing: "0.1em" },
+  fontFamily: 'var(--font-inter), "Helvetica Neue", Arial, sans-serif',
+  h1: { fontFamily: displayFont, fontWeight: 500, lineHeight: 1.05 },
+  h2: { fontFamily: displayFont, fontWeight: 500, lineHeight: 1.12 },
+  h3: { fontFamily: displayFont, fontWeight: 500, lineHeight: 1.2 },
+  h4: { fontFamily: displayFont, fontWeight: 500 },
+  h5: { fontFamily: displayFont, fontWeight: 600 },
+  h6: { fontFamily: displayFont, fontWeight: 600 },
+  body1: { fontWeight: 400, lineHeight: 1.75 },
+  body2: { fontWeight: 400, lineHeight: 1.7 },
+  caption: { fontWeight: 400 },
+  overline: { fontWeight: 600, letterSpacing: "0.1em" },
 };
 
 const baseComponents: ThemeOptions["components"] = {
+  // Matches the parent Wisemen Soft site's container scale: 1400px primary, 1000px for narrow/reading content.
   MuiContainer: {
     defaultProps: { maxWidth: "xl" },
     styleOverrides: {
       maxWidthXl: { maxWidth: "1400px !important" },
+      maxWidthLg: { maxWidth: "1400px !important" },
+      maxWidthMd: { maxWidth: "1000px !important" },
     },
   },
   MuiButton: {
     styleOverrides: {
-      root: { textTransform: "none", borderRadius: 8, fontWeight: 600 },
+      root: {
+        textTransform: "none",
+        borderRadius: 999,
+        fontWeight: 600,
+        transition: "transform 0.2s ease",
+        "&:hover": { transform: "translateY(-2px)" },
+      },
     },
   },
+  // Card is content surfaces (data tables, tiles) — flat, border-only, no MUI elevation shadow.
   MuiCard: {
-    styleOverrides: { root: { borderRadius: 12 } },
+    styleOverrides: { root: { borderRadius: 16, backgroundImage: "none", boxShadow: "none" } },
   },
+  // Paper backs floating elements (Menu, Dialog, Drawer, Popover) — keeps elevation shadow so those still read as elevated.
   MuiPaper: {
-    styleOverrides: { root: { borderRadius: 12 } },
+    styleOverrides: { root: { borderRadius: 16 } },
   },
   MuiChip: {
     styleOverrides: { root: { borderRadius: 6 } },

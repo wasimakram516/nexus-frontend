@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
+import { Inter, Montserrat } from "next/font/google";
 import Providers from "@/components/Providers";
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-  variable: "--font-dm-sans",
+  variable: "--font-inter",
+});
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-display",
 });
 
 export const metadata: Metadata = {
@@ -34,7 +39,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={dmSans.variable} style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
+      <body className={`${inter.variable} ${montserrat.variable}`} style={{ fontFamily: "var(--font-inter), sans-serif" }}>
         <Providers>{children}</Providers>
       </body>
     </html>
