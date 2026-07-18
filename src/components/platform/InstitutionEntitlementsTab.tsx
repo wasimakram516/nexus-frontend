@@ -1,7 +1,15 @@
 "use client";
 
-import { Box, Card, CardContent, Chip, Grid, Typography } from "@mui/material";
-import { CheckCircle, Cancel } from "@mui/icons-material";
+import { useState } from "react";
+import {
+  Box, Button, Card, CardContent, Chip, Dialog,
+  DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid,
+  Switch, Typography,
+} from "@mui/material";
+import { CheckCircle, Cancel, Edit } from "@mui/icons-material";
+import { useMessage } from "@/contexts/MessageContext";
+import { apiHandler } from "@/lib/apiHandler";
+import { platformService } from "@/services/platform.service";
 
 const ALL_MODULES = ["ACADEMICS", "ATTENDANCE", "FINANCE", "PEOPLE", "REPORTING", "EXAMINATIONS", "DOCUMENTS", "REALTIME"];
 
@@ -28,16 +36,50 @@ interface Props {
   onSaved?: () => void;
 }
 
-export default function InstitutionEntitlementsTab({ runtimeConfig }: Props) {
+export default function InstitutionEntitlementsTab({ institutionId, runtimeConfig, onSaved }: Props) {
+  const { showMessage } = useMessage();
   const entitlements = runtimeConfig?.modules as Record<string, { enabled: boolean }> | null;
   const isEnabled = (m: string) => entitlements?.[m]?.enabled === true;
   const enabledCount = ALL_MODULES.filter(isEnabled).length;
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [draft, setDraft] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState(false);
+
+  const openEdit = () => {
+    setDraft(Object.fromEntries(ALL_MODULES.map((m) => [m, isEnabled(m)])));
+    setEditOpen(true);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    const { success } = await apiHandler(
+      () =>
+        platformService.updateEntitlements(institutionId, {
+          entitlements: ALL_MODULES.map((moduleKey) => ({
+            moduleKey,
+            isEnabled: draft[moduleKey] ?? false,
+          })),
+        }),
+      { showMessage, successMessage: "Module entitlements saved." }
+    );
+    setSaving(false);
+    if (success) {
+      setEditOpen(false);
+      onSaved?.();
+    }
+  };
+
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>Module Entitlements</Typography>
-        <Typography variant="body2" color="text.secondary">{enabledCount} of {ALL_MODULES.length} modules enabled.</Typography>
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 3, gap: 2 }}>
+        <Box>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>Module Entitlements</Typography>
+          <Typography variant="body2" color="text.secondary">{enabledCount} of {ALL_MODULES.length} modules enabled.</Typography>
+        </Box>
+        <Button size="small" variant="outlined" startIcon={<Edit />} onClick={openEdit} sx={{ flexShrink: 0 }}>
+          Edit
+        </Button>
       </Box>
 
       <Grid container spacing={2}>
@@ -71,6 +113,45 @@ export default function InstitutionEntitlementsTab({ runtimeConfig }: Props) {
           );
         })}
       </Grid>
+
+      {/* Edit entitlements dialog */}
+      <Dialog open={editOpen} onClose={() => (saving ? undefined : setEditOpen(false))} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Edit Module Entitlements</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Toggle which modules this institution can access. Disabling a module locks it out of the institution&apos;s dashboard immediately.
+          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            {ALL_MODULES.map((mod) => (
+              <Box
+                key={mod}
+                sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", py: 1, borderBottom: "1px solid", borderColor: "divider" }}
+              >
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{MODULE_LABELS[mod]}</Typography>
+                  <Typography variant="caption" color="text.secondary">{MODULE_DESC[mod]}</Typography>
+                </Box>
+                <FormControlLabel
+                  sx={{ m: 0 }}
+                  control={
+                    <Switch
+                      checked={draft[mod] ?? false}
+                      onChange={(e) => setDraft((prev) => ({ ...prev, [mod]: e.target.checked }))}
+                    />
+                  }
+                  label=""
+                />
+              </Box>
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setEditOpen(false)} disabled={saving}>Cancel</Button>
+          <Button variant="contained" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

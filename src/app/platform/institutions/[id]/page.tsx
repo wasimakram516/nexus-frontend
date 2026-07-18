@@ -4,15 +4,15 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Box, Button, Chip, CircularProgress,
-  Container, Divider, Tab, Tabs, Typography,
+  Container, Tab, Tabs, Typography,
 } from "@mui/material";
 import {
-  ArrowBack, ArrowForward, Brush,
-  Edit, Extension, Lock, OpenInNew, Payment, Settings, Tune,
+  Brush, Dashboard, Extension, Info, Lock, Payment, Tune,
 } from "@mui/icons-material";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
+import PlatformBreadcrumbs from "@/components/shared/PlatformBreadcrumbs";
 import InstitutionOverviewTab from "@/components/platform/InstitutionOverviewTab";
 import InstitutionBrandingTab from "@/components/platform/InstitutionBrandingTab";
 import InstitutionEntitlementsTab from "@/components/platform/InstitutionEntitlementsTab";
@@ -25,7 +25,7 @@ const STATUS_COLOR: Record<string, "success" | "error" | "warning" | "default"> 
 };
 
 const TABS = [
-  { label: "Overview",     icon: <Settings fontSize="small" /> },
+  { label: "Overview",     icon: <Info fontSize="small" /> },
   { label: "Branding",     icon: <Brush fontSize="small" /> },
   { label: "Entitlements", icon: <Extension fontSize="small" /> },
   { label: "Subscription", icon: <Payment fontSize="small" /> },
@@ -93,16 +93,10 @@ export default function InstitutionDetailPage() {
     <Box sx={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, py: { xs: 2, sm: 3 }, borderBottom: "1px solid", borderColor: "divider", backgroundColor: "background.paper" }}>
-        {/* Breadcrumb */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-          <Button startIcon={<ArrowBack />} color="inherit" size="small" onClick={() => router.push("/platform/institutions")} sx={{ color: "text.secondary", minWidth: 0, px: 1 }}>
-            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Institutions</Box>
-          </Button>
-          <Divider orientation="vertical" flexItem />
-          <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "monospace", fontSize: { xs: "0.7rem", sm: "0.875rem" } }}>
-            {slug}
-          </Typography>
-        </Box>
+        <PlatformBreadcrumbs crumbs={[
+          { label: "Institutions", href: "/platform/institutions" },
+          { label: institution.name as string },
+        ]} />
 
         {/* Institution identity */}
         <Box sx={{ display: "flex", alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
@@ -123,30 +117,22 @@ export default function InstitutionDetailPage() {
                 </Typography>
                 <Chip label={institution.status as string} color={STATUS_COLOR[institution.status as string] ?? "default"} size="small" />
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
-                {institution.deploymentMode as string} · {(institution.contactEmail as string) || "No email set"}
+              <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "monospace", fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                {slug}
               </Typography>
             </Box>
           </Box>
 
-          {/* Desktop actions */}
-          <Box sx={{ display: { xs: "none", sm: "flex" }, gap: 1, flexShrink: 0 }}>
-            <Button variant="outlined" startIcon={<Edit />} size="small" onClick={() => router.push(`/platform/institutions/${slug}/edit`)}>
-              Edit
-            </Button>
-            <Button variant="contained" endIcon={<ArrowForward />} size="small" onClick={() => router.push(`/platform/institutions/${slug}/manage`)}>
-              Manage Institution
-            </Button>
-          </Box>
-        </Box>
-
-        {/* Mobile actions */}
-        <Box sx={{ display: { xs: "flex", sm: "none" }, mt: 1.5, gap: 1 }}>
-          <Button variant="outlined" startIcon={<Edit />} size="small" onClick={() => router.push(`/platform/institutions/${slug}/edit`)} fullWidth>
-            Edit
-          </Button>
-          <Button variant="outlined" startIcon={<OpenInNew />} size="small" onClick={() => router.push(`/platform/institutions/${slug}/manage`)} fullWidth>
-            Dashboard
+          {/* Primary action — everything editable lives in the tabs below;
+              this is the one navigational escape hatch into the tenant's own dashboard. */}
+          <Button
+            variant="outlined"
+            startIcon={<Dashboard />}
+            size="small"
+            onClick={() => router.push(`/platform/institutions/${slug}/manage`)}
+            sx={{ flexShrink: 0, width: { xs: "100%", sm: "auto" } }}
+          >
+            Open Dashboard
           </Button>
         </Box>
       </Box>
@@ -166,7 +152,7 @@ export default function InstitutionDetailPage() {
       {/* Tab content */}
       <Box sx={{ flex: 1, overflow: "auto" }}>
         <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 3 } }}>
-          {tab === 0 && <InstitutionOverviewTab institution={institution} runtimeConfig={runtimeConfig} />}
+          {tab === 0 && <InstitutionOverviewTab institution={institution} runtimeConfig={runtimeConfig} onSaved={() => refresh(institutionId)} />}
           {tab === 1 && <InstitutionBrandingTab institutionId={institutionId} runtimeConfig={runtimeConfig} onSaved={() => refresh(institutionId)} />}
           {tab === 2 && <InstitutionEntitlementsTab institutionId={institutionId} runtimeConfig={runtimeConfig} onSaved={() => refresh(institutionId)} />}
           {tab === 3 && <InstitutionSubscriptionTab institutionId={institutionId} runtimeConfig={runtimeConfig} onSaved={() => refresh(institutionId)} />}

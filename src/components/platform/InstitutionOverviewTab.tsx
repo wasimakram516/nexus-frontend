@@ -18,6 +18,7 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
+  MenuItem,
   TextField,
   Typography,
 } from "@mui/material";
@@ -26,6 +27,7 @@ import {
   AccountCircle,
   CalendarToday,
   Domain,
+  Edit,
   Email,
   PersonAdd,
   Phone,
@@ -34,11 +36,17 @@ import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { authService } from "@/services/auth.service";
 import { usersService } from "@/services/users.service";
+import { platformService } from "@/services/platform.service";
+import RecordMetadataPopover from "@/components/shared/RecordMetadataPopover";
 
 interface Props {
   institution: Record<string, unknown>;
   runtimeConfig: Record<string, unknown> | null;
+  onSaved?: () => void;
 }
+
+const STATUSES = ["ACTIVE", "INACTIVE", "SUSPENDED"];
+const DEPLOYMENT_MODES = ["SHARED_HOSTED", "DEDICATED_HOSTED", "SELF_HOSTED"];
 
 interface AdminUser {
   id: string;
@@ -60,7 +68,7 @@ function InfoRow({ icon, label, value }: { icon: React.JSX.Element; label: strin
   );
 }
 
-export default function InstitutionOverviewTab({ institution, runtimeConfig }: Props) {
+export default function InstitutionOverviewTab({ institution, runtimeConfig, onSaved }: Props) {
   const { showMessage } = useMessage();
   const subscription = runtimeConfig?.subscription as Record<string, unknown> | null;
   const institutionId = String(institution.id ?? "");
@@ -70,6 +78,55 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig }: P
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState({ name: "", email: "", password: "" });
   const [adding, setAdding] = useState(false);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "", slug: "", status: "", deploymentMode: "",
+    primaryDomain: "", contactEmail: "", contactPhone: "", notes: "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const openEdit = () => {
+    setEditForm({
+      name: String(institution.name ?? ""),
+      slug: String(institution.slug ?? ""),
+      status: String(institution.status ?? ""),
+      deploymentMode: String(institution.deploymentMode ?? ""),
+      primaryDomain: String(institution.primaryDomain ?? ""),
+      contactEmail: String(institution.contactEmail ?? ""),
+      contactPhone: String(institution.contactPhone ?? ""),
+      notes: String(institution.notes ?? ""),
+    });
+    setEditOpen(true);
+  };
+
+  const ef = (key: keyof typeof editForm, value: string) =>
+    setEditForm((prev) => ({ ...prev, [key]: value }));
+
+  const canSave = !saving && editForm.name.trim() !== "" && /^[a-z0-9-]+$/.test(editForm.slug.trim());
+
+  const handleSave = async () => {
+    setSaving(true);
+    const { success } = await apiHandler(
+      () =>
+        platformService.updateInstitution(institutionId, {
+          name: editForm.name.trim(),
+          slug: editForm.slug.trim(),
+          status: editForm.status,
+          deploymentMode: editForm.deploymentMode,
+          primaryDomain: editForm.primaryDomain.trim() || undefined,
+          contactEmail: editForm.contactEmail.trim() || undefined,
+          contactPhone: editForm.contactPhone.trim() || undefined,
+          notes: editForm.notes.trim() || undefined,
+        }),
+      { showMessage, successMessage: "Institution details saved." }
+    );
+    setSaving(false);
+    if (success) {
+      setEditOpen(false);
+      onSaved?.();
+    }
+  };
 
   const loadAdmins = useCallback(async () => {
     if (!institutionId) return;
@@ -113,7 +170,20 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig }: P
       <Grid size={{ xs: 12, md: 6 }}>
         <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
           <CardContent sx={{ p: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>Institution Details</Typography>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Institution Details</Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <RecordMetadataPopover
+                  createdById={institution.createdBy as string | null}
+                  createdAt={institution.createdAt as string | null}
+                  updatedById={institution.updatedBy as string | null}
+                  updatedAt={institution.updatedAt as string | null}
+                />
+                <Button size="small" variant="outlined" startIcon={<Edit />} onClick={openEdit}>
+                  Edit
+                </Button>
+              </Box>
+            </Box>
             <InfoRow icon={<AccountCircle fontSize="small" />} label="Name" value={String(institution.name ?? "")} />
             <InfoRow icon={<Domain fontSize="small" />} label="Slug" value={String(institution.slug ?? "")} />
             <InfoRow icon={<Domain fontSize="small" />} label="Primary Domain" value={String(institution.primaryDomain ?? "")} />
@@ -238,6 +308,55 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig }: P
             disabled={adding || !addForm.name || !addForm.email || addForm.password.length < 8}
           >
             {adding ? <CircularProgress size={16} color="inherit" /> : "Create Admin"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit institution details dialog */}
+      <Dialog open={editOpen} onClose={() => (saving ? undefined : setEditOpen(false))} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Edit Institution Details</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2.5} sx={{ pt: 1 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField label="Name *" size="small" fullWidth value={editForm.name} onChange={(e) => ef("name", e.target.value)} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Slug *" size="small" fullWidth value={editForm.slug}
+                onChange={(e) => ef("slug", e.target.value)}
+                error={editForm.slug !== "" && !/^[a-z0-9-]+$/.test(editForm.slug)}
+                helperText="Lowercase letters, numbers, and hyphens only."
+                slotProps={{ htmlInput: { style: { fontFamily: "monospace" } } }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField select label="Status" size="small" fullWidth value={editForm.status} onChange={(e) => ef("status", e.target.value)}>
+                {STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+              </TextField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField select label="Deployment Mode" size="small" fullWidth value={editForm.deploymentMode} onChange={(e) => ef("deploymentMode", e.target.value)}>
+                {DEPLOYMENT_MODES.map((m) => <MenuItem key={m} value={m}>{m.replace(/_/g, " ")}</MenuItem>)}
+              </TextField>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField label="Primary Domain" size="small" fullWidth value={editForm.primaryDomain} onChange={(e) => ef("primaryDomain", e.target.value)} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField label="Contact Email" type="email" size="small" fullWidth value={editForm.contactEmail} onChange={(e) => ef("contactEmail", e.target.value)} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField label="Contact Phone" size="small" fullWidth value={editForm.contactPhone} onChange={(e) => ef("contactPhone", e.target.value)} />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField label="Notes" size="small" fullWidth multiline minRows={2} value={editForm.notes} onChange={(e) => ef("notes", e.target.value)} />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setEditOpen(false)} disabled={saving}>Cancel</Button>
+          <Button variant="contained" onClick={handleSave} disabled={!canSave}>
+            {saving ? "Saving…" : "Save"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -169,7 +169,7 @@ export default function InstitutionsPage() {
                       <Typography variant="body2" color="text.secondary">{inst.deploymentMode?.replace(/_/g, " ")}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" color="text.secondary">{inst.contactEmail ?? "â€”"}</Typography>
+                      <Typography variant="body2" color="text.secondary">{inst.contactEmail ?? "—"}</Typography>
                     </TableCell>
                     <TableCell>
                       <Chip label={inst.status} color={statusColor[inst.status] ?? "default"} size="small" />
