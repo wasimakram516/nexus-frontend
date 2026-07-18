@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Box, Button, Card, Chip, CircularProgress, Container,
-  Table, TableBody, TableCell, TableHead, TableRow, Typography,
+  Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography,
 } from "@mui/material";
 import { Delete, RestoreFromTrash } from "@mui/icons-material";
 import { useMessage } from "@/contexts/MessageContext";
@@ -23,6 +23,25 @@ interface RecycleItem {
   deleteReason: string | null;
   deletedByUser?: { name: string; email: string } | null;
   metadata: Record<string, unknown>;
+  retentionDays: number;
+  purgeEligibleAt: string;
+  daysLeft: number;
+  isPurgeEligible: boolean;
+}
+
+function RetentionChip({ item }: { item: RecycleItem }) {
+  if (item.isPurgeEligible) {
+    return <Chip label="Eligible now" size="small" color="error" variant="outlined" />;
+  }
+  const nearingEligibility = item.daysLeft <= 3;
+  return (
+    <Chip
+      label={`${item.daysLeft} day${item.daysLeft === 1 ? "" : "s"} left`}
+      size="small"
+      color={nearingEligibility ? "warning" : "default"}
+      variant="outlined"
+    />
+  );
 }
 
 interface RecycleBinResponse {
@@ -84,6 +103,7 @@ export default function RecycleBinPage() {
                   <TableCell sx={{ fontWeight: 700 }}>Record</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Deleted By</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Deleted At</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Retention</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Reason</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Actions</TableCell>
                 </TableRow>
@@ -91,7 +111,7 @@ export default function RecycleBinPage() {
               <TableBody>
                 {items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                       <Typography color="text.secondary">Recycle bin is empty.</Typography>
                     </TableCell>
                   </TableRow>
@@ -120,6 +140,9 @@ export default function RecycleBinPage() {
                       <Typography variant="body2" color="text.secondary">{formatDateTime(item.deletedAt)}</Typography>
                     </TableCell>
                     <TableCell>
+                      <RetentionChip item={item} />
+                    </TableCell>
+                    <TableCell>
                       <Typography variant="body2" color="text.secondary">{item.deleteReason ?? "—"}</Typography>
                     </TableCell>
                     <TableCell>
@@ -127,9 +150,19 @@ export default function RecycleBinPage() {
                         <Button size="small" startIcon={<RestoreFromTrash />} onClick={() => setConfirmRestore(item)}>
                           Restore
                         </Button>
-                        <Button size="small" color="error" startIcon={<Delete />} onClick={() => setConfirmDelete(item)}>
-                          Delete
-                        </Button>
+                        <Tooltip title={item.isPurgeEligible ? "" : `Available once the ${item.retentionDays}-day retention period ends`}>
+                          <span>
+                            <Button
+                              size="small"
+                              color="error"
+                              startIcon={<Delete />}
+                              disabled={!item.isPurgeEligible}
+                              onClick={() => setConfirmDelete(item)}
+                            >
+                              Delete
+                            </Button>
+                          </span>
+                        </Tooltip>
                       </Box>
                     </TableCell>
                   </TableRow>
