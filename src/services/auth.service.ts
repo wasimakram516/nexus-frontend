@@ -1,7 +1,8 @@
 import apiClient from "@/lib/axios";
 
 export interface LoginPayload {
-  email: string;
+  /** Email (staff/admin), registration number (student), or phone (guardian). */
+  identifier: string;
   password: string;
 }
 

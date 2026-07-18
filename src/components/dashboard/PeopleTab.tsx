@@ -104,7 +104,7 @@ interface PeopleTabProps {
 
 const KIND_CONFIG: Record<PersonKind, { singular: string; role: string }> = {
   students: { singular: "Student", role: "STUDENT" },
-  teachers: { singular: "Teacher", role: "TEACHER" },
+  teachers: { singular: "Teacher", role: "STAFF" },
   guardians: { singular: "Guardian", role: "GUARDIAN" },
 };
 
@@ -581,8 +581,11 @@ export default function PeopleTab({
       <Box>
         <FieldGroupLabel>Sign-in account</FieldGroupLabel>
         <Typography variant="caption" color="text.disabled">
-          Every {cfg.singular.toLowerCase()} signs in with an email. If that email already has an
-          unlinked {cfg.role.toLowerCase()} account, we link it — otherwise a new account is created.
+          Every {cfg.singular.toLowerCase()} account is created or linked by email. If that email
+          already has an unlinked {cfg.role.toLowerCase()} account, we link it — otherwise a new
+          account is created.
+          {kind === "students" && " Students then sign in with their registration number."}
+          {kind === "guardians" && " Guardians then sign in with their phone number."}
         </Typography>
       </Box>
 

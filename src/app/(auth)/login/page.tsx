@@ -35,7 +35,7 @@ const features = [
 ];
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,7 +48,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     const { data, success } = await apiHandler<LoginResponse>(
-      () => authService.login({ email, password }),
+      () => authService.login({ identifier, password }),
       { showMessage, successMessage: "Welcome back!" }
     );
     if (success && data) {
@@ -152,14 +152,15 @@ export default function LoginPage() {
         <form onSubmit={handleLogin}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
             <TextField
-              label="Email Address"
-              type="email"
+              label="Email / Registration No. / Phone"
+              type="text"
               fullWidth
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              autoComplete="username"
               autoFocus
+              helperText="Staff sign in with email, students with their registration number, guardians with their phone number."
             />
             <TextField
               label="Password"
