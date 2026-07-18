@@ -31,14 +31,16 @@ import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
+import { PermissionAction, PermissionCatalogFeature } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
 import { authService } from "@/services/auth.service";
-import { platformService } from "@/services/platform.service";
+import { rolesService } from "@/services/roles.service";
 import { usersService } from "@/services/users.service";
 
 type OverrideEffect = "allow" | "deny";
-type Overrides = Record<string, { view?: OverrideEffect; manage?: OverrideEffect }>;
+type Overrides = Record<string, Partial<Record<PermissionAction, OverrideEffect>>>;
+type PermissionMap = Record<string, Partial<Record<PermissionAction, boolean>>>;
 
 interface UserRow {
   id: string;
@@ -47,9 +49,9 @@ interface UserRow {
   role: string;
   status: string;
   institutionId?: string | null;
-  permissionTemplateId?: string | null;
+  roleId?: string | null;
   permissionOverrides?: Overrides | null;
-  permissionTemplate?: { name: string } | null;
+  assignedRole?: { name: string } | null;
   createdAt: string;
 }
 
@@ -58,10 +60,10 @@ interface PaginatedUsers {
   total: number;
 }
 
-interface Template {
+interface Role {
   id: string;
   name: string;
-  permissions: Record<string, { view?: boolean; manage?: boolean }>;
+  permissions: PermissionMap;
 }
 
 interface UsersManagerProps {
@@ -69,29 +71,31 @@ interface UsersManagerProps {
   institutionId?: string;
 }
 
-const ADMIN_CREATABLE_ROLES = ["TEACHER", "STUDENT", "GUARDIAN", "ACCOUNTANT"];
+const ADMIN_CREATABLE_ROLES = ["STAFF", "STUDENT", "GUARDIAN"];
 const SUPERADMIN_CREATABLE_ROLES = ["ADMIN", ...ADMIN_CREATABLE_ROLES];
 const STATUSES = ["ACTIVE", "RESIGNED", "SUSPENDED"];
-const STAFF_ROLES = new Set(ADMIN_CREATABLE_ROLES);
+/** Roles that can be assigned a custom Role + overrides; ADMIN/SUPERADMIN always have full access. */
+const CONFIGURABLE_ROLES = new Set(["STAFF", "STUDENT", "GUARDIAN"]);
 
-const MODULES = ["PEOPLE", "ACADEMICS", "ATTENDANCE", "FINANCE", "REPORTING", "EXAMINATIONS", "DOCUMENTS", "REALTIME"];
+const ALL_ACTIONS: PermissionAction[] = ["create", "read", "update", "delete"];
+const ACTION_LABELS: Record<PermissionAction, string> = {
+  create: "Create", read: "Read", update: "Update", delete: "Delete",
+};
 const MODULE_LABELS: Record<string, string> = {
-  PEOPLE: "People", ACADEMICS: "Academics", ATTENDANCE: "Attendance", FINANCE: "Finance",
+  ACADEMICS: "Academics", ATTENDANCE: "Attendance", FINANCE: "Finance", PEOPLE: "People",
   REPORTING: "Reporting", EXAMINATIONS: "Examinations", DOCUMENTS: "Documents", REALTIME: "Real-time",
 };
+const ADMINISTRATIVE_LABEL = "Administrative";
 
-/** Mirrors the backend role defaults used when no template is assigned. */
-const ROLE_DEFAULT_PERMISSIONS: Record<string, Record<string, { view?: boolean; manage?: boolean }>> = {
-  TEACHER: { ATTENDANCE: { view: true } },
-  STUDENT: { ATTENDANCE: { view: true } },
-  GUARDIAN: { ATTENDANCE: { view: true } },
-  ACCOUNTANT: { FINANCE: { view: true, manage: true }, ATTENDANCE: { view: true } },
+/** Mirrors the backend's self-service defaults for STUDENT/GUARDIAN when no Role is assigned. */
+const SELF_SERVICE_DEFAULTS: Record<string, PermissionMap> = {
+  STUDENT: { attendance: { read: true } },
+  GUARDIAN: { attendance: { read: true } },
 };
 
 const ROLE_COLORS: Record<string, "primary" | "secondary" | "info" | "warning" | "default"> = {
   ADMIN: "primary",
-  TEACHER: "info",
-  ACCOUNTANT: "warning",
+  STAFF: "info",
 };
 
 const STATUS_COLORS: Record<string, "success" | "error" | "default"> = {
@@ -112,14 +116,15 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(true);
-  const [templates, setTemplates] = useState<Template[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [catalog, setCatalog] = useState<PermissionCatalogFeature[]>([]);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "", email: "", password: "", role: "TEACHER" });
+  const [createForm, setCreateForm] = useState({ name: "", email: "", password: "", role: "STAFF" });
   const [creating, setCreating] = useState(false);
 
   const [editing, setEditing] = useState<UserRow | null>(null);
-  const [editForm, setEditForm] = useState({ role: "", status: "", permissionTemplateId: "" });
+  const [editForm, setEditForm] = useState({ role: "", status: "", roleId: "" });
   const [overrides, setOverrides] = useState<Overrides>({});
   const [editSaving, setEditSaving] = useState(false);
 
@@ -148,19 +153,19 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
     load();
   }, [load]);
 
-  // Permission templates for the access editor
+  // Roles + catalog for the access editor. Fetched independently of runtime
+  // config: this component also renders in the superadmin platform console,
+  // which is outside RuntimeConfigProvider.
   useEffect(() => {
-    const loadTemplates = async () => {
-      const { data } = await apiHandler<Template[]>(
-        () =>
-          institutionId
-            ? platformService.getPermissionTemplates(institutionId)
-            : platformService.getMyPermissionTemplates(),
-        { showMessage, silent: true }
-      );
-      setTemplates(Array.isArray(data) ? data : []);
+    const loadAccessData = async () => {
+      const [rolesRes, catalogRes] = await Promise.all([
+        apiHandler<Role[]>(() => rolesService.list(institutionId), { showMessage, silent: true }),
+        apiHandler<PermissionCatalogFeature[]>(() => rolesService.getCatalog(), { showMessage, silent: true }),
+      ]);
+      setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : []);
+      setCatalog(Array.isArray(catalogRes.data) ? catalogRes.data : []);
     };
-    loadTemplates();
+    loadAccessData();
   }, [institutionId, showMessage]);
 
   // Debounced search
@@ -185,7 +190,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
     setCreating(false);
     if (success) {
       setCreateOpen(false);
-      setCreateForm({ name: "", email: "", password: "", role: "TEACHER" });
+      setCreateForm({ name: "", email: "", password: "", role: "STAFF" });
       load();
     }
   };
@@ -195,7 +200,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
     setEditForm({
       role: row.role,
       status: row.status,
-      permissionTemplateId: row.permissionTemplateId ?? "",
+      roleId: row.roleId ?? "",
     });
     setOverrides(row.permissionOverrides ?? {});
   };
@@ -204,21 +209,22 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
     if (!editing) return;
     setEditSaving(true);
 
-    const isStaff = STAFF_ROLES.has(editForm.role);
+    const isConfigurable = CONFIGURABLE_ROLES.has(editForm.role);
     const cleanedOverrides: Overrides = {};
-    for (const [moduleKey, entry] of Object.entries(overrides)) {
+    for (const [featureKey, entry] of Object.entries(overrides)) {
       const cleaned: Overrides[string] = {};
-      if (entry.view) cleaned.view = entry.view;
-      if (entry.manage) cleaned.manage = entry.manage;
-      if (cleaned.view || cleaned.manage) cleanedOverrides[moduleKey] = cleaned;
+      for (const action of ALL_ACTIONS) {
+        if (entry[action]) cleaned[action] = entry[action];
+      }
+      if (Object.keys(cleaned).length > 0) cleanedOverrides[featureKey] = cleaned;
     }
 
     const payload: Record<string, unknown> = {
       role: editForm.role,
       status: editForm.status,
     };
-    if (isStaff) {
-      payload.permissionTemplateId = editForm.permissionTemplateId || null;
+    if (isConfigurable) {
+      payload.roleId = editForm.roleId || null;
       payload.permissionOverrides =
         Object.keys(cleanedOverrides).length > 0 ? cleanedOverrides : null;
     }
@@ -252,48 +258,59 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
 
   // --- Access editor helpers -------------------------------------------------
 
-  const selectedTemplate = useMemo(
-    () => templates.find((t) => t.id === editForm.permissionTemplateId) ?? null,
-    [templates, editForm.permissionTemplateId]
+  const selectedRole = useMemo(
+    () => roles.find((r) => r.id === editForm.roleId) ?? null,
+    [roles, editForm.roleId]
   );
 
-  /** Base permission for a module/action: template if selected, else role defaults. */
-  const baseFor = (moduleKey: string, action: "view" | "manage"): boolean => {
-    if (selectedTemplate) {
-      return Boolean(selectedTemplate.permissions?.[moduleKey]?.[action]);
+  const groupedCatalog = useMemo(() => {
+    const byModule = new Map<string, PermissionCatalogFeature[]>();
+    for (const feature of catalog) {
+      const key = feature.module ?? ADMINISTRATIVE_LABEL;
+      const list = byModule.get(key) ?? [];
+      list.push(feature);
+      byModule.set(key, list);
     }
-    return Boolean(ROLE_DEFAULT_PERMISSIONS[editForm.role]?.[moduleKey]?.[action]);
+    return Array.from(byModule.entries());
+  }, [catalog]);
+
+  /** Base permission for a feature/action: selected role if set, else self-service defaults. */
+  const baseFor = (featureKey: string, action: PermissionAction): boolean => {
+    if (selectedRole) {
+      return Boolean(selectedRole.permissions?.[featureKey]?.[action]);
+    }
+    return Boolean(SELF_SERVICE_DEFAULTS[editForm.role]?.[featureKey]?.[action]);
   };
 
-  /** Cycles a cell: inherit → allow → deny → inherit. */
-  const cycleOverride = (moduleKey: string, action: "view" | "manage") => {
+  /** Cycles a cell: inherit -> allow -> deny -> inherit. */
+  const cycleOverride = (featureKey: string, action: PermissionAction) => {
     setOverrides((prev) => {
-      const entry = { ...(prev[moduleKey] ?? {}) };
+      const entry = { ...(prev[featureKey] ?? {}) };
       const current = entry[action];
       if (current === undefined) entry[action] = "allow";
       else if (current === "allow") entry[action] = "deny";
       else delete entry[action];
-      const next = { ...prev, [moduleKey]: entry };
-      if (!entry.view && !entry.manage) delete next[moduleKey];
+      const next = { ...prev, [featureKey]: entry };
+      if (Object.keys(entry).length === 0) delete next[featureKey];
       return next;
     });
   };
 
-  const effectiveFor = (moduleKey: string, action: "view" | "manage") => {
-    const override = overrides[moduleKey]?.[action];
+  const effectiveFor = (featureKey: string, action: PermissionAction) => {
+    const override = overrides[featureKey]?.[action];
     if (override) return override === "allow";
-    return baseFor(moduleKey, action);
+    return baseFor(featureKey, action);
   };
 
   const overrideCount = Object.values(overrides).reduce(
-    (count, entry) => count + (entry.view ? 1 : 0) + (entry.manage ? 1 : 0),
+    (count, entry) => count + Object.values(entry).filter(Boolean).length,
     0
   );
 
-  const renderPermissionCell = (moduleKey: string, action: "view" | "manage") => {
-    const override = overrides[moduleKey]?.[action];
-    const base = baseFor(moduleKey, action);
-    const effective = effectiveFor(moduleKey, action);
+  const renderPermissionCell = (featureKey: string, action: PermissionAction) => {
+    const override = overrides[featureKey]?.[action];
+    const base = baseFor(featureKey, action);
+    const effective = effectiveFor(featureKey, action);
 
     return (
       <Tooltip
@@ -306,7 +323,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
         <Chip
           label={override ? (override === "allow" ? "Allow" : "Deny") : base ? "On" : "Off"}
           size="small"
-          onClick={() => cycleOverride(moduleKey, action)}
+          onClick={() => cycleOverride(featureKey, action)}
           color={override ? (override === "allow" ? "success" : "error") : "default"}
           variant={override ? "filled" : "outlined"}
           sx={{
@@ -320,7 +337,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
     );
   };
 
-  const editingIsStaff = STAFF_ROLES.has(editForm.role);
+  const editingIsConfigurable = CONFIGURABLE_ROLES.has(editForm.role);
 
   return (
     <>
@@ -371,7 +388,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
                     const locked = isProtected(row);
                     const rowOverrideCount = row.permissionOverrides
                       ? Object.values(row.permissionOverrides).reduce(
-                          (count, entry) => count + (entry.view ? 1 : 0) + (entry.manage ? 1 : 0),
+                          (count, entry) => count + Object.values(entry).filter(Boolean).length,
                           0
                         )
                       : 0;
@@ -386,10 +403,10 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
                           <Chip label={row.role} size="small" color={ROLE_COLORS[row.role] ?? "default"} />
                         </TableCell>
                         <TableCell>
-                          {STAFF_ROLES.has(row.role) ? (
+                          {CONFIGURABLE_ROLES.has(row.role) ? (
                             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
                               <Chip
-                                label={row.permissionTemplate?.name ?? "Role defaults"}
+                                label={row.assignedRole?.name ?? "No role (no access)"}
                                 size="small"
                                 variant="outlined"
                                 sx={{ height: 20, fontSize: 10 }}
@@ -490,7 +507,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
       </Dialog>
 
       {/* Edit access & permissions dialog */}
-      <Dialog open={!!editing} onClose={() => setEditing(null)} maxWidth="sm" fullWidth>
+      <Dialog open={!!editing} onClose={() => setEditing(null)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ fontWeight: 700 }}>Edit Access — {editing?.name}</DialogTitle>
         <DialogContent sx={{ pt: "16px !important" }}>
           <Grid container spacing={2.5}>
@@ -505,7 +522,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
               </TextField>
             </Grid>
 
-            {editingIsStaff ? (
+            {editingIsConfigurable ? (
               <>
                 <Grid size={{ xs: 12 }}>
                   <Divider />
@@ -513,44 +530,57 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
                 <Grid size={{ xs: 12 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Permissions</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Base access comes from the template (or role defaults). Click a cell to override it:
-                    inherit → allow → deny.
+                    Base access comes from the assigned role (or self-service defaults for students/guardians —
+                    a STAFF user with no role has zero access). Click a cell to override it: inherit → allow → deny.
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                   <TextField
                     select
-                    label="Permission Template (base)"
-                    value={editForm.permissionTemplateId}
-                    onChange={(e) => setEditForm((p) => ({ ...p, permissionTemplateId: e.target.value }))}
+                    label="Role (base)"
+                    value={editForm.roleId}
+                    onChange={(e) => setEditForm((p) => ({ ...p, roleId: e.target.value }))}
                     fullWidth
-                    helperText={templates.length === 0 ? "No templates yet — create them in the Permissions tab." : undefined}
+                    helperText={roles.length === 0 ? "No roles yet — create them on the Roles page." : undefined}
                   >
-                    <MenuItem value="">Role defaults (no template)</MenuItem>
-                    {templates.map((t) => (
-                      <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+                    <MenuItem value="">No role (self-service defaults only)</MenuItem>
+                    {roles.map((r) => (
+                      <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>
                     ))}
                   </TextField>
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableHeaderCell>Module</TableHeaderCell>
-                        <TableHeaderCell align="center">View</TableHeaderCell>
-                        <TableHeaderCell align="center">Manage</TableHeaderCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {MODULES.map((moduleKey) => (
-                        <TableRow key={moduleKey}>
-                          <TableCell>{MODULE_LABELS[moduleKey]}</TableCell>
-                          <TableCell align="center">{renderPermissionCell(moduleKey, "view")}</TableCell>
-                          <TableCell align="center">{renderPermissionCell(moduleKey, "manage")}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  {groupedCatalog.map(([moduleKey, features]) => (
+                    <Box key={moduleKey} sx={{ mb: 2 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, display: "block", mb: 0.5 }}>
+                        {MODULE_LABELS[moduleKey] ?? moduleKey}
+                      </Typography>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableHeaderCell>Feature</TableHeaderCell>
+                            {ALL_ACTIONS.map((action) => (
+                              <TableHeaderCell key={action} align="center">{ACTION_LABELS[action]}</TableHeaderCell>
+                            ))}
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {features.map((feature) => (
+                            <TableRow key={feature.key}>
+                              <TableCell>{feature.label}</TableCell>
+                              {ALL_ACTIONS.map((action) => (
+                                <TableCell key={action} align="center">
+                                  {feature.actions.includes(action)
+                                    ? renderPermissionCell(feature.key, action)
+                                    : <Typography variant="caption" color="text.disabled">—</Typography>}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </Box>
+                  ))}
                   {overrideCount > 0 && (
                     <Box sx={{ mt: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <Typography variant="caption" color="secondary">
@@ -564,7 +594,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
             ) : (
               <Grid size={{ xs: 12 }}>
                 <Typography variant="caption" color="text.secondary">
-                  Admin-level accounts always have full institution access — permission templates do not apply.
+                  Admin-level accounts always have full institution access — roles do not apply.
                 </Typography>
               </Grid>
             )}

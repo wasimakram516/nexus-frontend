@@ -16,6 +16,7 @@ import {
   ListItemText,
   Tooltip,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
 import {
   createTheme,
@@ -24,6 +25,7 @@ import {
 } from "@mui/material/styles";
 import {
   AccountBalance,
+  Assessment,
   Business,
   ChevronLeft,
   ChevronRight,
@@ -34,6 +36,7 @@ import {
   ManageAccounts,
   Person,
   SchoolOutlined,
+  Shield,
   Today,
   Tune,
 } from "@mui/icons-material";
@@ -46,6 +49,7 @@ import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
 import {
   ModuleKey,
+  PermissionAction,
   RuntimeConfigProvider,
   useRuntimeConfig,
 } from "@/contexts/RuntimeConfigContext";
@@ -63,6 +67,7 @@ interface NavItem {
   icon: React.ReactNode;
   module?: ModuleKey;
   roles?: UserRole[];
+  permission?: { feature: string; action: PermissionAction };
 }
 
 const navItems: NavItem[] = [
@@ -75,7 +80,11 @@ const navItems: NavItem[] = [
   { label: "Finance",       href: "/dashboard/finance",       icon: <AccountBalance />, module: "FINANCE" },
   { label: "Campuses",      href: "/dashboard/campuses",      icon: <Business />,       roles: ["ADMIN"] },
   { label: "Users",         href: "/dashboard/users",         icon: <ManageAccounts />, roles: ["ADMIN"] },
+  { label: "Roles",         href: "/dashboard/roles",         icon: <Shield />,         roles: ["ADMIN"] },
   { label: "Custom Fields", href: "/dashboard/custom-fields", icon: <Tune />,           roles: ["ADMIN"] },
+  // Not role-restricted like the items above: any STAFF actor with a
+  // delegated audit_logs.read grant should see it too, not just ADMIN.
+  { label: "Activity",      href: "/dashboard/activity",      icon: <Assessment />,     permission: { feature: "audit_logs", action: "read" } },
 ];
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -86,27 +95,44 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const { user, clearAuth } = useAuth();
   const confirm = useConfirm();
   const { showMessage } = useMessage();
-  const { config, isModuleEnabled, can } = useRuntimeConfig();
+  const { config, isModuleEnabled, canViewModule, can } = useRuntimeConfig();
   const drawerWidth = collapsed ? DRAWER_COLLAPSED : DRAWER_EXPANDED;
   const outerTheme = useTheme();
 
+  // Default the sidebar to collapsed on mobile so it doesn't eat most of a
+  // small screen on first load — applied once, the first time a mobile
+  // viewport is detected, so it never fights a later manual expand/collapse.
+  // Adjusting state during render (React's own pattern for "reset on a
+  // condition becoming true") instead of a useEffect avoids an extra render.
+  const isMobileViewport = useMediaQuery(outerTheme.breakpoints.down("sm"));
+  const [mobileDefaultApplied, setMobileDefaultApplied] = useState(false);
+  if (isMobileViewport && !mobileDefaultApplied) {
+    setMobileDefaultApplied(true);
+    setCollapsed(true);
+  }
+
   // Institution branding tints the dashboard: valid hex colors from the
   // branding config override the default palette (light/dark base kept).
+  // Branding stores a separate color pair per theme mode, so which field
+  // applies follows whichever mode is currently active.
   const brandedTheme = useMemo(() => {
     const branding = config?.branding;
+    const isDark = outerTheme.palette.mode === "dark";
+    const primaryColor = isDark ? branding?.primaryColorDark : branding?.primaryColorLight;
+    const secondaryColor = isDark ? branding?.secondaryColorDark : branding?.secondaryColorLight;
+    const backgroundColor = isDark ? branding?.backgroundColorDark : branding?.backgroundColorLight;
     const primary =
-      branding?.primaryColor && HEX_COLOR.test(branding.primaryColor)
-        ? branding.primaryColor
-        : undefined;
+      primaryColor && HEX_COLOR.test(primaryColor) ? primaryColor : undefined;
     const secondary =
-      branding?.secondaryColor && HEX_COLOR.test(branding.secondaryColor)
-        ? branding.secondaryColor
-        : undefined;
-    if (!primary && !secondary) return outerTheme;
+      secondaryColor && HEX_COLOR.test(secondaryColor) ? secondaryColor : undefined;
+    const background =
+      backgroundColor && HEX_COLOR.test(backgroundColor) ? backgroundColor : undefined;
+    if (!primary && !secondary && !background) return outerTheme;
     return createTheme(outerTheme, {
       palette: {
         ...(primary ? { primary: { main: primary } } : {}),
         ...(secondary ? { secondary: { main: secondary } } : {}),
+        ...(background ? { background: { default: background } } : {}),
       },
     });
   }, [outerTheme, config?.branding]);
@@ -129,8 +155,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
 
   const visibleItems = navItems.filter((item) => {
-    if (item.module && (!isModuleEnabled(item.module) || !can(item.module, "view"))) return false;
+    if (item.module && (!isModuleEnabled(item.module) || !canViewModule(item.module))) return false;
     if (item.roles && user && !item.roles.includes(user.role)) return false;
+    if (item.permission && !can(item.permission.feature, item.permission.action)) return false;
     return true;
   });
 

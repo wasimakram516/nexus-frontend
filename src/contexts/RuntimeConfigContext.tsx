@@ -14,18 +14,49 @@ export type ModuleKey =
   | "DOCUMENTS"
   | "REALTIME";
 
-export type PermissionAction = "view" | "manage";
+export type PermissionAction = "create" | "read" | "update" | "delete";
 
-export type ModulePermissionMap = Record<string, { view: boolean; manage: boolean }>;
+export interface PermissionCatalogFeature {
+  key: string;
+  label: string;
+  /** Plan module this feature is gated behind, or null for administrative features. */
+  module: ModuleKey | null;
+  /** The subset of CRUD actions meaningful for this feature. */
+  actions: PermissionAction[];
+}
+
+/** Effective per-feature permission state, keyed by feature key. */
+export type FeaturePermissionMap = Record<string, Partial<Record<PermissionAction, boolean>>>;
+
+const WRITE_ACTIONS: PermissionAction[] = ["create", "update", "delete"];
+
+/**
+ * Fallback institution-branding colors for an institution that hasn't set
+ * its own. Primary/secondary/accent follow the Wisemen Soft "Forest & Bone"
+ * palette (see the parent site's styles/tokens.js); background intentionally
+ * departs from it (wisemensoft's warm "bone" tone reads as beige/earthy in
+ * a data-dense app) in favor of a neutral gray/white pair — matches Nexus's
+ * own base theme in theme/theme.ts either way, and institutions can further
+ * override any of the four roles.
+ */
+export const DEFAULT_BRANDING_COLORS = {
+  light: { primaryColor: "#2C6B48", secondaryColor: "#6366F1", accentColor: "#4C8F68", backgroundColor: "#F7F8FA" },
+  dark: { primaryColor: "#54A87A", secondaryColor: "#6366F1", accentColor: "#7CC79E", backgroundColor: "#141D18" },
+};
 
 export interface RuntimeConfig {
   institutionId: string;
   branding: {
     displayName: string | null;
     logoUrl: string | null;
-    primaryColor: string | null;
-    secondaryColor: string | null;
-    accentColor: string | null;
+    primaryColorLight: string | null;
+    secondaryColorLight: string | null;
+    accentColorLight: string | null;
+    backgroundColorLight: string | null;
+    primaryColorDark: string | null;
+    secondaryColorDark: string | null;
+    accentColorDark: string | null;
+    backgroundColorDark: string | null;
     theme: string | null;
   } | null;
   settings: Record<string, unknown>;
@@ -40,8 +71,10 @@ export interface RuntimeConfig {
     startsAt: string | null;
     endsAt: string | null;
   } | null;
-  /** Effective module permissions for the current user; null = full access (admin-level). */
-  permissions: ModulePermissionMap | null;
+  /** Effective feature permissions for the current user; null = full access (admin-level). */
+  permissions: FeaturePermissionMap | null;
+  /** Static feature x action reference list — same source the backend guard enforces against. */
+  permissionCatalog: PermissionCatalogFeature[];
   /** True while an active trial unlocks every module. */
   trialFullAccess?: boolean;
 }
@@ -50,8 +83,12 @@ interface RuntimeConfigValue {
   config: RuntimeConfig | null;
   isLoading: boolean;
   isModuleEnabled: (key: ModuleKey) => boolean;
-  /** True when the current user may perform the action on the module. */
-  can: (key: ModuleKey, action: PermissionAction) => boolean;
+  /** True when the current user may perform the action on the feature. */
+  can: (featureKey: string, action: PermissionAction) => boolean;
+  /** True when the user has read access to at least one feature in the module. */
+  canViewModule: (key: ModuleKey) => boolean;
+  /** True when the user has create/update/delete access to at least one feature in the module. */
+  canManageModule: (key: ModuleKey) => boolean;
   /** Days until the trial ends; null when not on a dated trial. Negative = expired. */
   trialDaysLeft: number | null;
   refresh: () => Promise<void>;
@@ -89,13 +126,29 @@ export function RuntimeConfigProvider({ children }: { children: React.ReactNode 
     [config]
   );
 
+  const isAdminLevel = user?.role === "SUPERADMIN" || user?.role === "ADMIN";
+
   const can = useCallback(
-    (key: ModuleKey, action: PermissionAction) => {
-      if (user?.role === "SUPERADMIN" || user?.role === "ADMIN") return true;
-      return Boolean(config?.permissions?.[key]?.[action]);
+    (featureKey: string, action: PermissionAction) => {
+      if (isAdminLevel) return true;
+      return Boolean(config?.permissions?.[featureKey]?.[action]);
     },
-    [config, user]
+    [config, isAdminLevel]
   );
+
+  const canAnyInModule = useCallback(
+    (key: ModuleKey, actions: PermissionAction[]) => {
+      if (isAdminLevel) return true;
+      const features = config?.permissionCatalog?.filter((f) => f.module === key) ?? [];
+      return features.some((feature) =>
+        actions.some((action) => Boolean(config?.permissions?.[feature.key]?.[action]))
+      );
+    },
+    [config, isAdminLevel]
+  );
+
+  const canViewModule = useCallback((key: ModuleKey) => canAnyInModule(key, ["read"]), [canAnyInModule]);
+  const canManageModule = useCallback((key: ModuleKey) => canAnyInModule(key, WRITE_ACTIONS), [canAnyInModule]);
 
   const trialDaysLeft = (() => {
     const sub = config?.subscription;
@@ -105,7 +158,7 @@ export function RuntimeConfigProvider({ children }: { children: React.ReactNode 
 
   return (
     <RuntimeConfigContext.Provider
-      value={{ config, isLoading, isModuleEnabled, can, trialDaysLeft, refresh }}
+      value={{ config, isLoading, isModuleEnabled, can, canViewModule, canManageModule, trialDaysLeft, refresh }}
     >
       {children}
     </RuntimeConfigContext.Provider>

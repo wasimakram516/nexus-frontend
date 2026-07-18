@@ -57,7 +57,7 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
   const { showMessage } = useMessage();
   const runtime = useOptionalRuntimeConfig();
   // Platform console (institutionId set) is superadmin — always full access.
-  const canManage = institutionId ? true : (runtime?.can("ACADEMICS", "manage") ?? true);
+  const canManage = institutionId ? true : (runtime?.canManageModule("ACADEMICS") ?? true);
 
   // null = hub of structure cards; otherwise the open section.
   const [activeKey, setActiveKey] = useState<string | null>(null);

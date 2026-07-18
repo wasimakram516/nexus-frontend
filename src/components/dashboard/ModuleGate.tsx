@@ -14,7 +14,7 @@ interface ModuleGateProps {
  * current user has at least view permission for it.
  */
 export default function ModuleGate({ module, children }: ModuleGateProps) {
-  const { isLoading, isModuleEnabled, can } = useRuntimeConfig();
+  const { isLoading, isModuleEnabled, canViewModule } = useRuntimeConfig();
 
   if (isLoading) {
     return (
@@ -41,7 +41,7 @@ export default function ModuleGate({ module, children }: ModuleGateProps) {
     );
   }
 
-  if (!can(module, "view")) {
+  if (!canViewModule(module)) {
     return (
       <Box sx={{ p: 4 }}>
         <Card sx={{ border: "1px solid", borderColor: "divider" }}>

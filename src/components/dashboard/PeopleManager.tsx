@@ -36,7 +36,7 @@ export default function PeopleManager({ institutionId }: PeopleManagerProps) {
   const { showMessage } = useMessage();
   const runtime = useOptionalRuntimeConfig();
   // Platform console (institutionId set) is superadmin — always full access.
-  const canManage = institutionId ? true : (runtime?.can("PEOPLE", "manage") ?? true);
+  const canManage = institutionId ? true : (runtime?.canManageModule("PEOPLE") ?? true);
 
   // null = hub of person-type cards; otherwise the open section.
   const [activeKind, setActiveKind] = useState<PersonKind | null>(null);

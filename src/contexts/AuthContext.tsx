@@ -5,10 +5,9 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 export type UserRole =
   | "SUPERADMIN"
   | "ADMIN"
-  | "TEACHER"
+  | "STAFF"
   | "STUDENT"
-  | "GUARDIAN"
-  | "ACCOUNTANT";
+  | "GUARDIAN";
 
 export interface AuthUser {
   id: string;

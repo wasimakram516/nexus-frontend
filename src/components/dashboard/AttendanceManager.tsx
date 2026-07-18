@@ -133,7 +133,7 @@ const MARK_ACTIONS: Array<{ status: string; label: string; short: string; color:
   { status: "LEAVE", label: "Leave", short: "Lv", color: "info" },
 ];
 
-const STAFF_ROLES = ["TEACHER", "ADMIN", "ACCOUNTANT"];
+const STAFF_ROLES = ["STAFF", "ADMIN"];
 
 const today = () => new Date().toISOString().slice(0, 10);
 const nowTime = () => new Date().toTimeString().slice(0, 5);
@@ -147,7 +147,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   const { showMessage } = useMessage();
   const runtime = useOptionalRuntimeConfig();
   // Platform console (institutionId set) is superadmin — always full access.
-  const canManage = institutionId ? true : (runtime?.can("ATTENDANCE", "manage") ?? true);
+  const canManage = institutionId ? true : (runtime?.canManageModule("ATTENDANCE") ?? true);
 
   // ---- hub navigation ----
   const [activeView, setActiveView] = useState<"register" | "timeclock" | null>(null);
@@ -314,16 +314,17 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
         userId: teacher.userId,
         name: userMap[teacher.userId]?.name ?? userMap[teacher.userId]?.email ?? "Teacher",
         meta: "Teacher",
-        role: "TEACHER",
+        role: "STAFF",
       });
     }
     for (const cu of campusUsers) {
       const role = cu.user?.role;
-      if (role !== "ADMIN" && role !== "ACCOUNTANT") continue;
+      if (role !== "ADMIN" && role !== "STAFF") continue;
+      if (staff.has(cu.userId)) continue;
       staff.set(cu.userId, {
         userId: cu.userId,
         name: cu.user?.name ?? userMap[cu.userId]?.name ?? "Staff",
-        meta: role === "ADMIN" ? "Admin" : "Accountant",
+        meta: role === "ADMIN" ? "Admin" : "Staff",
         role,
       });
     }

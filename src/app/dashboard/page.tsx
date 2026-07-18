@@ -80,7 +80,7 @@ const formatTime = (value?: string | null) =>
 
 export default function DashboardOverviewPage() {
   const { user } = useAuth();
-  const { config, isLoading: configLoading, isModuleEnabled, can } = useRuntimeConfig();
+  const { config, isLoading: configLoading, isModuleEnabled, canViewModule } = useRuntimeConfig();
   const { showMessage } = useMessage();
   const router = useRouter();
 
@@ -230,7 +230,7 @@ export default function DashboardOverviewPage() {
     { label: "Academics", description: "Levels, classes, sections & subjects", icon: <SchoolOutlined />, href: "/dashboard/academics", module: "ACADEMICS" as const },
     { label: "Attendance", description: "Daily check-ins, leaves & reports", icon: <Today />, href: "/dashboard/attendance", module: "ATTENDANCE" as const },
     { label: "Finance", description: "Salaries, fees, vouchers & payments", icon: <AccountBalance />, href: "/dashboard/finance", module: "FINANCE" as const },
-  ].filter((l) => isModuleEnabled(l.module) && can(l.module, "view"));
+  ].filter((l) => isModuleEnabled(l.module) && canViewModule(l.module));
 
   const myPresent = myAttendance.filter((r) => r.status === "PRESENT").length;
   const myAbsent = myAttendance.filter((r) => r.status === "ABSENT").length;

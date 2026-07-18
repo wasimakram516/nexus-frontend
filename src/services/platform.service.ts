@@ -3,7 +3,6 @@ import apiClient from "@/lib/axios";
 export const platformService = {
   // Institution self-service (any authenticated institution user)
   getMyRuntimeConfig: () => apiClient.get("/platform/me/runtime-config"),
-  getMyPermissionTemplates: () => apiClient.get("/platform/me/permission-templates"),
 
   // Plans
   getPlans: () => apiClient.get("/platform/plans"),
@@ -31,29 +30,6 @@ export const platformService = {
   updateSubscription: (id: string, payload: Record<string, unknown>) =>
     apiClient.put(`/platform/institutions/${id}/subscription`, payload),
 
-  // Permission Templates
-  createPermissionTemplate: (institutionId: string, payload: Record<string, unknown>) =>
-    apiClient.post(
-      `/platform/institutions/${institutionId}/permission-templates`,
-      payload
-    ),
-  getPermissionTemplates: (institutionId: string) =>
-    apiClient.get(`/platform/institutions/${institutionId}/permission-templates`),
-  getPermissionTemplate: (institutionId: string, templateId: string) =>
-    apiClient.get(
-      `/platform/institutions/${institutionId}/permission-templates/${templateId}`
-    ),
-  updatePermissionTemplate: (
-    institutionId: string,
-    templateId: string,
-    payload: Record<string, unknown>
-  ) =>
-    apiClient.patch(
-      `/platform/institutions/${institutionId}/permission-templates/${templateId}`,
-      payload
-    ),
-  deletePermissionTemplate: (institutionId: string, templateId: string) =>
-    apiClient.delete(
-      `/platform/institutions/${institutionId}/permission-templates/${templateId}`
-    ),
+  // Roles have moved to services/roles.service.ts (institution-scoped
+  // /roles for ADMIN, /platform/institutions/:id/roles for superadmin).
 };

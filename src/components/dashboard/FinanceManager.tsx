@@ -53,13 +53,13 @@ const MONTH_OPTIONS: Option[] = Array.from({ length: 12 }, (_, i) => ({
   label: new Date(2026, i, 1).toLocaleString("en", { month: "long" }),
 }));
 
-const STAFF_ROLES = ["ADMIN", "TEACHER", "ACCOUNTANT"];
+const STAFF_ROLES = ["ADMIN", "STAFF"];
 
 export default function FinanceManager({ institutionId }: FinanceManagerProps) {
   const { showMessage } = useMessage();
   const runtime = useOptionalRuntimeConfig();
   // Platform console (institutionId set) is superadmin — always full access.
-  const canManage = institutionId ? true : (runtime?.can("FINANCE", "manage") ?? true);
+  const canManage = institutionId ? true : (runtime?.canManageModule("FINANCE") ?? true);
 
   // null = category hub; otherwise the label of the open section.
   const [activeKey, setActiveKey] = useState<string | null>(null);
