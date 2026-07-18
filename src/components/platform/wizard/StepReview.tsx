@@ -75,8 +75,18 @@ export default function StepReview({ data, onSubmit, onCancel, onBack, submittin
           <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Branding</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>Light mode</Typography>
+              <Box sx={{ display: "flex", gap: 1.5, mb: 1.5 }}>
+                {[data.primaryColorLight, data.secondaryColorLight, data.accentColorLight, data.backgroundColorLight].map((c, i) => (
+                  <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <Box sx={{ width: 20, height: 20, borderRadius: 1, backgroundColor: c, border: "1px solid", borderColor: "divider" }} />
+                    <Typography variant="caption" sx={{ fontFamily: "monospace" }}>{c}</Typography>
+                  </Box>
+                ))}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>Dark mode</Typography>
               <Box sx={{ display: "flex", gap: 1.5, mb: 2 }}>
-                {[data.primaryColor, data.secondaryColor, data.accentColor].map((c, i) => (
+                {[data.primaryColorDark, data.secondaryColorDark, data.accentColorDark, data.backgroundColorDark].map((c, i) => (
                   <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                     <Box sx={{ width: 20, height: 20, borderRadius: 1, backgroundColor: c, border: "1px solid", borderColor: "divider" }} />
                     <Typography variant="caption" sx={{ fontFamily: "monospace" }}>{c}</Typography>

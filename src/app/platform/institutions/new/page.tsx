@@ -11,6 +11,7 @@ import {
   RemoveCircleOutlined, RocketLaunch,
 } from "@mui/icons-material";
 import { useMessage } from "@/contexts/MessageContext";
+import { DEFAULT_BRANDING_COLORS } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { authService } from "@/services/auth.service";
 import { platformService } from "@/services/platform.service";
@@ -59,9 +60,14 @@ export interface WizardData {
   // Step 4
   displayName: string;
   logoUrl: string;
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
+  primaryColorLight: string;
+  secondaryColorLight: string;
+  accentColorLight: string;
+  backgroundColorLight: string;
+  primaryColorDark: string;
+  secondaryColorDark: string;
+  accentColorDark: string;
+  backgroundColorDark: string;
   theme: string;
   // Step 5
   modules: Record<string, boolean>;
@@ -84,7 +90,16 @@ const defaultData: WizardData = {
   contactEmail: "", contactPhone: "", primaryDomain: "", notes: "",
   adminName: "", adminEmail: "", adminPassword: "", skipAdmin: false,
   planId: "", planName: "", billingCycle: "MONTHLY", agreedPrice: "", currency: "PKR", setupFee: "",
-  displayName: "", logoUrl: "", primaryColor: "#059669", secondaryColor: "#6366F1", accentColor: "#34D399", theme: "default",
+  displayName: "", logoUrl: "",
+  primaryColorLight: DEFAULT_BRANDING_COLORS.light.primaryColor,
+  secondaryColorLight: DEFAULT_BRANDING_COLORS.light.secondaryColor,
+  accentColorLight: DEFAULT_BRANDING_COLORS.light.accentColor,
+  backgroundColorLight: DEFAULT_BRANDING_COLORS.light.backgroundColor,
+  primaryColorDark: DEFAULT_BRANDING_COLORS.dark.primaryColor,
+  secondaryColorDark: DEFAULT_BRANDING_COLORS.dark.secondaryColor,
+  accentColorDark: DEFAULT_BRANDING_COLORS.dark.accentColor,
+  backgroundColorDark: DEFAULT_BRANDING_COLORS.dark.backgroundColor,
+  theme: "default",
   modules: {},
   campusName: "", campusAddress: "",
   campusStudentStart: "08:00", campusStudentEnd: "14:00",
@@ -187,9 +202,14 @@ export default function NewInstitutionWizard() {
     const brandPayload = {
       displayName: data.displayName || data.name,
       logoUrl: data.logoUrl || null,
-      primaryColor: data.primaryColor,
-      secondaryColor: data.secondaryColor,
-      accentColor: data.accentColor,
+      primaryColorLight: data.primaryColorLight,
+      secondaryColorLight: data.secondaryColorLight,
+      accentColorLight: data.accentColorLight,
+      backgroundColorLight: data.backgroundColorLight,
+      primaryColorDark: data.primaryColorDark,
+      secondaryColorDark: data.secondaryColorDark,
+      accentColorDark: data.accentColorDark,
+      backgroundColorDark: data.backgroundColorDark,
       theme: data.theme,
     };
     {

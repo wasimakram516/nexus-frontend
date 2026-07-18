@@ -11,6 +11,7 @@ import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
 import { WizardData } from "@/app/platform/institutions/new/page";
+import { DEFAULT_BRANDING_COLORS } from "@/contexts/RuntimeConfigContext";
 
 import StepBasicInfo from "@/components/platform/wizard/StepBasicInfo";
 import StepPlan from "@/components/platform/wizard/StepPlan";
@@ -46,7 +47,16 @@ const defaultData: WizardData = {
   contactEmail: "", contactPhone: "", primaryDomain: "", notes: "",
   adminName: "", adminEmail: "", adminPassword: "", skipAdmin: true,
   planId: "", planName: "", billingCycle: "MONTHLY", agreedPrice: "", currency: "PKR", setupFee: "",
-  displayName: "", logoUrl: "", primaryColor: "#059669", secondaryColor: "#6366F1", accentColor: "#34D399", theme: "default",
+  displayName: "", logoUrl: "",
+  primaryColorLight: DEFAULT_BRANDING_COLORS.light.primaryColor,
+  secondaryColorLight: DEFAULT_BRANDING_COLORS.light.secondaryColor,
+  accentColorLight: DEFAULT_BRANDING_COLORS.light.accentColor,
+  backgroundColorLight: DEFAULT_BRANDING_COLORS.light.backgroundColor,
+  primaryColorDark: DEFAULT_BRANDING_COLORS.dark.primaryColor,
+  secondaryColorDark: DEFAULT_BRANDING_COLORS.dark.secondaryColor,
+  accentColorDark: DEFAULT_BRANDING_COLORS.dark.accentColor,
+  backgroundColorDark: DEFAULT_BRANDING_COLORS.dark.backgroundColor,
+  theme: "default",
   modules: {},
   campusName: "", campusAddress: "",
   campusStudentStart: "08:00", campusStudentEnd: "14:00",
@@ -109,9 +119,14 @@ export default function EditInstitutionWizard() {
         setupFee: "",
         displayName: String(branding?.displayName ?? ""),
         logoUrl: String(branding?.logoUrl ?? ""),
-        primaryColor: String(branding?.primaryColor ?? "#059669"),
-        secondaryColor: String(branding?.secondaryColor ?? "#6366F1"),
-        accentColor: String(branding?.accentColor ?? "#34D399"),
+        primaryColorLight: String(branding?.primaryColorLight ?? DEFAULT_BRANDING_COLORS.light.primaryColor),
+        secondaryColorLight: String(branding?.secondaryColorLight ?? DEFAULT_BRANDING_COLORS.light.secondaryColor),
+        accentColorLight: String(branding?.accentColorLight ?? DEFAULT_BRANDING_COLORS.light.accentColor),
+        backgroundColorLight: String(branding?.backgroundColorLight ?? DEFAULT_BRANDING_COLORS.light.backgroundColor),
+        primaryColorDark: String(branding?.primaryColorDark ?? DEFAULT_BRANDING_COLORS.dark.primaryColor),
+        secondaryColorDark: String(branding?.secondaryColorDark ?? DEFAULT_BRANDING_COLORS.dark.secondaryColor),
+        accentColorDark: String(branding?.accentColorDark ?? DEFAULT_BRANDING_COLORS.dark.accentColor),
+        backgroundColorDark: String(branding?.backgroundColorDark ?? DEFAULT_BRANDING_COLORS.dark.backgroundColor),
         theme: String(branding?.theme ?? "default"),
         modules,
         campusName: "", campusAddress: "",
@@ -168,9 +183,14 @@ export default function EditInstitutionWizard() {
       () => platformService.updateBranding(institutionId, {
         displayName: data.displayName || data.name,
         logoUrl: data.logoUrl || null,
-        primaryColor: data.primaryColor,
-        secondaryColor: data.secondaryColor,
-        accentColor: data.accentColor,
+        primaryColorLight: data.primaryColorLight,
+        secondaryColorLight: data.secondaryColorLight,
+        accentColorLight: data.accentColorLight,
+        backgroundColorLight: data.backgroundColorLight,
+        primaryColorDark: data.primaryColorDark,
+        secondaryColorDark: data.secondaryColorDark,
+        accentColorDark: data.accentColorDark,
+        backgroundColorDark: data.backgroundColorDark,
         theme: data.theme,
       }),
       { showMessage, silent: true }

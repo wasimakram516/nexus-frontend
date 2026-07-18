@@ -31,8 +31,11 @@ export default function NexusLogo({
   theme = "color",
   className,
   title = "Nexus",
-  primaryColor = "#059669",
-  accentColor = "#34D399",
+  // Matches wisemensoft's own logo convention: the accent mark stays the
+  // dark-mode forest green (its own icon.svg/opengraph mark use the same
+  // value) regardless of the page's active theme mode.
+  primaryColor = "#54A87A",
+  accentColor = "#7CC79E",
   letterColor,
 }: NexusLogoProps) {
   const generatedId = useId().replace(/:/g, "");
