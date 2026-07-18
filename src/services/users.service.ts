@@ -7,6 +7,9 @@ export const usersService = {
 
   getAll: (params?: Record<string, unknown>) => apiClient.get("/users", { params }),
 
+  resolve: (ids: string[]) =>
+    apiClient.get("/users/resolve", { params: { ids: ids.join(",") } }),
+
   updateUser: (userId: string, payload: Record<string, unknown>) =>
     apiClient.put(`/users/${userId}`, payload),
 
