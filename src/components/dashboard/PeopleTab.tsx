@@ -1108,6 +1108,7 @@ export default function PeopleTab({
                 {kind === "students" && <TableHeaderCell>Reg No</TableHeaderCell>}
                 {kind === "students" && <TableHeaderCell>Class</TableHeaderCell>}
                 {kind === "students" && <TableHeaderCell>Guardians</TableHeaderCell>}
+                {kind === "staff" && <TableHeaderCell>Designation</TableHeaderCell>}
                 {kind !== "guardians" && <TableHeaderCell>Gender</TableHeaderCell>}
                 {kind === "guardians" && <TableHeaderCell>Relation</TableHeaderCell>}
                 {kind === "guardians" && <TableHeaderCell>Students</TableHeaderCell>}
@@ -1136,6 +1137,18 @@ export default function PeopleTab({
                               .map((l) => guardianLabel(l.guardianId))
                               .join(", ") +
                             ((row.guardians ?? []).length > 2 ? ` +${(row.guardians ?? []).length - 2}` : "")}
+                      </TableCell>
+                    )}
+                    {kind === "staff" && (
+                      <TableCell>
+                        {row.designation ?? "—"}
+                        {row.employmentType && (
+                          <Chip
+                            label={row.employmentType === "TEACHING" ? "Teaching" : "Non-Teaching"}
+                            size="small"
+                            sx={{ ml: 1 }}
+                          />
+                        )}
                       </TableCell>
                     )}
                     {kind !== "guardians" && (
