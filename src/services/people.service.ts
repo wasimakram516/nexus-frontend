@@ -10,6 +10,33 @@ export const peopleService = {
   updateStudent: (studentId: string, payload: Record<string, unknown>) =>
     apiClient.patch(`/people/students/${studentId}`, payload),
   deleteStudent: (studentId: string) => apiClient.delete(`/people/students/${studentId}`),
+  // Advisory only — still fully validated for uniqueness on actual create.
+  getNextRegNo: (campusId?: string) =>
+    apiClient.get("/people/students/next-reg-no", { params: { campusId } }),
+
+  // Student Enrollments — StudentEnrollment is the source of truth for a
+  // student's class/section per academic year (M2 Phase 3). Class/section
+  // changes for an existing student go through these instead of
+  // updateStudent, which no longer accepts classId/sectionId.
+  createStudentEnrollment: (payload: Record<string, unknown>) =>
+    apiClient.post("/people/student-enrollments", payload),
+  getStudentEnrollments: (params?: Record<string, unknown>) =>
+    apiClient.get("/people/student-enrollments", { params }),
+  getStudentEnrollment: (enrollmentId: string) =>
+    apiClient.get(`/people/student-enrollments/${enrollmentId}`),
+  updateStudentEnrollment: (enrollmentId: string, payload: Record<string, unknown>) =>
+    apiClient.patch(`/people/student-enrollments/${enrollmentId}`, payload),
+  deleteStudentEnrollment: (enrollmentId: string) =>
+    apiClient.delete(`/people/student-enrollments/${enrollmentId}`),
+  withdrawStudentEnrollment: (enrollmentId: string, payload: Record<string, unknown>) =>
+    apiClient.post(`/people/student-enrollments/${enrollmentId}/withdraw`, payload),
+
+  // Bulk Promotions — preview never writes, commit executes; re-running a
+  // partially-failed commit is safe (already-processed students are skipped).
+  previewPromotion: (payload: Record<string, unknown>) =>
+    apiClient.post("/people/promotions/preview", payload),
+  commitPromotion: (payload: Record<string, unknown>) =>
+    apiClient.post("/people/promotions/commit", payload),
 
   // Guardians
   createGuardian: (payload: Record<string, unknown>) =>
