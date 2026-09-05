@@ -32,8 +32,11 @@ export async function apiHandler<T>(
       error.response?.data?.message ?? error.message ?? "Something went wrong";
 
     // Silent background loads routinely hit permission 403s for restricted
-    // roles — don't nag the user about data they were never meant to see.
-    if (!(silent && error.response?.status === 403)) {
+    // roles, or 404s for a resource that legitimately doesn't exist yet
+    // (e.g. no current academic year set) — don't nag the user about
+    // conditions the caller already told us are expected, not failures.
+    const expectedSilentStatus = error.response?.status === 403 || error.response?.status === 404;
+    if (!(silent && expectedSilentStatus)) {
       showMessage(message, "error");
     }
     return { data: null, success: false };
