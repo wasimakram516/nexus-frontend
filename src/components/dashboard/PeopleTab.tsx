@@ -54,7 +54,7 @@ import { UserLite } from "@/lib/users";
 import { authService } from "@/services/auth.service";
 import { peopleService } from "@/services/people.service";
 
-export type PersonKind = "students" | "teachers" | "guardians";
+export type PersonKind = "students" | "staff" | "guardians";
 
 export interface PersonRecord {
   id: string;
@@ -73,6 +73,10 @@ export interface PersonRecord {
   reference?: string;
   /** Guardian links embedded on student rows. */
   guardians?: Array<{ id: string; guardianId: string }>;
+  // staff fields
+  employmentType?: string;
+  designation?: string;
+  joiningDate?: string;
   // guardian fields
   relation?: string;
   /** Student links embedded on guardian rows. */
@@ -104,13 +108,14 @@ interface PeopleTabProps {
 
 const KIND_CONFIG: Record<PersonKind, { singular: string; role: string }> = {
   students: { singular: "Student", role: "STUDENT" },
-  teachers: { singular: "Teacher", role: "STAFF" },
+  staff: { singular: "Staff Member", role: "STAFF" },
   guardians: { singular: "Guardian", role: "GUARDIAN" },
 };
 
 const GENDERS = ["MALE", "FEMALE", "OTHER"];
 const RELIGIONS = ["ISLAM", "CHRISTIANITY", "HINDUISM", "OTHER"];
 const RELATIONS = ["FATHER", "MOTHER", "UNCLE", "AUNT", "OTHER"];
+const EMPLOYMENT_TYPES = ["TEACHING", "NON_TEACHING"];
 
 const emptyProfile = {
   regNo: "",
@@ -125,6 +130,9 @@ const emptyProfile = {
   prevSchool: "",
   reference: "",
   relation: "",
+  employmentType: "",
+  designation: "",
+  joiningDate: "",
 };
 
 const emptyAccount = { name: "", email: "", password: "" };
@@ -289,6 +297,9 @@ export default function PeopleTab({
       prevSchool: row.prevSchool ?? "",
       reference: row.reference ?? "",
       relation: row.relation ?? "",
+      employmentType: row.employmentType ?? "",
+      designation: row.designation ?? "",
+      joiningDate: row.joiningDate?.slice(0, 10) ?? "",
     });
     setActiveStep(1);
     setAttempted(false);
@@ -310,9 +321,12 @@ export default function PeopleTab({
         ...(profile.prevSchool && { prevSchool: profile.prevSchool }),
         ...(profile.reference && { reference: profile.reference }),
       });
-    } else if (kind === "teachers") {
+    } else if (kind === "staff") {
       Object.assign(payload, {
         gender: profile.gender,
+        employmentType: profile.employmentType,
+        designation: profile.designation,
+        joiningDate: profile.joiningDate,
         ...(profile.cnic && { cnic: profile.cnic }),
       });
     } else {
@@ -341,8 +355,8 @@ export default function PeopleTab({
     Boolean(profile.campusId) &&
     (kind === "students"
       ? Boolean(profile.regNo && profile.dob && profile.gender && profile.admissionDate)
-      : kind === "teachers"
-        ? Boolean(profile.gender)
+      : kind === "staff"
+        ? Boolean(profile.gender && profile.employmentType && profile.designation && profile.joiningDate)
         : Boolean(profile.relation));
 
   const goToProfile = () => {
@@ -368,8 +382,8 @@ export default function PeopleTab({
       const update =
         kind === "students"
           ? peopleService.updateStudent
-          : kind === "teachers"
-            ? peopleService.updateTeacher
+          : kind === "staff"
+            ? peopleService.updateStaffProfile
             : peopleService.updateGuardian;
       const { success } = await apiHandler(() => update(editing.id, buildProfilePayload()), {
         showMessage,
@@ -406,8 +420,8 @@ export default function PeopleTab({
     const create =
       kind === "students"
         ? peopleService.createStudent
-        : kind === "teachers"
-          ? peopleService.createTeacher
+        : kind === "staff"
+          ? peopleService.createStaffProfile
           : peopleService.createGuardian;
 
     const { data: created, success } = await apiHandler<{ id: string }>(
@@ -478,8 +492,8 @@ export default function PeopleTab({
     const remove =
       kind === "students"
         ? peopleService.deleteStudent
-        : kind === "teachers"
-          ? peopleService.deleteTeacher
+        : kind === "staff"
+          ? peopleService.deleteStaffProfile
           : peopleService.deleteGuardian;
     await apiHandler(() => remove(confirmDelete.id), {
       showMessage,
@@ -786,7 +800,7 @@ export default function PeopleTab({
           </>
         )}
 
-        {kind === "teachers" && (
+        {kind === "staff" && (
           <>
             <Grid size={{ xs: 12 }}>
               <FieldGroupLabel>Placement</FieldGroupLabel>
@@ -815,6 +829,35 @@ export default function PeopleTab({
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField label="CNIC" value={profile.cnic} onChange={(e) => setP("cnic", e.target.value)} fullWidth placeholder="00000-0000000-0" />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <FieldGroupLabel>Employment</FieldGroupLabel>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Designation" required value={profile.designation}
+                onChange={(e) => setP("designation", e.target.value)} fullWidth
+                error={err(!profile.designation)}
+                helperText={err(!profile.designation) ? "Designation is required." : undefined}
+                placeholder="e.g. Class Teacher, Front Desk, Accountant"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                select label="Employment Type" required value={profile.employmentType}
+                onChange={(e) => setP("employmentType", e.target.value)} fullWidth
+                error={err(!profile.employmentType)}
+              >
+                {EMPLOYMENT_TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+              </TextField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Joining Date" type="date" required value={profile.joiningDate}
+                onChange={(e) => setP("joiningDate", e.target.value)} fullWidth
+                error={err(!profile.joiningDate)}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
             </Grid>
           </>
         )}
@@ -973,7 +1016,7 @@ export default function PeopleTab({
         <Typography variant="body2" color="text.secondary">
           {filtersActive
             ? `${filteredRows.length} of ${rows.length} shown.`
-            : `${rows.length} ${kind === "students" ? "student" : kind === "teachers" ? "teacher" : "guardian"}${rows.length !== 1 ? "s" : ""} registered.`}
+            : `${rows.length} ${kind === "students" ? "student" : kind === "staff" ? "staff member" : "guardian"}${rows.length !== 1 ? "s" : ""} registered.`}
         </Typography>
         {canManage && (
           <Button variant="contained" startIcon={<Add />} onClick={openCreate}>

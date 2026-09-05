@@ -42,7 +42,7 @@ export default function PeopleManager({ institutionId }: PeopleManagerProps) {
   const [activeKind, setActiveKind] = useState<PersonKind | null>(null);
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<PersonRecord[]>([]);
-  const [teachers, setTeachers] = useState<PersonRecord[]>([]);
+  const [staff, setStaff] = useState<PersonRecord[]>([]);
   const [guardians, setGuardians] = useState<PersonRecord[]>([]);
   const [users, setUsers] = useState<UserLite[]>([]);
   const [campuses, setCampuses] = useState<CampusItem[]>([]);
@@ -50,9 +50,9 @@ export default function PeopleManager({ institutionId }: PeopleManagerProps) {
   const [sections, setSections] = useState<SectionItem[]>([]);
 
   const load = useCallback(async () => {
-    const [studentsRes, teachersRes, guardiansRes, campusesRes] = await Promise.all([
+    const [studentsRes, staffRes, guardiansRes, campusesRes] = await Promise.all([
       apiHandler<PersonRecord[]>(() => peopleService.getStudents(), { showMessage, silent: true }),
-      apiHandler<PersonRecord[]>(() => peopleService.getTeachers(), { showMessage, silent: true }),
+      apiHandler<PersonRecord[]>(() => peopleService.getStaffProfiles(), { showMessage, silent: true }),
       apiHandler<PersonRecord[]>(() => peopleService.getGuardians(), { showMessage, silent: true }),
       apiHandler<{ items: CampusItem[] }>(() => campusesService.getAll({ limit: 100 }), { showMessage, silent: true }),
     ]);
@@ -67,7 +67,7 @@ export default function PeopleManager({ institutionId }: PeopleManagerProps) {
 
     setCampuses(scopedCampuses);
     setStudents(inScope(studentsRes.data));
-    setTeachers(inScope(teachersRes.data));
+    setStaff(inScope(staffRes.data));
     setGuardians(inScope(guardiansRes.data));
 
     try {
@@ -118,11 +118,11 @@ export default function PeopleManager({ institutionId }: PeopleManagerProps) {
       rows: students,
     },
     {
-      kind: "teachers" as const,
-      label: "Teachers",
-      description: "Teaching staff and their subject assignments.",
+      kind: "staff" as const,
+      label: "Staff",
+      description: "Teaching and non-teaching employees across campuses.",
       icon: <Person />,
-      rows: teachers,
+      rows: staff,
     },
     {
       kind: "guardians" as const,
