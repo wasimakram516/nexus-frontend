@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { AxiosError } from "axios";
 import {
   Alert,
   Autocomplete,
@@ -38,6 +39,7 @@ import {
   Edit,
   Link as LinkIcon,
   NavigateNext,
+  PersonRemove,
   Search,
   TrendingUp,
   Visibility,
@@ -46,6 +48,7 @@ import {
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
+import PromotionWizard from "@/components/dashboard/PromotionWizard";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -56,6 +59,30 @@ import { peopleService } from "@/services/people.service";
 
 export type PersonKind = "students" | "staff" | "guardians";
 
+/**
+ * A student's class/section placement for one academic year, computed by
+ * the backend against the institution's current academic year.
+ *
+ * GUESSED SHAPE — the backend half of this contract (StudentEnrollment,
+ * M2 Phase 3) lands in a separate parallel agent run and wasn't available
+ * to check against while this was written. Fields beyond `academicYearId`
+ * / `classId` / `sectionId` / `status` (the ones explicitly named in the
+ * frozen contract) are assumed based on naming convention elsewhere in this
+ * codebase. In particular `id` (the enrollment's own id, required by the
+ * withdraw action below) is NOT confirmed to be present on this embedded
+ * object — verify against the real response and adjust
+ * `resolveEnrollmentId` in this file if it's missing.
+ */
+export interface CurrentEnrollment {
+  id?: string;
+  academicYearId: string;
+  classId: string;
+  className?: string;
+  sectionId?: string;
+  sectionName?: string;
+  status: "ACTIVE" | "PROMOTED" | "LEFT";
+}
+
 export interface PersonRecord {
   id: string;
   userId: string;
@@ -65,8 +92,9 @@ export interface PersonRecord {
   dob?: string;
   gender?: string;
   cnic?: string;
-  classId?: string | null;
-  sectionId?: string | null;
+  /** Computed by the backend from StudentEnrollment — replaces the old
+   *  top-level classId/sectionId pointer (M2 Phase 3). Students only. */
+  currentEnrollment?: CurrentEnrollment;
   religion?: string;
   admissionDate?: string;
   prevSchool?: string;
@@ -209,6 +237,15 @@ export default function PeopleTab({
   const [actionForm, setActionForm] = useState<Record<string, string>>({});
   const [actionSaving, setActionSaving] = useState(false);
 
+  // Withdraw student dialog
+  const [withdrawRow, setWithdrawRow] = useState<PersonRecord | null>(null);
+  const [withdrawForm, setWithdrawForm] = useState({ leftDate: "", leftReason: "" });
+  const [withdrawSaving, setWithdrawSaving] = useState(false);
+  const [withdrawOutstanding, setWithdrawOutstanding] = useState<number | null>(null);
+
+  // Bulk promotion wizard
+  const [promotionWizardOpen, setPromotionWizardOpen] = useState(false);
+
   const userMap = useMemo(
     () => users.reduce<Record<string, UserLite>>((acc, u) => ((acc[u.id] = u), acc), {}),
     [users]
@@ -243,7 +280,7 @@ export default function PeopleTab({
     const query = search.trim().toLowerCase();
     return rows.filter((row) => {
       if (campusFilter && row.campusId !== campusFilter) return false;
-      if (kind === "students" && classFilter && row.classId !== classFilter) return false;
+      if (kind === "students" && classFilter && row.currentEnrollment?.classId !== classFilter) return false;
       if (query) {
         const u = userMap[row.userId];
         const haystack = [u?.name, u?.email, row.regNo, row.cnic, row.relation]
@@ -289,8 +326,10 @@ export default function PeopleTab({
       dob: row.dob?.slice(0, 10) ?? "",
       gender: row.gender ?? "",
       cnic: row.cnic ?? "",
-      classId: row.classId ?? "",
-      sectionId: row.sectionId ?? "",
+      // Display-only on edit — the fields are disabled (PATCH no longer
+      // accepts classId/sectionId; see the Class/Section selects below).
+      classId: row.currentEnrollment?.classId ?? "",
+      sectionId: row.currentEnrollment?.sectionId ?? "",
       campusId: row.campusId ?? "",
       religion: row.religion ?? "",
       admissionDate: row.admissionDate?.slice(0, 10) ?? "",
@@ -306,17 +345,46 @@ export default function PeopleTab({
     setDialogOpen(true);
   };
 
+  // Advisory regNo suggestion — create only. Fires once campus is picked
+  // and regNo is still blank; still fully editable by the admin afterward.
+  // A missing suggestion (e.g. 404) is expected, not an error — silent.
+  useEffect(() => {
+    if (editing || kind !== "students" || !dialogOpen) return;
+    if (!profile.campusId || profile.regNo) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await apiHandler<{ suggestedRegNo: string }>(
+        () => peopleService.getNextRegNo(profile.campusId) as never,
+        { showMessage, silent: true }
+      );
+      if (!cancelled && data?.suggestedRegNo) {
+        setProfile((prev) => (prev.regNo ? prev : { ...prev, regNo: data.suggestedRegNo }));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.campusId, editing, dialogOpen, kind]);
+
   const buildProfilePayload = (): Record<string, unknown> => {
     const payload: Record<string, unknown> = { campusId: profile.campusId };
     if (kind === "students") {
       Object.assign(payload, {
-        regNo: profile.regNo,
+        // Optional on create (server generates one if omitted) — only send
+        // it when the admin actually typed/kept one. Unaffected on edit,
+        // where it stays a plain editable field.
+        ...(profile.regNo && { regNo: profile.regNo }),
         dob: profile.dob,
         gender: profile.gender,
         admissionDate: profile.admissionDate,
         ...(profile.cnic && { cnic: profile.cnic }),
-        ...(profile.classId && { classId: profile.classId }),
-        ...(profile.sectionId && { sectionId: profile.sectionId }),
+        // classId/sectionId only seed the FIRST enrollment on create.
+        // PATCH /people/students/:id no longer accepts them — class/section
+        // changes for an existing student go through the enrollment
+        // endpoints (transfer/promotion actions) instead.
+        ...(!editing && profile.classId && { classId: profile.classId }),
+        ...(!editing && profile.sectionId && { sectionId: profile.sectionId }),
         ...(profile.religion && { religion: profile.religion }),
         ...(profile.prevSchool && { prevSchool: profile.prevSchool }),
         ...(profile.reference && { reference: profile.reference }),
@@ -354,7 +422,9 @@ export default function PeopleTab({
   const profileValid =
     Boolean(profile.campusId) &&
     (kind === "students"
-      ? Boolean(profile.regNo && profile.dob && profile.gender && profile.admissionDate)
+      ? // regNo is only required on create — the server generates one when
+        // omitted, and on edit it's a plain optional/editable field.
+        Boolean((editing || profile.regNo) && profile.dob && profile.gender && profile.admissionDate)
       : kind === "staff"
         ? Boolean(profile.gender && profile.employmentType && profile.designation && profile.joiningDate)
         : Boolean(profile.relation));
@@ -522,14 +592,18 @@ export default function PeopleTab({
       () =>
         peopleService.recordStudentPromotion({
           studentId: actionRow.id,
-          ...(actionRow.classId && { previousClassId: actionRow.classId }),
-          ...(actionRow.sectionId && { previousSectionId: actionRow.sectionId }),
+          ...(actionRow.currentEnrollment?.classId && {
+            previousClassId: actionRow.currentEnrollment.classId,
+          }),
+          ...(actionRow.currentEnrollment?.sectionId && {
+            previousSectionId: actionRow.currentEnrollment.sectionId,
+          }),
           ...(actionForm.newClassId && { newClassId: actionForm.newClassId }),
           ...(actionForm.newSectionId && { newSectionId: actionForm.newSectionId }),
           promotionDate: actionForm.promotionDate,
           ...(actionForm.promotionReason && { promotionReason: actionForm.promotionReason }),
         }),
-      { showMessage, successMessage: "Promotion recorded." }
+      { showMessage, successMessage: "Class/section change recorded." }
     );
     setActionSaving(false);
     setActionRow(null);
@@ -537,6 +611,75 @@ export default function PeopleTab({
   };
 
   const actionValid = Boolean(actionForm.promotionDate);
+
+  // --- Withdraw student ---------------------------------------------------
+
+  /**
+   * Resolves the enrollment id to withdraw for a student row.
+   *
+   * GUESS FALLBACK: the frozen contract doesn't confirm whether the
+   * `currentEnrollment` object embedded on the Student response carries its
+   * own `id` (needed by POST /people/student-enrollments/:id/withdraw) —
+   * the backend half of this change lands separately and wasn't available
+   * to check against. If it's missing, this looks it up directly instead of
+   * guessing at one. Once the real shape is confirmed, this fallback branch
+   * can be dropped if `currentEnrollment.id` always turns out to be present.
+   *
+   * @param {PersonRecord} row - The student row being withdrawn.
+   * @returns {Promise<string | null>} The active enrollment id, or null if none was found.
+   */
+  const resolveActiveEnrollmentId = async (row: PersonRecord): Promise<string | null> => {
+    if (row.currentEnrollment?.id) return row.currentEnrollment.id;
+    const { data } = await apiHandler<Array<{ id: string; status: string }>>(
+      () => peopleService.getStudentEnrollments({ studentId: row.id }) as never,
+      { showMessage, silent: true }
+    );
+    const active = (data ?? []).find((e) => e.status === "ACTIVE");
+    return active?.id ?? null;
+  };
+
+  const openWithdraw = (row: PersonRecord) => {
+    setWithdrawRow(row);
+    setWithdrawForm({ leftDate: new Date().toISOString().slice(0, 10), leftReason: "" });
+    setWithdrawOutstanding(null);
+  };
+
+  const withdrawValid = Boolean(withdrawForm.leftDate && withdrawForm.leftReason);
+
+  const handleWithdraw = async () => {
+    if (!withdrawRow) return;
+    setWithdrawSaving(true);
+    try {
+      const enrollmentId = await resolveActiveEnrollmentId(withdrawRow);
+      if (!enrollmentId) {
+        showMessage("Could not find this student's active enrollment.", "error");
+        return;
+      }
+      await peopleService.withdrawStudentEnrollment(enrollmentId, {
+        leftDate: withdrawForm.leftDate,
+        leftReason: withdrawForm.leftReason,
+        ...(withdrawOutstanding !== null && { acknowledgeOutstandingDues: true }),
+      });
+      showMessage("Student withdrawn.", "success");
+      setWithdrawRow(null);
+      setWithdrawOutstanding(null);
+      onReload();
+    } catch (err) {
+      const error = err as AxiosError<{
+        message?: string;
+        error?: { details?: { outstandingAmount?: number } };
+      }>;
+      const outstanding =
+        error.response?.status === 409 ? error.response.data?.error?.details?.outstandingAmount : undefined;
+      if (typeof outstanding === "number") {
+        setWithdrawOutstanding(outstanding);
+      } else {
+        showMessage(error.response?.data?.message ?? "Failed to withdraw student.", "error");
+      }
+    } finally {
+      setWithdrawSaving(false);
+    }
+  };
 
   // --- Guardian ↔ students management -----------------------------------
 
@@ -730,10 +873,16 @@ export default function PeopleTab({
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
-                label="Registration No" required value={profile.regNo}
+                label="Registration No" required={!editing} value={profile.regNo}
                 onChange={(e) => setP("regNo", e.target.value)} fullWidth
-                error={err(!profile.regNo)}
-                helperText={err(!profile.regNo) ? "Registration number is required." : undefined}
+                error={!editing && err(!profile.regNo)}
+                helperText={
+                  !editing && err(!profile.regNo)
+                    ? "Registration number is required."
+                    : !editing
+                      ? "Leave blank to auto-generate one."
+                      : undefined
+                }
                 placeholder="e.g. STD-0042"
               />
             </Grid>
@@ -746,13 +895,25 @@ export default function PeopleTab({
               />
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
-              <TextField select label="Class" value={profile.classId} onChange={(e) => { setP("classId", e.target.value); setP("sectionId", ""); }} fullWidth>
+              <TextField
+                select label="Class" value={profile.classId}
+                onChange={(e) => { setP("classId", e.target.value); setP("sectionId", ""); }}
+                fullWidth
+                disabled={Boolean(editing)}
+                helperText={editing ? "Use Transfer Class/Section to change this." : undefined}
+              >
                 <MenuItem value="">—</MenuItem>
                 {classes.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
               </TextField>
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
-              <TextField select label="Section" value={profile.sectionId} onChange={(e) => setP("sectionId", e.target.value)} fullWidth disabled={!profile.classId}>
+              <TextField
+                select label="Section" value={profile.sectionId}
+                onChange={(e) => setP("sectionId", e.target.value)}
+                fullWidth
+                disabled={Boolean(editing) || !profile.classId}
+                helperText={editing ? "Use Transfer Class/Section to change this." : undefined}
+              >
                 <MenuItem value="">—</MenuItem>
                 {sectionsForClass(profile.classId).map((s) => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
               </TextField>
@@ -1019,9 +1180,20 @@ export default function PeopleTab({
             : `${rows.length} ${kind === "students" ? "student" : kind === "staff" ? "staff member" : "guardian"}${rows.length !== 1 ? "s" : ""} registered.`}
         </Typography>
         {canManage && (
-          <Button variant="contained" startIcon={<Add />} onClick={openCreate}>
-            Add {cfg.singular}
-          </Button>
+          <Box sx={{ display: "flex", gap: 1.5 }}>
+            {kind === "students" && (
+              <Button
+                variant="outlined"
+                startIcon={<TrendingUp />}
+                onClick={() => setPromotionWizardOpen(true)}
+              >
+                Promote Students
+              </Button>
+            )}
+            <Button variant="contained" startIcon={<Add />} onClick={openCreate}>
+              Add {cfg.singular}
+            </Button>
+          </Box>
         )}
       </Box>
 
@@ -1126,7 +1298,25 @@ export default function PeopleTab({
                     <TableCell>{u?.email ?? "—"}</TableCell>
                     {kind === "students" && <TableCell>{row.regNo ?? "—"}</TableCell>}
                     {kind === "students" && (
-                      <TableCell>{row.classId ? classMap[row.classId] ?? "—" : "—"}</TableCell>
+                      <TableCell>
+                        {row.currentEnrollment ? (
+                          <>
+                            {row.currentEnrollment.className ??
+                              classMap[row.currentEnrollment.classId] ??
+                              "—"}
+                            {row.currentEnrollment.sectionName ? ` - ${row.currentEnrollment.sectionName}` : ""}
+                            {row.currentEnrollment.status !== "ACTIVE" && (
+                              <Chip
+                                label={row.currentEnrollment.status}
+                                size="small"
+                                sx={{ ml: 1 }}
+                              />
+                            )}
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
                     )}
                     {kind === "students" && (
                       <TableCell>
@@ -1173,8 +1363,15 @@ export default function PeopleTab({
                     {canManage && (
                       <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
                         {kind === "students" && (
-                          <Tooltip title="Promote Student">
+                          <Tooltip title="Change Class/Section">
                             <IconButton size="small" onClick={() => openAction(row)}><TrendingUp fontSize="small" /></IconButton>
+                          </Tooltip>
+                        )}
+                        {kind === "students" && row.currentEnrollment?.status === "ACTIVE" && (
+                          <Tooltip title="Withdraw Student">
+                            <IconButton size="small" color="error" onClick={() => openWithdraw(row)}>
+                              <PersonRemove fontSize="small" />
+                            </IconButton>
                           </Tooltip>
                         )}
                         {kind === "guardians" && (
@@ -1280,10 +1477,11 @@ export default function PeopleTab({
         </DialogActions>
       </Dialog>
 
-      {/* Promote dialog (students) */}
+      {/* Change class/section dialog (students) — single-student transfer,
+          distinct from the bulk Promotion Wizard below. */}
       <Dialog open={!!actionRow} onClose={() => setActionRow(null)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 700 }}>
-          Promote Student
+          Change Class/Section
           {actionRow && (
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 400 }}>
               {userMap[actionRow.userId]?.name ?? cfg.singular}
@@ -1315,7 +1513,7 @@ export default function PeopleTab({
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setActionRow(null)}>Cancel</Button>
           <Button variant="contained" onClick={handleAction} disabled={actionSaving || !actionValid}>
-            {actionSaving ? <CircularProgress size={16} color="inherit" /> : "Promote Student"}
+            {actionSaving ? <CircularProgress size={16} color="inherit" /> : "Save Change"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1389,6 +1587,82 @@ export default function PeopleTab({
           <Button onClick={() => setManageRowId(null)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Withdraw student dialog */}
+      <Dialog
+        open={!!withdrawRow}
+        onClose={withdrawSaving ? undefined : () => setWithdrawRow(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          Withdraw Student
+          {withdrawRow && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 400 }}>
+              {userMap[withdrawRow.userId]?.name ?? cfg.singular}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ pt: "16px !important" }}>
+          {withdrawOutstanding !== null && (
+            <Alert severity="warning" sx={{ mb: 2.5 }}>
+              This student has PKR {withdrawOutstanding.toLocaleString()} in outstanding dues.
+              Submit again to withdraw anyway.
+            </Alert>
+          )}
+          <Grid container spacing={2.5}>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Left Date" type="date" required value={withdrawForm.leftDate}
+                onChange={(e) => setWithdrawForm((p) => ({ ...p, leftDate: e.target.value }))}
+                fullWidth
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Left Reason" required value={withdrawForm.leftReason}
+                onChange={(e) => setWithdrawForm((p) => ({ ...p, leftReason: e.target.value }))}
+                fullWidth
+                multiline
+                minRows={2}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setWithdrawRow(null)} disabled={withdrawSaving}>Cancel</Button>
+          <Button
+            variant="contained"
+            color={withdrawOutstanding !== null ? "warning" : "primary"}
+            onClick={handleWithdraw}
+            disabled={withdrawSaving || !withdrawValid}
+          >
+            {withdrawSaving
+              ? <CircularProgress size={16} color="inherit" />
+              : withdrawOutstanding !== null
+                ? "Withdraw Anyway"
+                : "Withdraw Student"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {kind === "students" && (
+        <PromotionWizard
+          open={promotionWizardOpen}
+          onClose={() => setPromotionWizardOpen(false)}
+          campuses={campuses}
+          classes={classes}
+          sections={sections}
+          students={students}
+          users={users}
+          institutionId={institutionId}
+          onComplete={() => {
+            setPromotionWizardOpen(false);
+            onReload();
+          }}
+        />
+      )}
     </Box>
   );
 }
