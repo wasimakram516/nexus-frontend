@@ -139,7 +139,7 @@ export default function TeachingAssignmentsSection({
     const { success } = await apiHandler(
       () =>
         peopleService.assignTeacherToSubject({
-          teacherId: form.teacherId,
+          staffProfileId: form.teacherId,
           classId: form.classId,
           subjectId: form.subjectId,
           sectionId: form.sectionId,

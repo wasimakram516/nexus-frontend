@@ -62,7 +62,7 @@ interface AttendanceRecord {
 
 interface Stats {
   students: number | null;
-  teachers: number | null;
+  staff: number | null;
   guardians: number | null;
   campuses: number | null;
   classes: number | null;
@@ -84,7 +84,7 @@ export default function DashboardOverviewPage() {
   const { showMessage } = useMessage();
   const router = useRouter();
 
-  const [stats, setStats] = useState<Stats>({ students: null, teachers: null, guardians: null, campuses: null, classes: null });
+  const [stats, setStats] = useState<Stats>({ students: null, staff: null, guardians: null, campuses: null, classes: null });
   const [summary, setSummary] = useState<AttendanceSummary | null>(null);
   const [myAttendance, setMyAttendance] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,15 +101,15 @@ export default function DashboardOverviewPage() {
       if (isAdmin && isModuleEnabled("PEOPLE")) {
         tasks.push(
           (async () => {
-            const [students, teachers, guardians] = await Promise.all([
+            const [students, staff, guardians] = await Promise.all([
               apiHandler<unknown[]>(() => peopleService.getStudents(), { showMessage, silent: true }),
-              apiHandler<unknown[]>(() => peopleService.getTeachers(), { showMessage, silent: true }),
+              apiHandler<unknown[]>(() => peopleService.getStaffProfiles(), { showMessage, silent: true }),
               apiHandler<unknown[]>(() => peopleService.getGuardians(), { showMessage, silent: true }),
             ]);
             setStats((prev) => ({
               ...prev,
               students: students.data?.length ?? 0,
-              teachers: teachers.data?.length ?? 0,
+              staff: staff.data?.length ?? 0,
               guardians: guardians.data?.length ?? 0,
             }));
           })()
@@ -194,9 +194,9 @@ export default function DashboardOverviewPage() {
         },
         isModuleEnabled("PEOPLE") && {
           key: "people",
-          label: "Add students & teachers",
+          label: "Add students & staff",
           description: "Register people and their accounts.",
-          done: (stats.students ?? 0) + (stats.teachers ?? 0) > 0,
+          done: (stats.students ?? 0) + (stats.staff ?? 0) > 0,
           href: "/dashboard/people",
         },
         isModuleEnabled("ATTENDANCE") && {
@@ -211,7 +211,7 @@ export default function DashboardOverviewPage() {
 
   const statCards = [
     { label: "Students", value: stats.students, icon: <SchoolOutlined />, show: isAdmin && isModuleEnabled("PEOPLE"), href: "/dashboard/people" },
-    { label: "Teachers", value: stats.teachers, icon: <Person />, show: isAdmin && isModuleEnabled("PEOPLE"), href: "/dashboard/people" },
+    { label: "Staff", value: stats.staff, icon: <Person />, show: isAdmin && isModuleEnabled("PEOPLE"), href: "/dashboard/people" },
     { label: "Guardians", value: stats.guardians, icon: <SupervisorAccount />, show: isAdmin && isModuleEnabled("PEOPLE"), href: "/dashboard/people" },
     { label: "Campuses", value: stats.campuses, icon: <Business />, show: isAdmin, href: "/dashboard/campuses" },
   ].filter((c) => c.show);
@@ -226,7 +226,7 @@ export default function DashboardOverviewPage() {
     : [];
 
   const quickLinks = [
-    { label: "People", description: "Students, teachers & guardians", icon: <Groups />, href: "/dashboard/people", module: "PEOPLE" as const },
+    { label: "People", description: "Students, staff & guardians", icon: <Groups />, href: "/dashboard/people", module: "PEOPLE" as const },
     { label: "Academics", description: "Levels, classes, sections & subjects", icon: <SchoolOutlined />, href: "/dashboard/academics", module: "ACADEMICS" as const },
     { label: "Attendance", description: "Daily check-ins, leaves & reports", icon: <Today />, href: "/dashboard/attendance", module: "ATTENDANCE" as const },
     { label: "Finance", description: "Salaries, fees, vouchers & payments", icon: <AccountBalance />, href: "/dashboard/finance", module: "FINANCE" as const },

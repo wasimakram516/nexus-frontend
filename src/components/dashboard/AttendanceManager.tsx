@@ -85,7 +85,7 @@ interface StudentItem {
   sectionId?: string | null;
 }
 
-interface TeacherItem {
+interface StaffProfileItem {
   id: string;
   userId: string;
   campusId: string;
@@ -171,7 +171,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   const [marking, setMarking] = useState(false);
 
   const [students, setStudents] = useState<StudentItem[]>([]);
-  const [teachers, setTeachers] = useState<TeacherItem[]>([]);
+  const [staffProfiles, setStaffProfiles] = useState<StaffProfileItem[]>([]);
   const [campusUsers, setCampusUsers] = useState<CampusUserItem[]>([]);
   const [users, setUsers] = useState<UserLite[]>([]);
   const [classes, setClasses] = useState<NamedItem[]>([]);
@@ -235,15 +235,15 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
       setCampusId((prev) => prev || (scoped[0]?.id ?? ""));
 
       if (canManage) {
-        const [studentsRes, teachersRes, classesRes, sectionsRes] = await Promise.all([
+        const [studentsRes, staffProfilesRes, classesRes, sectionsRes] = await Promise.all([
           apiHandler<StudentItem[]>(() => peopleService.getStudents(), { showMessage, silent: true }),
-          apiHandler<TeacherItem[]>(() => peopleService.getTeachers(), { showMessage, silent: true }),
+          apiHandler<StaffProfileItem[]>(() => peopleService.getStaffProfiles(), { showMessage, silent: true }),
           apiHandler<NamedItem[]>(() => academicsService.getClasses(), { showMessage, silent: true }),
           apiHandler<NamedItem[]>(() => academicsService.getSections(), { showMessage, silent: true }),
         ]);
         const campusIds = new Set(scoped.map((c) => c.id));
         setStudents((studentsRes.data ?? []).filter((s) => campusIds.has(s.campusId)));
-        setTeachers((teachersRes.data ?? []).filter((t) => campusIds.has(t.campusId)));
+        setStaffProfiles((staffProfilesRes.data ?? []).filter((t) => campusIds.has(t.campusId)));
         setClasses(classesRes.data ?? []);
         setSections(sectionsRes.data ?? []);
         try {
@@ -308,12 +308,12 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
 
   const staffRoster: RosterRow[] = useMemo(() => {
     const staff = new Map<string, RosterRow>();
-    for (const teacher of teachers) {
-      if (teacher.campusId !== campusId) continue;
-      staff.set(teacher.userId, {
-        userId: teacher.userId,
-        name: userMap[teacher.userId]?.name ?? userMap[teacher.userId]?.email ?? "Teacher",
-        meta: "Teacher",
+    for (const staffMember of staffProfiles) {
+      if (staffMember.campusId !== campusId) continue;
+      staff.set(staffMember.userId, {
+        userId: staffMember.userId,
+        name: userMap[staffMember.userId]?.name ?? userMap[staffMember.userId]?.email ?? "Staff",
+        meta: "Staff",
         role: "STAFF",
       });
     }
@@ -329,7 +329,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
       });
     }
     return [...staff.values()];
-  }, [teachers, campusUsers, campusId, userMap]);
+  }, [staffProfiles, campusUsers, campusId, userMap]);
 
   const combinedRoster: RosterRow[] = useMemo(
     () => [...staffRoster, ...studentRoster],
@@ -1045,7 +1045,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
               {registerRoster.length === 0
                 ? mode === "students"
                   ? "No students in this campus yet — add them under People."
-                  : "No staff in this campus yet. Teachers appear automatically; assign admins/accountants to the campus under Campuses → Manage Users."
+                  : "No staff in this campus yet. Staff appear automatically; assign admins/accountants to the campus under Campuses → Manage Users."
                 : "No one matches your search or filters."}
             </Typography>
           </CardContent>

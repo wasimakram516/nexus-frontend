@@ -48,6 +48,7 @@ interface TeacherItem {
   id: string;
   userId: string;
   campusId: string;
+  employmentType: string;
 }
 
 interface AcademicsManagerProps {
@@ -75,14 +76,14 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
 
   const load = useCallback(async () => {
-    const [campusesRes, levelsRes, classesRes, sectionsRes, subjectsRes, assignmentsRes, teachersRes, academicYearsRes] = await Promise.all([
+    const [campusesRes, levelsRes, classesRes, sectionsRes, subjectsRes, assignmentsRes, staffProfilesRes, academicYearsRes] = await Promise.all([
       apiHandler<{ items: AcademicItem[] }>(() => campusesService.getAll({ limit: 100 }), { showMessage, silent: true }),
       apiHandler<AcademicItem[]>(() => academicsService.getLevels(), { showMessage, silent: true }),
       apiHandler<AcademicItem[]>(() => academicsService.getClasses(), { showMessage, silent: true }),
       apiHandler<AcademicItem[]>(() => academicsService.getSections(), { showMessage, silent: true }),
       apiHandler<AcademicItem[]>(() => academicsService.getSubjects(), { showMessage, silent: true }),
       apiHandler<TeachingAssignment[]>(() => peopleService.getTeacherSubjects(), { showMessage, silent: true }),
-      apiHandler<TeacherItem[]>(() => peopleService.getTeachers(), { showMessage, silent: true }),
+      apiHandler<TeacherItem[]>(() => peopleService.getStaffProfiles(), { showMessage, silent: true }),
       apiHandler<AcademicYear[]>(() => academicsService.getAcademicYears(institutionId), { showMessage, silent: true }),
     ]);
 
@@ -110,8 +111,12 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
     setAssignments(
       (assignmentsRes.data ?? []).filter((a) => !institutionId || campusIds.has(a.campusId))
     );
+    // Only teaching staff belong in the Teaching Assignments picker — the
+    // underlying list now includes non-teaching employees too.
     setTeachers(
-      (teachersRes.data ?? []).filter((t) => !institutionId || campusIds.has(t.campusId))
+      (staffProfilesRes.data ?? []).filter(
+        (t) => t.employmentType === "TEACHING" && (!institutionId || campusIds.has(t.campusId))
+      )
     );
     // Unlike the resources above, AcademicYear scoping in the platform
     // console isn't done via client-side filtering — getAcademicYears()
