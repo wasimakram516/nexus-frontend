@@ -15,11 +15,13 @@ import {
 import {
   ArrowBack,
   AssignmentInd,
+  CalendarMonth,
   GridView,
   Layers,
   MenuBook,
   Workspaces,
 } from "@mui/icons-material";
+import AcademicYearsSection, { AcademicYear } from "@/components/dashboard/AcademicYearsSection";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
 import ResourceSection from "@/components/dashboard/ResourceSection";
 import TeachingAssignmentsSection, { TeachingAssignment } from "@/components/dashboard/TeachingAssignmentsSection";
@@ -70,9 +72,10 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
   const [assignments, setAssignments] = useState<TeachingAssignment[]>([]);
   const [teachers, setTeachers] = useState<TeacherItem[]>([]);
   const [users, setUsers] = useState<UserLite[]>([]);
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
 
   const load = useCallback(async () => {
-    const [campusesRes, levelsRes, classesRes, sectionsRes, subjectsRes, assignmentsRes, teachersRes] = await Promise.all([
+    const [campusesRes, levelsRes, classesRes, sectionsRes, subjectsRes, assignmentsRes, teachersRes, academicYearsRes] = await Promise.all([
       apiHandler<{ items: AcademicItem[] }>(() => campusesService.getAll({ limit: 100 }), { showMessage, silent: true }),
       apiHandler<AcademicItem[]>(() => academicsService.getLevels(), { showMessage, silent: true }),
       apiHandler<AcademicItem[]>(() => academicsService.getClasses(), { showMessage, silent: true }),
@@ -80,6 +83,7 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
       apiHandler<AcademicItem[]>(() => academicsService.getSubjects(), { showMessage, silent: true }),
       apiHandler<TeachingAssignment[]>(() => peopleService.getTeacherSubjects(), { showMessage, silent: true }),
       apiHandler<TeacherItem[]>(() => peopleService.getTeachers(), { showMessage, silent: true }),
+      apiHandler<AcademicYear[]>(() => academicsService.getAcademicYears(institutionId), { showMessage, silent: true }),
     ]);
 
     const allCampuses = campusesRes.data?.items ?? [];
@@ -109,6 +113,12 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
     setTeachers(
       (teachersRes.data ?? []).filter((t) => !institutionId || campusIds.has(t.campusId))
     );
+    // Unlike the resources above, AcademicYear scoping in the platform
+    // console isn't done via client-side filtering — getAcademicYears()
+    // routes through the SUPERADMIN-only /platform/institutions/:id mirror
+    // when institutionId is set, so the backend enforces the correct
+    // institution directly (no post-fetch filtering needed here at all).
+    setAcademicYears(academicYearsRes.data ?? []);
 
     try {
       const allUsers = await fetchAllUsers();
@@ -183,6 +193,14 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
 
   const sectionDefs = [
     {
+      key: "academic-years",
+      label: "Academic Years",
+      parent: "Institution",
+      description: "Sessions like 2026-27, with optional per-campus dates.",
+      icon: <CalendarMonth />,
+      count: academicYears.length,
+    },
+    {
       key: "levels",
       label: "Levels",
       parent: "Campus",
@@ -237,8 +255,9 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
     return (
       <>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Your structure flows top-down: <strong>Campus → Level → Class → Sections & Subjects</strong>,
-          then assign teachers per section. Set them up in that order.
+          Set up your <strong>Academic Year</strong> first, then build the structure top-down:{" "}
+          <strong>Campus → Level → Class → Sections & Subjects</strong>, then assign teachers per
+          section. Set them up in that order.
         </Typography>
         <Grid container spacing={2}>
           {sectionDefs.map((section) => (
@@ -282,7 +301,7 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
                     </Box>
                     <Typography variant="body1" sx={{ fontWeight: 700 }}>{section.label}</Typography>
                     <Typography variant="caption" color="text.disabled" sx={{ display: "block" }}>
-                      inside a {section.parent.toLowerCase()}
+                      inside {/^[aeiou]/i.test(section.parent) ? "an" : "a"} {section.parent.toLowerCase()}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ flex: 1, mt: 0.5 }}>
                       {section.description}
@@ -307,6 +326,17 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
       >
         All Academics
       </Button>
+
+      {activeKey === "academic-years" && (
+        <AcademicYearsSection
+          academicYears={academicYears}
+          campuses={campuses}
+          loading={loading}
+          canManage={canManage}
+          institutionId={institutionId}
+          onReload={load}
+        />
+      )}
 
       {activeKey === "levels" && (
         <ResourceSection
