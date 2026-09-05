@@ -22,15 +22,17 @@ export const peopleService = {
   deleteGuardian: (guardianId: string) =>
     apiClient.delete(`/people/guardians/${guardianId}`),
 
-  // Teachers
-  createTeacher: (payload: Record<string, unknown>) =>
-    apiClient.post("/people/teachers", payload),
-  getTeachers: (params?: Record<string, unknown>) =>
-    apiClient.get("/people/teachers", { params }),
-  getTeacher: (teacherId: string) => apiClient.get(`/people/teachers/${teacherId}`),
-  updateTeacher: (teacherId: string, payload: Record<string, unknown>) =>
-    apiClient.patch(`/people/teachers/${teacherId}`, payload),
-  deleteTeacher: (teacherId: string) => apiClient.delete(`/people/teachers/${teacherId}`),
+  // Staff Profiles
+  createStaffProfile: (payload: Record<string, unknown>) =>
+    apiClient.post("/people/staff-profiles", payload),
+  getStaffProfiles: (params?: Record<string, unknown>) =>
+    apiClient.get("/people/staff-profiles", { params }),
+  getStaffProfile: (staffProfileId: string) =>
+    apiClient.get(`/people/staff-profiles/${staffProfileId}`),
+  updateStaffProfile: (staffProfileId: string, payload: Record<string, unknown>) =>
+    apiClient.patch(`/people/staff-profiles/${staffProfileId}`, payload),
+  deleteStaffProfile: (staffProfileId: string) =>
+    apiClient.delete(`/people/staff-profiles/${staffProfileId}`),
 
   // Relations
   linkGuardianToStudent: (payload: Record<string, unknown>) =>
