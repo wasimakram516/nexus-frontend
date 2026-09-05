@@ -43,6 +43,7 @@ import {
 import NexusLogo from "@/components/shared/NexusLogo";
 import ProfileDialog from "@/components/shared/ProfileDialog";
 import ThemeToggle from "@/components/shared/ThemeToggle";
+import AcademicYearSelector from "@/components/dashboard/AcademicYearSelector";
 import TrialBanner from "@/components/dashboard/TrialBanner";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { useConfirm } from "@/contexts/ConfirmContext";
@@ -315,7 +316,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </Box>
           )}
 
-          <Box sx={{ display: "flex", gap: 0.5, justifyContent: collapsed ? "center" : "flex-start", flexDirection: collapsed ? "column" : "row", alignItems: "center" }}>
+          <Box sx={{ display: "flex", gap: 0.5, justifyContent: collapsed ? "center" : "flex-start", flexDirection: collapsed ? "column" : "row", alignItems: "center", flexWrap: "wrap" }}>
+            {!collapsed && <AcademicYearSelector />}
             <ThemeToggle />
             <Tooltip title="Profile" placement="right">
               <IconButton size="small" onClick={() => setProfileOpen(true)}>
