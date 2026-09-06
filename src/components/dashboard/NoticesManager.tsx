@@ -15,6 +15,7 @@ import {
   Grid,
   LinearProgress,
   MenuItem,
+  Pagination,
   Table,
   TableBody,
   TableCell,
@@ -101,6 +102,14 @@ const TARGETABLE_ROLES: UserRole[] = ["ADMIN", "STAFF", "STUDENT", "GUARDIAN"];
 /** Matches the backend's `@ArrayMaxSize(5)` on NoticeAttachmentDto (M3 design doc, § 7.3). */
 const MAX_ATTACHMENTS = 5;
 
+/** Page size for the read-only self-service feed (§ 7.3's /notices/for-me — paginated by design). */
+const MY_NOTICES_PAGE_SIZE = 10;
+
+interface NoticesForMeResponse {
+  items: Notice[];
+  total: number;
+}
+
 /**
  * Today's date as a `YYYY-MM-DD` string — the Publish Date field's default.
  * @returns {string} Today's local date in the shape `type="date"` inputs expect.
@@ -180,13 +189,29 @@ function attachmentLabel(attachment: NoticeAttachment): string {
 }
 
 /**
- * Admin management UI for the Notices module (M3 — Scheduling &
- * Communication). Lists every notice with a computed, readable audience
- * summary and provides a create/edit dialog covering title/body, the
- * cascading campus → class → section audience pickers plus an independent
- * target-role narrowing, publish/expiry dates, and up to 5 attachments
- * uploaded through the shared /upload endpoint. Delete is soft, same
- * ConfirmDialog + recycle-bin pattern as every other resource here.
+ * Notices UI for the Notices module (M3 — Scheduling & Communication).
+ *
+ * Renders one of two views depending on whether the caller can read the
+ * admin resource (`notices.read` — always true for ADMIN/SUPERADMIN, and in
+ * the platform console since `useOptionalRuntimeConfig()` returns null
+ * there, treated as full access):
+ *
+ * - **Admin view** (has `notices.read`): the full management table with a
+ *   computed, readable audience summary and a create/edit dialog covering
+ *   title/body, the cascading campus → class → section audience pickers,
+ *   an independent target-role narrowing, publish/expiry dates, and up to
+ *   5 attachments uploaded through the shared /upload endpoint. Delete is
+ *   soft, same ConfirmDialog + recycle-bin pattern as every other resource
+ *   here.
+ * - **Self-service view** (no `notices.read` — e.g. STUDENT/GUARDIAN, or a
+ *   STAFF role without it): a read-only, paginated feed sourced from
+ *   `GET /notices/for-me` instead — the audience-matched, publish-window-
+ *   filtered list that endpoint was built for (§ 7.3 of the M3 design doc).
+ *   Without this branch, a caller lacking `notices.read` would 403 against
+ *   the admin list and see a misleading empty "No notices yet" state despite
+ *   having real notices visible to them (NoticeBell already uses the right
+ *   endpoint for its dropdown preview; this is the same fix applied to the
+ *   full page).
  *
  * Accepts an optional `institutionId` (superadmin platform console managing
  * another institution, same convention as AcademicYearsSection/RolesManager)
@@ -197,6 +222,7 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
   const { showMessage } = useMessage();
   const runtime = useOptionalRuntimeConfig();
   const canManage = runtime?.canManageModule("NOTICES") ?? true;
+  const canViewAdminList = runtime?.can("notices", "read") ?? true;
 
   const [notices, setNotices] = useState<Notice[]>([]);
   const [campuses, setCampuses] = useState<CampusItem[]>([]);
@@ -204,6 +230,10 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [sections, setSections] = useState<SectionItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [myNotices, setMyNotices] = useState<Notice[]>([]);
+  const [myNoticesTotal, setMyNoticesTotal] = useState(0);
+  const [myNoticesPage, setMyNoticesPage] = useState(1);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Notice | null>(null);
@@ -216,9 +246,25 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /** Loads notices plus the campus/class/section lookups the audience pickers and summary need. */
+  /**
+   * Loads notices plus the campus/class/section lookups the audience pickers
+   * and summary need (admin view) — or just the caller's own audience-matched
+   * page (self-service view), when they lack notices.read.
+   */
   const load = useCallback(async () => {
     setLoading(true);
+
+    if (!canViewAdminList) {
+      const res = await apiHandler<NoticesForMeResponse>(
+        () => noticesService.getNoticesForMe({ page: myNoticesPage, limit: MY_NOTICES_PAGE_SIZE }),
+        { showMessage, silent: true }
+      );
+      setMyNotices(res.data?.items ?? []);
+      setMyNoticesTotal(res.data?.total ?? 0);
+      setLoading(false);
+      return;
+    }
+
     const [noticesRes, campusesRes, levelsRes, classesRes, sectionsRes] = await Promise.all([
       // includeExpired: true — this is the admin management list (unlike
       // /notices/for-me), so nothing should silently disappear from view.
@@ -260,7 +306,7 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
     setClasses(scopedClasses);
     setSections(scopedSections);
     setLoading(false);
-  }, [showMessage, institutionId]);
+  }, [showMessage, institutionId, canViewAdminList, myNoticesPage]);
 
   useEffect(() => {
     load();
@@ -457,6 +503,74 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
     setConfirmDelete(null);
     load();
   };
+
+  if (!canViewAdminList) {
+    const pageCount = Math.ceil(myNoticesTotal / MY_NOTICES_PAGE_SIZE);
+    return (
+      <Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          {myNoticesTotal} notice{myNoticesTotal !== 1 ? "s" : ""}.
+        </Typography>
+
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : myNotices.length === 0 ? (
+          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardContent sx={{ py: 6, textAlign: "center" }}>
+              <Typography color="text.secondary">No notices yet.</Typography>
+            </CardContent>
+          </Card>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {myNotices.map((notice) => (
+              <Card key={notice.id} sx={{ border: "1px solid", borderColor: "divider" }}>
+                <CardContent>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, mb: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{notice.title}</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+                      {formatDate(notice.publishAt)}
+                    </Typography>
+                  </Box>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ whiteSpace: "pre-wrap", mb: notice.attachments?.length ? 1.5 : 0 }}
+                  >
+                    {notice.body}
+                  </Typography>
+                  {notice.attachments && notice.attachments.length > 0 && (
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                      {notice.attachments.map((attachment, index) => (
+                        <Chip
+                          key={`${attachment.publicId}-${index}`}
+                          icon={<AttachFile fontSize="small" />}
+                          component="a"
+                          href={attachment.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          clickable
+                          label={`${attachmentLabel(attachment)} · ${formatBytes(attachment.bytes)}`}
+                          size="small"
+                        />
+                      ))}
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        )}
+
+        {pageCount > 1 && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+            <Pagination count={pageCount} page={myNoticesPage} onChange={(_e, page) => setMyNoticesPage(page)} />
+          </Box>
+        )}
+      </Box>
+    );
+  }
 
   return (
     <Box>

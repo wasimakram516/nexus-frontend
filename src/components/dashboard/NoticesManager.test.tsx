@@ -139,6 +139,24 @@ describe("NoticesManager", () => {
 
     expect(noticesService.deleteNotice).toHaveBeenCalledWith("notice-1", undefined);
   });
+
+  it("renders the read-only self-service feed instead of the admin list when the caller lacks notices.read", async () => {
+    vi.mocked(useOptionalRuntimeConfig).mockReturnValue({
+      can: () => false,
+      canManageModule: () => false,
+    } as never);
+    vi.mocked(noticesService.getNoticesForMe).mockResolvedValue({
+      data: { data: { items: [sampleNotice], total: 1, page: 1, limit: 10 } },
+    } as never);
+
+    renderManager();
+
+    expect(await screen.findByText("Announcement")).toBeInTheDocument();
+    expect(screen.getByText("This is a test notice body.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add notice/i })).not.toBeInTheDocument();
+    expect(noticesService.getNoticesForMe).toHaveBeenCalledWith({ page: 1, limit: 10 });
+    expect(noticesService.getNotices).not.toHaveBeenCalled();
+  });
 });
 
 describe("summarizeNoticeAudience", () => {
