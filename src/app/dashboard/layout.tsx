@@ -27,6 +27,7 @@ import {
   AccountBalance,
   Assessment,
   Business,
+  Campaign,
   ChevronLeft,
   ChevronRight,
   Dashboard,
@@ -44,6 +45,7 @@ import NexusLogo from "@/components/shared/NexusLogo";
 import ProfileDialog from "@/components/shared/ProfileDialog";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import AcademicYearSelector from "@/components/dashboard/AcademicYearSelector";
+import NoticeBell from "@/components/dashboard/NoticeBell";
 import TrialBanner from "@/components/dashboard/TrialBanner";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { useConfirm } from "@/contexts/ConfirmContext";
@@ -79,6 +81,7 @@ const navItems: NavItem[] = [
   { label: "Academics",     href: "/dashboard/academics",     icon: <SchoolOutlined />, module: "ACADEMICS" },
   { label: "Attendance",    href: "/dashboard/attendance",    icon: <Today />,          module: "ATTENDANCE" },
   { label: "Finance",       href: "/dashboard/finance",       icon: <AccountBalance />, module: "FINANCE" },
+  { label: "Notices",       href: "/dashboard/notices",       icon: <Campaign />,       module: "NOTICES" },
   { label: "Campuses",      href: "/dashboard/campuses",      icon: <Business />,       roles: ["ADMIN"] },
   { label: "Users",         href: "/dashboard/users",         icon: <ManageAccounts />, roles: ["ADMIN"] },
   { label: "Roles",         href: "/dashboard/roles",         icon: <Shield />,         roles: ["ADMIN"] },
@@ -318,6 +321,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
           <Box sx={{ display: "flex", gap: 0.5, justifyContent: collapsed ? "center" : "flex-start", flexDirection: collapsed ? "column" : "row", alignItems: "center", flexWrap: "wrap" }}>
             {!collapsed && <AcademicYearSelector />}
+            <NoticeBell />
             <ThemeToggle />
             <Tooltip title="Profile" placement="right">
               <IconButton size="small" onClick={() => setProfileOpen(true)}>

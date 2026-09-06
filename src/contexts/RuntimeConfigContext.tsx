@@ -12,7 +12,11 @@ export type ModuleKey =
   | "REPORTING"
   | "EXAMINATIONS"
   | "DOCUMENTS"
-  | "REALTIME";
+  | "REALTIME"
+  // M3: Scheduling & Communication — Timetable M1 (Period Slots) track.
+  | "TIMETABLE"
+  // M3: Scheduling & Communication — Notices track.
+  | "NOTICES";
 
 export type PermissionAction = "create" | "read" | "update" | "delete";
 

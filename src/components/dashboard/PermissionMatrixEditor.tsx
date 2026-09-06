@@ -25,6 +25,8 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   EXAMINATIONS: "Examinations",
   DOCUMENTS: "Documents",
   REALTIME: "Real-time",
+  TIMETABLE: "Timetable",
+  NOTICES: "Notices",
 };
 
 const ADMINISTRATIVE_LABEL = "Administrative";
