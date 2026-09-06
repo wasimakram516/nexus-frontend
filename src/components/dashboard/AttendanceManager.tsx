@@ -43,6 +43,7 @@ import {
   Search,
 } from "@mui/icons-material";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
+import type { DayOfWeek, PeriodSlot } from "@/components/dashboard/PeriodSlotsSection";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,11 +52,13 @@ import { useMessage } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
+import { parseSettingObject } from "@/lib/settings";
 import { fetchAllUsers, UserLite } from "@/lib/users";
-import { attendanceService } from "@/services/attendance.service";
+import { attendanceService, PeriodRosterStudent } from "@/services/attendance.service";
 import { academicsService } from "@/services/academics.service";
 import { campusesService } from "@/services/campuses.service";
 import { peopleService } from "@/services/people.service";
+import { timetableService } from "@/services/timetable.service";
 
 interface AttendanceRecord {
   id: string;
@@ -135,8 +138,22 @@ const MARK_ACTIONS: Array<{ status: string; label: string; short: string; color:
 
 const STAFF_ROLES = ["STAFF", "ADMIN"];
 
+/** JS `Date#getDay()` index (0 = Sunday) to the backend's `DayOfWeek` enum. */
+const DAY_OF_WEEK_BY_INDEX: DayOfWeek[] = [
+  "SUNDAY",
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
+];
+
 const today = () => new Date().toISOString().slice(0, 10);
 const nowTime = () => new Date().toTimeString().slice(0, 5);
+
+/** Day-of-week for a `YYYY-MM-DD` string, parsed as local time (not UTC) to avoid off-by-one at timezone edges. */
+const dayOfWeekOf = (dateStr: string): DayOfWeek => DAY_OF_WEEK_BY_INDEX[new Date(`${dateStr}T00:00:00`).getDay()];
 
 const formatTime = (value?: string | null) =>
   value ? new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
@@ -148,6 +165,16 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   const runtime = useOptionalRuntimeConfig();
   // Platform console (institutionId set) is superadmin — always full access.
   const canManage = institutionId ? true : (runtime?.canManageModule("ATTENDANCE") ?? true);
+
+  // Institution setting attendance.mode ("DAILY" | "PERIOD"), M3 Attendance
+  // Dual-Mode track (design doc §5.3/§7.2) — defaults to DAILY, matching the
+  // backend's own default, when absent (including in the platform-console
+  // context above, which renders outside RuntimeConfigProvider).
+  const attendanceMode: "DAILY" | "PERIOD" = useMemo(() => {
+    const raw = runtime?.config?.settings as Record<string, unknown> | undefined;
+    const setting = parseSettingObject(raw?.attendance);
+    return setting?.mode === "PERIOD" ? "PERIOD" : "DAILY";
+  }, [runtime?.config]);
 
   // ---- hub navigation ----
   const [activeView, setActiveView] = useState<"register" | "timeclock" | null>(null);
@@ -176,6 +203,16 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   const [users, setUsers] = useState<UserLite[]>([]);
   const [classes, setClasses] = useState<NamedItem[]>([]);
   const [sections, setSections] = useState<NamedItem[]>([]);
+
+  // ---- PERIOD-mode student marking (M3 Attendance Dual-Mode track) ----
+  const [periodSlots, setPeriodSlots] = useState<PeriodSlot[]>([]);
+  const [periodSlotsLoading, setPeriodSlotsLoading] = useState(false);
+  const [periodId, setPeriodId] = useState("");
+  const [periodRoster, setPeriodRoster] = useState<PeriodRosterStudent[]>([]);
+  const [periodRosterLoading, setPeriodRosterLoading] = useState(false);
+
+  /** True only for the student register in PERIOD mode — staff marking and DAILY mode are untouched by this track. */
+  const isPeriodStudentMode = attendanceMode === "PERIOD" && mode === "students";
 
   // ---- time clock state ----
   const [punchOpen, setPunchOpen] = useState(false);
@@ -286,6 +323,64 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
     loadRecords();
   }, [loadRecords, canManage, campusId]);
 
+  // ---- PERIOD-mode: section's weekly period slots ----
+  // Reuses Timetable M1's per-section weekly grid endpoint (PeriodSlotsSection
+  // already fetches the same data the same way) rather than a bespoke lookup.
+  useEffect(() => {
+    if (!isPeriodStudentMode || !sectionFilter) {
+      setPeriodSlots([]);
+      return;
+    }
+    let cancelled = false;
+    setPeriodSlotsLoading(true);
+    apiHandler<PeriodSlot[]>(
+      () => timetableService.getSectionWeek(sectionFilter),
+      { showMessage, silent: true }
+    ).then(({ data }) => {
+      if (cancelled) return;
+      setPeriodSlots(Array.isArray(data) ? data : []);
+      setPeriodSlotsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isPeriodStudentMode, sectionFilter, showMessage]);
+
+  // Only the slots scheduled on the day being marked are selectable.
+  const periodsForDay: PeriodSlot[] = useMemo(
+    () =>
+      periodSlots
+        .filter((slot) => slot.dayOfWeek === dayOfWeekOf(date))
+        .sort((a, b) => a.periodNumber - b.periodNumber),
+    [periodSlots, date]
+  );
+
+  // Drop a stale period selection once it no longer belongs to the day/section in view.
+  useEffect(() => {
+    if (periodId && !periodsForDay.some((slot) => slot.id === periodId)) {
+      setPeriodId("");
+    }
+  }, [periodsForDay, periodId]);
+
+  // ---- PERIOD-mode: roster + existing marks for the selected period+date ----
+  const loadPeriodRoster = useCallback(async () => {
+    if (!isPeriodStudentMode || !periodId) {
+      setPeriodRoster([]);
+      return;
+    }
+    setPeriodRosterLoading(true);
+    const { data } = await apiHandler<PeriodRosterStudent[]>(
+      () => attendanceService.getPeriodRoster(periodId, date),
+      { showMessage, silent: true }
+    );
+    setPeriodRoster(Array.isArray(data) ? data : []);
+    setPeriodRosterLoading(false);
+  }, [isPeriodStudentMode, periodId, date, showMessage]);
+
+  useEffect(() => {
+    loadPeriodRoster();
+  }, [loadPeriodRoster]);
+
   // ---- rosters ----
   const studentRoster: RosterRow[] = useMemo(
     () =>
@@ -348,23 +443,67 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
     return staffRoster.filter((row) => !roleFilter || row.role === roleFilter);
   }, [mode, studentRoster, staffRoster, students, classFilter, sectionFilter, roleFilter]);
 
+  // PERIOD mode: the roster IS the server's period-roster response (already
+  // scoped to the period slot's class/section) — not the locally-filtered
+  // studentRoster DAILY mode uses, since a period roster can legitimately
+  // differ from "everyone in this section" (e.g. elective/regrouped periods).
+  const periodRegisterRoster: RosterRow[] = useMemo(
+    () =>
+      periodRoster.map((entry) => ({
+        userId: entry.userId,
+        name: entry.name ?? userMap[entry.userId]?.name ?? entry.regNo ?? "Student",
+        meta: entry.regNo ?? "",
+        role: "STUDENT",
+      })),
+    [periodRoster, userMap]
+  );
+
+  // Backend returns flat status/halfDay/remarks per roster entry (status is
+  // null when unmarked) rather than a nested attendance object, and carries
+  // no attendance-record id at all — bulkMark upserts by the natural
+  // (userId, campusId, date, periodKey) key, not by record id, so a
+  // synthetic id here is purely for the table's React key, never sent back.
+  const periodRecordByUser: Record<string, AttendanceRecord> = useMemo(() => {
+    const map: Record<string, AttendanceRecord> = {};
+    for (const entry of periodRoster) {
+      if (entry.status === null) continue;
+      map[entry.userId] = {
+        id: `period-${entry.userId}`,
+        userId: entry.userId,
+        role: "STUDENT",
+        campusId,
+        date,
+        status: entry.status,
+        halfDay: entry.halfDay,
+        remarks: entry.remarks,
+      };
+    }
+    return map;
+  }, [periodRoster, campusId, date]);
+
+  // Single branch point for "which roster/record source is live right now" —
+  // DAILY mode and staff marking always resolve to the original values below,
+  // untouched by the PERIOD-mode addition.
+  const effectiveRegisterRoster = isPeriodStudentMode ? periodRegisterRoster : registerRoster;
+  const effectiveRecordByUser = isPeriodStudentMode ? periodRecordByUser : recordByUser;
+
   const filteredRoster = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return registerRoster;
-    return registerRoster.filter((row) =>
+    if (!query) return effectiveRegisterRoster;
+    return effectiveRegisterRoster.filter((row) =>
       `${row.name} ${row.meta}`.toLowerCase().includes(query)
     );
-  }, [registerRoster, search]);
+  }, [effectiveRegisterRoster, search]);
 
   const summary = useMemo(() => {
     const counts = { PRESENT: 0, ABSENT: 0, LATE: 0, LEAVE: 0, UNMARKED: 0 };
-    for (const row of registerRoster) {
-      const record = recordByUser[row.userId];
+    for (const row of effectiveRegisterRoster) {
+      const record = effectiveRecordByUser[row.userId];
       if (!record) counts.UNMARKED += 1;
       else counts[record.status as keyof typeof counts] = (counts[record.status as keyof typeof counts] ?? 0) + 1;
     }
     return counts;
-  }, [registerRoster, recordByUser]);
+  }, [effectiveRegisterRoster, effectiveRecordByUser]);
 
   // Punch log for the day (records with actual times). Guardians are not
   // attendance subjects — legacy guardian rows are hidden here.
@@ -407,15 +546,18 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   };
 
   const selectUnmarked = () => {
-    setSelected(new Set(filteredRoster.filter((row) => !recordByUser[row.userId]).map((row) => row.userId)));
+    setSelected(new Set(filteredRoster.filter((row) => !effectiveRecordByUser[row.userId]).map((row) => row.userId)));
   };
 
   // ---- marking ----
   const mark = async (userIds: string[], status: string, remarks?: string) => {
     if (userIds.length === 0 || !campusId) return;
+    // PERIOD mode requires a period before any marking grid is even shown —
+    // this is a defensive no-op, not a user-facing path.
+    if (isPeriodStudentMode && !periodId) return;
 
     const overwriting = userIds.filter((id) => {
-      const record = recordByUser[id];
+      const record = effectiveRecordByUser[id];
       return record && record.status !== status;
     });
     if (status === "ABSENT" && overwriting.length > 0) {
@@ -434,6 +576,9 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
         attendanceService.bulkMark({
           campusId,
           date,
+          // Only ever present in PERIOD mode — DAILY-mode payloads must omit
+          // this key entirely, not send it as undefined/null (backend 400s).
+          ...(isPeriodStudentMode ? { periodId } : {}),
           entries: userIds.map((userId) => ({
             userId,
             status,
@@ -450,6 +595,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
       setSelected(new Set());
       setBatchRemarks("");
       loadRecords();
+      if (isPeriodStudentMode) loadPeriodRoster();
     }
   };
 
@@ -931,7 +1077,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
         />
         <TextField
           select size="small" label="Campus" value={campusId}
-          onChange={(e) => { setCampusId(e.target.value); setSelected(new Set()); setClassFilter(""); setSectionFilter(""); }}
+          onChange={(e) => { setCampusId(e.target.value); setSelected(new Set()); setClassFilter(""); setSectionFilter(""); setPeriodId(""); }}
           sx={{ minWidth: 180 }}
         >
           {campuses.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
@@ -954,16 +1100,38 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
 
         {mode === "students" ? (
           <>
-            <TextField select size="small" label="Class" value={classFilter} onChange={(e) => { setClassFilter(e.target.value); setSectionFilter(""); }} sx={{ minWidth: 140 }}>
+            <TextField select size="small" label="Class" value={classFilter} onChange={(e) => { setClassFilter(e.target.value); setSectionFilter(""); setPeriodId(""); }} sx={{ minWidth: 140 }}>
               <MenuItem value="">All Classes</MenuItem>
               {classes.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
             </TextField>
-            <TextField select size="small" label="Section" value={sectionFilter} onChange={(e) => setSectionFilter(e.target.value)} sx={{ minWidth: 140 }} disabled={!classFilter}>
+            <TextField select size="small" label="Section" value={sectionFilter} onChange={(e) => { setSectionFilter(e.target.value); setPeriodId(""); }} sx={{ minWidth: 140 }} disabled={!classFilter}>
               <MenuItem value="">All Sections</MenuItem>
               {sections.filter((s) => s.classId === classFilter).map((s) => (
                 <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
               ))}
             </TextField>
+            {attendanceMode === "PERIOD" && (
+              <TextField
+                select size="small" label="Period" value={periodId}
+                onChange={(e) => { setPeriodId(e.target.value); setSelected(new Set()); }}
+                sx={{ minWidth: 220 }}
+                disabled={!sectionFilter || periodSlotsLoading}
+                helperText={
+                  !sectionFilter
+                    ? "Pick a section first"
+                    : !periodSlotsLoading && periodsForDay.length === 0
+                      ? "No periods scheduled this day"
+                      : undefined
+                }
+              >
+                <MenuItem value="">Select a period</MenuItem>
+                {periodsForDay.map((slot) => (
+                  <MenuItem key={slot.id} value={slot.id}>
+                    {slot.name} ({slot.startTime}–{slot.endTime})
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
           </>
         ) : (
           <TextField select size="small" label="Role" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} sx={{ minWidth: 150 }}>
@@ -1036,15 +1204,27 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
       )}
 
       {/* Roster */}
-      {staticLoading || recordsLoading ? (
+      {staticLoading || (isPeriodStudentMode ? periodSlotsLoading || periodRosterLoading : recordsLoading) ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+      ) : isPeriodStudentMode && !periodId ? (
+        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <CardContent sx={{ py: 6, textAlign: "center" }}>
+            <Typography color="text.secondary">
+              {!sectionFilter
+                ? "Select a class and section, then a period, to mark attendance."
+                : "Select a period above to load its roster."}
+            </Typography>
+          </CardContent>
+        </Card>
       ) : filteredRoster.length === 0 ? (
         <Card sx={{ border: "1px solid", borderColor: "divider" }}>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary">
-              {registerRoster.length === 0
+              {effectiveRegisterRoster.length === 0
                 ? mode === "students"
-                  ? "No students in this campus yet — add them under People."
+                  ? isPeriodStudentMode
+                    ? "No students enrolled for this period."
+                    : "No students in this campus yet — add them under People."
                   : "No staff in this campus yet. Staff appear automatically; assign admins/accountants to the campus under Campuses → Manage Users."
                 : "No one matches your search or filters."}
             </Typography>
@@ -1074,7 +1254,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
             </TableHead>
             <TableBody>
               {filteredRoster.map((row) => {
-                const record = recordByUser[row.userId];
+                const record = effectiveRecordByUser[row.userId];
                 return (
                   <TableRow key={row.userId} hover selected={selected.has(row.userId)}>
                     <TableCell padding="checkbox">
