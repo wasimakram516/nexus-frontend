@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import {
   AccountBalance, AccountTree, ArrowForwardIos, AssignmentTurnedIn,
-  AutoStories, Block, CheckCircle, Description, Forum,
+  AutoStories, Block, Campaign, CheckCircle, Description, Forum,
   Group, ManageAccounts, QueryStats, School, Tune,
 } from "@mui/icons-material";
 import PlatformBreadcrumbs from "@/components/shared/PlatformBreadcrumbs";
@@ -38,6 +38,7 @@ const MODULE_DEFS: ModuleDef[] = [
   { key: "EXAMINATIONS", label: "Examinations",description: "Exams, results, and grade sheets.",            icon: <AutoStories />,       accent: "#d946ef", route: "examinations" },
   { key: "DOCUMENTS",    label: "Documents",   description: "Institution documents and templates.",         icon: <Description />,       accent: "#0ea5e9", route: "documents" },
   { key: "REALTIME",     label: "Real-time",   description: "Live notifications and socket events.",        icon: <Forum />,             accent: "#22c55e", route: "realtime" },
+  { key: "NOTICES",      label: "Notices",     description: "Announcements with audience targeting.",       icon: <Campaign />,          accent: "#f97316", route: "notices" },
 ];
 
 const STATUS_COLOR: Record<string, "success" | "warning" | "error" | "default"> = {
@@ -74,7 +75,14 @@ export default function InstitutionManagePage() {
     return modules?.[key]?.enabled === true;
   };
 
-  const enabledCount = MODULE_DEFS.filter((m) => m.key && isModuleEnabled(m.key)).length;
+  // Counted from the full runtime-config entitlement map, not MODULE_DEFS —
+  // that list deliberately doesn't have a card for every ModuleKey (e.g.
+  // Timetable lives inside the Academics card, not its own), so counting
+  // off it undercounts real entitlements whenever a module has no dedicated
+  // card here.
+  const enabledCount = Object.values(
+    (runtimeConfig?.modules as Record<string, { enabled: boolean }> | undefined) ?? {}
+  ).filter((m) => m.enabled).length;
   const subscription = runtimeConfig?.subscription as Record<string, unknown> | null;
   const initials = (institution?.name as string ?? "?").charAt(0).toUpperCase();
   const slug = (institution?.slug as string) || slugOrId;

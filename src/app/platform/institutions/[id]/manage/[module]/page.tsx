@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import {
   AccountBalance, AccountTree, AssignmentTurnedIn, AutoStories,
-  Description, Forum, Group, ManageAccounts, QueryStats, School, Tune,
+  Campaign, Description, Forum, Group, ManageAccounts, QueryStats, School, Tune,
 } from "@mui/icons-material";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -18,6 +18,7 @@ import CampusesManager from "@/components/dashboard/CampusesManager";
 import AttendanceManager from "@/components/dashboard/AttendanceManager";
 import CustomFieldsManager from "@/components/dashboard/CustomFieldsManager";
 import FinanceManager from "@/components/dashboard/FinanceManager";
+import NoticesManager from "@/components/dashboard/NoticesManager";
 import PeopleManager from "@/components/dashboard/PeopleManager";
 import UsersManager from "@/components/dashboard/UsersManager";
 
@@ -33,9 +34,10 @@ const MODULE_META: Record<string, { label: string; description: string; icon: Re
   examinations:    { label: "Examinations",  description: "Exam scheduling, grading, and result sheets.",               icon: <AutoStories sx={{ fontSize: 40 }} />,       accent: "#d946ef" },
   documents:       { label: "Documents",     description: "Institution documents, templates, and file management.",      icon: <Description sx={{ fontSize: 40 }} />,       accent: "#0ea5e9" },
   realtime:        { label: "Real-time",     description: "Live notifications, socket events, and activity feeds.",      icon: <Forum sx={{ fontSize: 40 }} />,             accent: "#22c55e" },
+  notices:         { label: "Notices",       description: "Announcements with audience targeting, publish windows, and attachments.", icon: <Campaign sx={{ fontSize: 40 }} />, accent: "#f97316" },
 };
 
-const IMPLEMENTED = new Set(["campuses", "people", "academics", "attendance", "finance", "users", "custom-fields"]);
+const IMPLEMENTED = new Set(["campuses", "people", "academics", "attendance", "finance", "users", "custom-fields", "notices"]);
 
 export default function ModulePage() {
   const { id: slugOrId, module } = useParams<{ id: string; module: string }>();
@@ -80,6 +82,8 @@ export default function ModulePage() {
         return <UsersManager institutionId={institutionId} />;
       case "custom-fields":
         return <CustomFieldsManager institutionId={institutionId} />;
+      case "notices":
+        return <NoticesManager institutionId={institutionId} />;
       default:
         return null;
     }
