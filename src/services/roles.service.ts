@@ -17,6 +17,11 @@ export const rolesService = {
    *  (the institution-creation wizard renders outside institution runtime-config). */
   getCatalog: () => apiClient.get("/roles/catalog"),
 
+  /** Static { key, label, description } list for every ModuleKey — the
+   *  single source of truth every module picker/toggle screen renders from
+   *  instead of hand-listing modules locally. */
+  getModuleCatalog: () => apiClient.get("/roles/module-catalog"),
+
   list: (institutionId?: string) =>
     institutionId
       ? apiClient.get(`/platform/institutions/${institutionId}/roles`)

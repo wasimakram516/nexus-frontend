@@ -81,10 +81,6 @@ const ALL_ACTIONS: PermissionAction[] = ["create", "read", "update", "delete"];
 const ACTION_LABELS: Record<PermissionAction, string> = {
   create: "Create", read: "Read", update: "Update", delete: "Delete",
 };
-const MODULE_LABELS: Record<string, string> = {
-  ACADEMICS: "Academics", ATTENDANCE: "Attendance", FINANCE: "Finance", PEOPLE: "People",
-  REPORTING: "Reporting", EXAMINATIONS: "Examinations", DOCUMENTS: "Documents", REALTIME: "Real-time",
-};
 const ADMINISTRATIVE_LABEL = "Administrative";
 
 /** Mirrors the backend's self-service defaults for STUDENT/GUARDIAN when no Role is assigned. */
@@ -118,6 +114,10 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<Role[]>([]);
   const [catalog, setCatalog] = useState<PermissionCatalogFeature[]>([]);
+  // Fetched from GET /roles/module-catalog (single source of truth) instead
+  // of a hand-typed label map — see InstitutionEntitlementsTab.tsx for the
+  // same fix and why it matters.
+  const [moduleLabels, setModuleLabels] = useState<Record<string, string>>({});
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ name: "", email: "", password: "", role: "STAFF" });
@@ -158,12 +158,19 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
   // which is outside RuntimeConfigProvider.
   useEffect(() => {
     const loadAccessData = async () => {
-      const [rolesRes, catalogRes] = await Promise.all([
+      const [rolesRes, catalogRes, moduleCatalogRes] = await Promise.all([
         apiHandler<Role[]>(() => rolesService.list(institutionId), { showMessage, silent: true }),
         apiHandler<PermissionCatalogFeature[]>(() => rolesService.getCatalog(), { showMessage, silent: true }),
+        apiHandler<Array<{ key: string; label: string }>>(
+          () => rolesService.getModuleCatalog(),
+          { showMessage, silent: true }
+        ),
       ]);
       setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : []);
       setCatalog(Array.isArray(catalogRes.data) ? catalogRes.data : []);
+      setModuleLabels(
+        Object.fromEntries((moduleCatalogRes.data ?? []).map((m) => [m.key, m.label]))
+      );
     };
     loadAccessData();
   }, [institutionId, showMessage]);
@@ -553,7 +560,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
                   {groupedCatalog.map(([moduleKey, features]) => (
                     <Box key={moduleKey} sx={{ mb: 2 }}>
                       <Typography variant="caption" sx={{ fontWeight: 700, display: "block", mb: 0.5 }}>
-                        {MODULE_LABELS[moduleKey] ?? moduleKey}
+                        {moduleLabels[moduleKey] ?? moduleKey}
                       </Typography>
                       <Table size="small">
                         <TableHead>

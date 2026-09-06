@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box, Button, Card, CardContent, Chip, Dialog,
   DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid,
@@ -10,25 +10,13 @@ import { CheckCircle, Cancel, Edit } from "@mui/icons-material";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
+import { rolesService } from "@/services/roles.service";
 
-const ALL_MODULES = ["ACADEMICS", "ATTENDANCE", "FINANCE", "PEOPLE", "REPORTING", "EXAMINATIONS", "DOCUMENTS", "REALTIME"];
-
-const MODULE_LABELS: Record<string, string> = {
-  ACADEMICS: "Academics", ATTENDANCE: "Attendance", FINANCE: "Finance",
-  PEOPLE: "People", REPORTING: "Reporting", EXAMINATIONS: "Examinations",
-  DOCUMENTS: "Documents", REALTIME: "Real-time",
-};
-
-const MODULE_DESC: Record<string, string> = {
-  ACADEMICS: "Levels, classes, sections, subjects and teacher assignments.",
-  ATTENDANCE: "Daily check-in/out, leave management, and auto-absent marking.",
-  FINANCE: "Fee structures, vouchers, payroll, deductions, and bank accounts.",
-  PEOPLE: "Student, teacher, and guardian profile management.",
-  REPORTING: "Analytics, reports, and data exports.",
-  EXAMINATIONS: "Exam scheduling, results, and grading.",
-  DOCUMENTS: "Document management and storage.",
-  REALTIME: "Real-time notifications and live updates via WebSocket.",
-};
+interface ModuleCatalogEntry {
+  key: string;
+  label: string;
+  description: string;
+}
 
 interface Props {
   institutionId: string;
@@ -40,14 +28,27 @@ export default function InstitutionEntitlementsTab({ institutionId, runtimeConfi
   const { showMessage } = useMessage();
   const entitlements = runtimeConfig?.modules as Record<string, { enabled: boolean }> | null;
   const isEnabled = (m: string) => entitlements?.[m]?.enabled === true;
-  const enabledCount = ALL_MODULES.filter(isEnabled).length;
+
+  // Fetched from the backend (single source of truth, GET /roles/module-catalog)
+  // instead of a hand-typed list — a new ModuleKey shows up here automatically,
+  // the exact gap that let Timetable/Notices go missing from this screen after
+  // being added to the enum without every frontend list being updated too.
+  const [catalog, setCatalog] = useState<ModuleCatalogEntry[]>([]);
+  useEffect(() => {
+    apiHandler<ModuleCatalogEntry[]>(() => rolesService.getModuleCatalog(), {
+      showMessage,
+      silent: true,
+    }).then(({ data }) => setCatalog(data ?? []));
+  }, [showMessage]);
+
+  const enabledCount = catalog.filter((m) => isEnabled(m.key)).length;
 
   const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
 
   const openEdit = () => {
-    setDraft(Object.fromEntries(ALL_MODULES.map((m) => [m, isEnabled(m)])));
+    setDraft(Object.fromEntries(catalog.map((m) => [m.key, isEnabled(m.key)])));
     setEditOpen(true);
   };
 
@@ -56,9 +57,9 @@ export default function InstitutionEntitlementsTab({ institutionId, runtimeConfi
     const { success } = await apiHandler(
       () =>
         platformService.updateEntitlements(institutionId, {
-          entitlements: ALL_MODULES.map((moduleKey) => ({
-            moduleKey,
-            isEnabled: draft[moduleKey] ?? false,
+          entitlements: catalog.map((m) => ({
+            moduleKey: m.key,
+            isEnabled: draft[m.key] ?? false,
           })),
         }),
       { showMessage, successMessage: "Module entitlements saved." }
@@ -75,7 +76,7 @@ export default function InstitutionEntitlementsTab({ institutionId, runtimeConfi
       <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 3, gap: 2 }}>
         <Box>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>Module Entitlements</Typography>
-          <Typography variant="body2" color="text.secondary">{enabledCount} of {ALL_MODULES.length} modules enabled.</Typography>
+          <Typography variant="body2" color="text.secondary">{enabledCount} of {catalog.length} modules enabled.</Typography>
         </Box>
         <Button size="small" variant="outlined" startIcon={<Edit />} onClick={openEdit} sx={{ flexShrink: 0 }}>
           Edit
@@ -83,16 +84,16 @@ export default function InstitutionEntitlementsTab({ institutionId, runtimeConfi
       </Box>
 
       <Grid container spacing={2}>
-        {ALL_MODULES.map((mod) => {
-          const enabled = isEnabled(mod);
+        {catalog.map((mod) => {
+          const enabled = isEnabled(mod.key);
           return (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={mod}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={mod.key}>
               <Card sx={{ border: "1px solid", borderColor: enabled ? "primary.main" : "divider", opacity: enabled ? 1 : 0.6 }}>
                 <CardContent sx={{ p: 2.5 }}>
                   <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1 }}>
                     <Box sx={{ flex: 1 }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{MODULE_LABELS[mod]}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{mod.label}</Typography>
                         <Chip
                           label={enabled ? "Enabled" : "Disabled"}
                           color={enabled ? "success" : "default"}
@@ -100,7 +101,7 @@ export default function InstitutionEntitlementsTab({ institutionId, runtimeConfi
                           sx={{ height: 18, fontSize: 10 }}
                         />
                       </Box>
-                      <Typography variant="caption" color="text.secondary">{MODULE_DESC[mod]}</Typography>
+                      <Typography variant="caption" color="text.secondary">{mod.description}</Typography>
                     </Box>
                     {enabled
                       ? <CheckCircle sx={{ color: "success.main", fontSize: 18, flexShrink: 0 }} />
@@ -122,21 +123,21 @@ export default function InstitutionEntitlementsTab({ institutionId, runtimeConfi
             Toggle which modules this institution can access. Disabling a module locks it out of the institution&apos;s dashboard immediately.
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column" }}>
-            {ALL_MODULES.map((mod) => (
+            {catalog.map((mod) => (
               <Box
-                key={mod}
+                key={mod.key}
                 sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", py: 1, borderBottom: "1px solid", borderColor: "divider" }}
               >
                 <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{MODULE_LABELS[mod]}</Typography>
-                  <Typography variant="caption" color="text.secondary">{MODULE_DESC[mod]}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{mod.label}</Typography>
+                  <Typography variant="caption" color="text.secondary">{mod.description}</Typography>
                 </Box>
                 <FormControlLabel
                   sx={{ m: 0 }}
                   control={
                     <Switch
-                      checked={draft[mod] ?? false}
-                      onChange={(e) => setDraft((prev) => ({ ...prev, [mod]: e.target.checked }))}
+                      checked={draft[mod.key] ?? false}
+                      onChange={(e) => setDraft((prev) => ({ ...prev, [mod.key]: e.target.checked }))}
                     />
                   }
                   label=""

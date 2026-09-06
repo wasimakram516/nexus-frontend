@@ -1,22 +1,34 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Box, Card, CardContent, Chip, Grid, Switch, Typography } from "@mui/material";
 import { WizardData } from "@/app/platform/institutions/new/page";
+import { apiHandler } from "@/lib/apiHandler";
+import { useMessage } from "@/contexts/MessageContext";
+import { rolesService } from "@/services/roles.service";
 
 interface Props { data: WizardData; update: (p: Partial<WizardData>) => void; }
 
-const ALL_MODULES = [
-  { key: "ACADEMICS",    label: "Academics",           desc: "Levels, classes, sections, subjects, and teacher assignments." },
-  { key: "ATTENDANCE",   label: "Attendance",          desc: "Daily check-in/out, leave management, and auto-absent marking." },
-  { key: "FINANCE",      label: "Finance & Payroll",   desc: "Fee vouchers, salaries, deductions, fines, and bank accounts." },
-  { key: "PEOPLE",       label: "People",              desc: "Student, teacher, and guardian profiles with full history." },
-  { key: "REPORTING",    label: "Reporting",           desc: "Analytics, summaries, and data export." },
-  { key: "EXAMINATIONS", label: "Examinations",        desc: "Exam scheduling, results, and grade management." },
-  { key: "DOCUMENTS",    label: "Documents",           desc: "Document storage and management." },
-  { key: "REALTIME",     label: "Real-time Updates",   desc: "Live notifications and WebSocket-powered updates." },
-];
+interface ModuleCatalogEntry {
+  key: string;
+  label: string;
+  description: string;
+}
 
 export default function StepModules({ data, update }: Props) {
+  const { showMessage } = useMessage();
+  // Fetched from GET /roles/module-catalog (single source of truth) instead
+  // of a hand-typed list — see InstitutionEntitlementsTab.tsx for the same
+  // fix and why it matters (a new ModuleKey used to have to be added here
+  // by hand and was easy to miss).
+  const [modules, setModules] = useState<ModuleCatalogEntry[]>([]);
+  useEffect(() => {
+    apiHandler<ModuleCatalogEntry[]>(() => rolesService.getModuleCatalog(), {
+      showMessage,
+      silent: true,
+    }).then(({ data: catalog }) => setModules(catalog ?? []));
+  }, [showMessage]);
+
   const toggle = (key: string, val: boolean) =>
     update({ modules: { ...data.modules, [key]: val } });
 
@@ -30,10 +42,10 @@ export default function StepModules({ data, update }: Props) {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
         Control which modules this institution can access. Pre-populated from the selected plan — adjust as needed.
       </Typography>
-      <Chip label={`${enabledCount} of ${ALL_MODULES.length} modules enabled`} color="primary" size="small" sx={{ mb: 4 }} />
+      <Chip label={`${enabledCount} of ${modules.length} modules enabled`} color="primary" size="small" sx={{ mb: 4 }} />
 
       <Grid container spacing={2}>
-        {ALL_MODULES.map((mod) => {
+        {modules.map((mod) => {
           const enabled = data.modules[mod.key] ?? false;
           return (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={mod.key}>
@@ -53,7 +65,7 @@ export default function StepModules({ data, update }: Props) {
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{mod.label}</Typography>
                         {enabled && <Chip label="ON" color="success" size="small" sx={{ height: 16, fontSize: 10 }} />}
                       </Box>
-                      <Typography variant="caption" color="text.secondary">{mod.desc}</Typography>
+                      <Typography variant="caption" color="text.secondary">{mod.description}</Typography>
                     </Box>
                     <Switch
                       checked={enabled}

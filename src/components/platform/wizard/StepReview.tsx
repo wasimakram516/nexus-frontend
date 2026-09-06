@@ -1,8 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Box, Button, Card, CardContent, Chip, CircularProgress, Divider, Grid, Typography } from "@mui/material";
 import { ArrowBack, Check } from "@mui/icons-material";
 import { WizardData } from "@/app/platform/institutions/new/page";
+import { apiHandler } from "@/lib/apiHandler";
+import { useMessage } from "@/contexts/MessageContext";
+import { rolesService } from "@/services/roles.service";
 
 interface Props {
   data: WizardData;
@@ -25,13 +29,21 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-const MODULE_LABELS: Record<string, string> = {
-  ACADEMICS: "Academics", ATTENDANCE: "Attendance", FINANCE: "Finance & Payroll",
-  PEOPLE: "People", REPORTING: "Reporting", EXAMINATIONS: "Examinations",
-  DOCUMENTS: "Documents", REALTIME: "Real-time",
-};
-
 export default function StepReview({ data, onSubmit, onCancel, onBack, submitting, submitLabel = "Create Institution", hideCampus = false }: Props) {
+  const { showMessage } = useMessage();
+  // Fetched from GET /roles/module-catalog (single source of truth) instead
+  // of a hand-typed label map — see InstitutionEntitlementsTab.tsx for the
+  // same fix and why it matters.
+  const [moduleLabels, setModuleLabels] = useState<Record<string, string>>({});
+  useEffect(() => {
+    apiHandler<Array<{ key: string; label: string }>>(
+      () => rolesService.getModuleCatalog(),
+      { showMessage, silent: true }
+    ).then(({ data: catalog }) =>
+      setModuleLabels(Object.fromEntries((catalog ?? []).map((m) => [m.key, m.label])))
+    );
+  }, [showMessage]);
+
   const enabledModules = Object.entries(data.modules).filter(([, v]) => v).map(([k]) => k);
 
   return (
@@ -105,7 +117,7 @@ export default function StepReview({ data, onSubmit, onCancel, onBack, submittin
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
                 {enabledModules.map((m) => (
-                  <Chip key={m} label={MODULE_LABELS[m] ?? m} color="primary" size="small" />
+                  <Chip key={m} label={moduleLabels[m] ?? m} color="primary" size="small" />
                 ))}
                 {enabledModules.length === 0 && (
                   <Typography variant="body2" color="text.secondary">No modules selected.</Typography>

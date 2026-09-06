@@ -10,10 +10,10 @@ import { Add, Edit } from "@mui/icons-material";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
+import { rolesService } from "@/services/roles.service";
 
 const BILLING_CYCLES = ["MONTHLY", "QUARTERLY", "YEARLY", "CUSTOM"];
 const DEPLOYMENT_MODES = ["SHARED_HOSTED", "DEDICATED_HOSTED", "SELF_HOSTED"];
-const ALL_MODULES = ["ACADEMICS", "ATTENDANCE", "FINANCE", "PEOPLE", "REPORTING", "EXAMINATIONS", "DOCUMENTS", "REALTIME"];
 
 interface Plan {
   id: string; key: string; name: string; description?: string;
@@ -29,6 +29,10 @@ export default function PlansPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Plan | null>(null);
   const [saving, setSaving] = useState(false);
+  // Fetched from GET /roles/module-catalog (single source of truth) instead
+  // of a hand-typed list — see InstitutionEntitlementsTab.tsx for the same
+  // fix and why it matters.
+  const [allModules, setAllModules] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     key: "", name: "", description: "", basePrice: "", currency: "PKR",
@@ -49,6 +53,13 @@ export default function PlansPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    apiHandler<Array<{ key: string }>>(() => rolesService.getModuleCatalog(), {
+      showMessage,
+      silent: true,
+    }).then(({ data: catalog }) => setAllModules((catalog ?? []).map((m) => m.key)));
+  }, [showMessage]);
 
   const openCreate = () => {
     setEditing(null);
@@ -175,7 +186,7 @@ export default function PlansPage() {
             <Grid size={{ xs: 12 }}>
               <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Default Modules</Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {ALL_MODULES.map((m) => (
+                {allModules.map((m) => (
                   <Chip key={m} label={m} onClick={() => setForm((p) => ({ ...p, defaultModules: toggleArray(p.defaultModules, m) }))} color={form.defaultModules.includes(m) ? "primary" : "default"} variant={form.defaultModules.includes(m) ? "filled" : "outlined"} sx={{ cursor: "pointer" }} size="small" />
                 ))}
               </Box>
