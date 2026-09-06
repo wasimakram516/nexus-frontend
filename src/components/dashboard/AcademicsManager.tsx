@@ -19,10 +19,12 @@ import {
   GridView,
   Layers,
   MenuBook,
+  Schedule,
   Workspaces,
 } from "@mui/icons-material";
 import AcademicYearsSection, { AcademicYear } from "@/components/dashboard/AcademicYearsSection";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
+import PeriodSlotsSection, { PeriodSlot } from "@/components/dashboard/PeriodSlotsSection";
 import ResourceSection from "@/components/dashboard/ResourceSection";
 import TeachingAssignmentsSection, { TeachingAssignment } from "@/components/dashboard/TeachingAssignmentsSection";
 import { useMessage } from "@/contexts/MessageContext";
@@ -33,6 +35,7 @@ import { fetchAllUsers, UserLite } from "@/lib/users";
 import { academicsService } from "@/services/academics.service";
 import { campusesService } from "@/services/campuses.service";
 import { peopleService } from "@/services/people.service";
+import { timetableService } from "@/services/timetable.service";
 
 interface AcademicItem {
   id: string;
@@ -61,6 +64,9 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
   const runtime = useOptionalRuntimeConfig();
   // Platform console (institutionId set) is superadmin — always full access.
   const canManage = institutionId ? true : (runtime?.canManageModule("ACADEMICS") ?? true);
+  // Period Slots is gated by its own TIMETABLE module/permission (period_slots.*),
+  // not ACADEMICS — separate entitlement, separate canManage flag.
+  const canManageTimetable = institutionId ? true : (runtime?.canManageModule("TIMETABLE") ?? true);
 
   // null = hub of structure cards; otherwise the open section.
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -74,9 +80,10 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
   const [teachers, setTeachers] = useState<TeacherItem[]>([]);
   const [users, setUsers] = useState<UserLite[]>([]);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
+  const [periodSlots, setPeriodSlots] = useState<PeriodSlot[]>([]);
 
   const load = useCallback(async () => {
-    const [campusesRes, levelsRes, classesRes, sectionsRes, subjectsRes, assignmentsRes, staffProfilesRes, academicYearsRes] = await Promise.all([
+    const [campusesRes, levelsRes, classesRes, sectionsRes, subjectsRes, assignmentsRes, staffProfilesRes, academicYearsRes, periodSlotsRes] = await Promise.all([
       apiHandler<{ items: AcademicItem[] }>(() => campusesService.getAll({ limit: 100 }), { showMessage, silent: true }),
       apiHandler<AcademicItem[]>(() => academicsService.getLevels(), { showMessage, silent: true }),
       apiHandler<AcademicItem[]>(() => academicsService.getClasses(), { showMessage, silent: true }),
@@ -85,6 +92,7 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
       apiHandler<TeachingAssignment[]>(() => peopleService.getTeacherSubjects(), { showMessage, silent: true }),
       apiHandler<TeacherItem[]>(() => peopleService.getStaffProfiles(), { showMessage, silent: true }),
       apiHandler<AcademicYear[]>(() => academicsService.getAcademicYears(institutionId), { showMessage, silent: true }),
+      apiHandler<PeriodSlot[]>(() => timetableService.getPeriodSlots(), { showMessage, silent: true }),
     ]);
 
     const allCampuses = campusesRes.data?.items ?? [];
@@ -124,6 +132,11 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
     // when institutionId is set, so the backend enforces the correct
     // institution directly (no post-fetch filtering needed here at all).
     setAcademicYears(academicYearsRes.data ?? []);
+    // No platform-console mirror route exists for period slots (unlike
+    // Academic Years) — client-side filter by campus, same as assignments.
+    setPeriodSlots(
+      (periodSlotsRes.data ?? []).filter((p) => !institutionId || campusIds.has(p.campusId))
+    );
 
     try {
       const allUsers = await fetchAllUsers();
@@ -244,6 +257,14 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
       description: "Which teacher takes which subject per section.",
       icon: <AssignmentInd />,
       count: assignments.length,
+    },
+    {
+      key: "period-slots",
+      label: "Period Slots",
+      parent: "Section",
+      description: "Weekly recurring schedule per section — time, subject, teacher.",
+      icon: <Schedule />,
+      count: periodSlots.length,
     },
   ];
 
@@ -413,6 +434,19 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
           sections={sections}
           subjects={subjects}
           canManage={canManage}
+          onReload={load}
+        />
+      )}
+
+      {activeKey === "period-slots" && (
+        <PeriodSlotsSection
+          classes={classes}
+          levels={levels}
+          sections={sections}
+          subjects={subjects}
+          teachers={teachers}
+          teacherName={teacherName}
+          canManage={canManageTimetable}
           onReload={load}
         />
       )}
