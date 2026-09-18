@@ -330,27 +330,34 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
 
   useEffect(() => {
     if (canManage && !campusId) return;
-    loadRecords();
+    (async () => {
+      await loadRecords();
+    })();
   }, [loadRecords, canManage, campusId]);
 
   // ---- PERIOD-mode: section's weekly period slots ----
   // Reuses Timetable M1's per-section weekly grid endpoint (PeriodSlotsSection
   // already fetches the same data the same way) rather than a bespoke lookup.
   useEffect(() => {
-    if (!isPeriodStudentMode || !sectionFilter) {
-      setPeriodSlots([]);
-      return;
-    }
     let cancelled = false;
-    setPeriodSlotsLoading(true);
-    apiHandler<PeriodSlot[]>(
-      () => timetableService.getSectionWeek(sectionFilter),
-      { showMessage, silent: true }
-    ).then(({ data }) => {
-      if (cancelled) return;
-      setPeriodSlots(Array.isArray(data) ? data : []);
-      setPeriodSlotsLoading(false);
-    });
+
+    const loadSlots = () => {
+      if (!isPeriodStudentMode || !sectionFilter) {
+        setPeriodSlots([]);
+        return;
+      }
+      setPeriodSlotsLoading(true);
+      apiHandler<PeriodSlot[]>(
+        () => timetableService.getSectionWeek(sectionFilter),
+        { showMessage, silent: true }
+      ).then(({ data }) => {
+        if (cancelled) return;
+        setPeriodSlots(Array.isArray(data) ? data : []);
+        setPeriodSlotsLoading(false);
+      });
+    };
+    loadSlots();
+
     return () => {
       cancelled = true;
     };
@@ -367,9 +374,12 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
 
   // Drop a stale period selection once it no longer belongs to the day/section in view.
   useEffect(() => {
-    if (periodId && !periodsForDay.some((slot) => slot.id === periodId)) {
-      setPeriodId("");
-    }
+    const dropStalePeriod = () => {
+      if (periodId && !periodsForDay.some((slot) => slot.id === periodId)) {
+        setPeriodId("");
+      }
+    };
+    dropStalePeriod();
   }, [periodsForDay, periodId]);
 
   // ---- PERIOD-mode: roster + existing marks for the selected period+date ----
@@ -388,7 +398,9 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   }, [isPeriodStudentMode, periodId, date, showMessage]);
 
   useEffect(() => {
-    loadPeriodRoster();
+    (async () => {
+      await loadPeriodRoster();
+    })();
   }, [loadPeriodRoster]);
 
   // ---- rosters ----

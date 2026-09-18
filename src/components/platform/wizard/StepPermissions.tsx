@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Box, Button, Card, CardContent, CircularProgress,
   Dialog, DialogActions, DialogContent, DialogTitle,
@@ -42,7 +42,7 @@ export default function StepPermissions({ institutionId }: Props) {
   const [form, setForm] = useState({ name: "", description: "" });
   const [permissions, setPermissions] = useState<PermissionMatrixValue>({});
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     const [catalogRes, rolesRes] = await Promise.all([
       apiHandler<PermissionCatalogFeature[]>(() => rolesService.getCatalog(), { showMessage, silent: true }),
@@ -51,9 +51,13 @@ export default function StepPermissions({ institutionId }: Props) {
     setCatalog(Array.isArray(catalogRes.data) ? catalogRes.data : []);
     setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : []);
     setLoading(false);
-  };
+  }, [institutionId, showMessage]);
 
-  useEffect(() => { load(); }, [institutionId]);
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
 
   const openCreate = () => {
     setEditing(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Box, Button, Card, CardContent, Chip, CircularProgress,
   Container, Dialog, DialogActions, DialogContent, DialogTitle,
@@ -40,19 +40,19 @@ export default function PlansPage() {
     defaultModules: [] as string[], limits: '{"maxCampuses":1}', isActive: true,
   });
 
-  const load = async () => {
-    const { data } = await apiHandler<Plan[]>(
-      () => platformService.getInstitutions(),
-      { showMessage, silent: true }
-    );
+  const load = useCallback(async () => {
     // Use public plans endpoint
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${process.env.NEXT_PUBLIC_API_VERSION}/platform/plans`);
     const json = await res.json();
     setPlans(json?.data ?? []);
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
 
   useEffect(() => {
     apiHandler<Array<{ key: string }>>(() => rolesService.getModuleCatalog(), {

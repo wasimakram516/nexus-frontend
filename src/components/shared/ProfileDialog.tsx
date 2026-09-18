@@ -40,11 +40,20 @@ export default function ProfileDialog({ open, onClose }: ProfileDialogProps) {
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
-    apiHandler<Profile>(() => usersService.getMe(), { showMessage, silent: true }).then(({ data }) => {
+    let cancelled = false;
+
+    const loadProfile = async () => {
+      setLoading(true);
+      const { data } = await apiHandler<Profile>(() => usersService.getMe(), { showMessage, silent: true });
+      if (cancelled) return;
       setForm({ name: data?.name ?? "", email: data?.email ?? "", password: "" });
       setLoading(false);
-    });
+    };
+
+    loadProfile();
+    return () => {
+      cancelled = true;
+    };
   }, [open, showMessage]);
 
   const handleSave = async () => {

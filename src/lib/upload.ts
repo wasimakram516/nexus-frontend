@@ -1,5 +1,4 @@
 import apiClient from "@/lib/axios";
-import env from "@/config/env";
 
 export interface UploadResult {
   url: string;

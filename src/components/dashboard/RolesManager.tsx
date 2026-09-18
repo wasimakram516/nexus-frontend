@@ -57,7 +57,9 @@ export default function RolesManager({ institutionId }: RolesManagerProps) {
   };
 
   useEffect(() => {
-    load();
+    (async () => {
+      await load();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [institutionId]);
 

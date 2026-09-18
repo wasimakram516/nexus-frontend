@@ -6,7 +6,7 @@ import {
   Box, Button, CircularProgress, Container,
   Divider, Step, StepLabel, Stepper, Typography,
 } from "@mui/material";
-import { ArrowBack, ArrowForward, Save } from "@mui/icons-material";
+import { ArrowBack, ArrowForward } from "@mui/icons-material";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
@@ -141,7 +141,7 @@ export default function EditInstitutionWizard() {
       setLoading(false);
     };
     load();
-  }, [slugOrId]);
+  }, [slugOrId, showMessage]);
 
   const update = (partial: Partial<WizardData>) =>
     setData((prev) => ({ ...prev, ...partial }));

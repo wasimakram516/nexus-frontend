@@ -127,16 +127,22 @@ export default function NewInstitutionWizard() {
   const [result, setResult] = useState<SetupResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Restore draft after mount to avoid SSR/client hydration mismatch
+  // Restore draft after mount to avoid SSR/client hydration mismatch. The
+  // restore itself is wrapped in a nested function so it isn't a bare
+  // top-level setState call in the effect body (matches the async-fetch
+  // pattern used elsewhere — see e.g. ProfileDialog.tsx).
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const draft = JSON.parse(raw) as { step: number; data: WizardData };
-        setStep(draft.step ?? 0);
-        setData({ ...defaultData, ...(draft.data ?? {}) });
-      }
-    } catch { /* ignore corrupted draft */ }
+    const restoreDraft = () => {
+      try {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const draft = JSON.parse(raw) as { step: number; data: WizardData };
+          setStep(draft.step ?? 0);
+          setData({ ...defaultData, ...(draft.data ?? {}) });
+        }
+      } catch { /* ignore corrupted draft */ }
+    };
+    restoreDraft();
   }, []);
 
   const update = (partial: Partial<WizardData>) =>

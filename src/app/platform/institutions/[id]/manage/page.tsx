@@ -67,7 +67,7 @@ export default function InstitutionManagePage() {
       setLoading(false);
     };
     load();
-  }, [slugOrId]);
+  }, [slugOrId, showMessage]);
 
   const isModuleEnabled = (key: string | null): boolean => {
     if (!key) return true;

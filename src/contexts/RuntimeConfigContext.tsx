@@ -104,8 +104,17 @@ export function RuntimeConfigProvider({ children }: { children: React.ReactNode 
   const { user, isLoading: authLoading } = useAuth();
   const [config, setConfig] = useState<RuntimeConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Trial countdown reference point. Read once via a lazy initializer instead of
+  // calling Date.now() during render (impure) — day-level precision only needs to
+  // reflect "now as of this mount," not live wall-clock time on every re-render.
+  const [now] = useState(() => Date.now());
 
   const refresh = useCallback(async () => {
+    if (!user || !user.institutionId) {
+      setConfig(null);
+      setIsLoading(false);
+      return;
+    }
     try {
       const res = await platformService.getMyRuntimeConfig();
       setConfig(res.data?.data ?? null);
@@ -114,16 +123,14 @@ export function RuntimeConfigProvider({ children }: { children: React.ReactNode 
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user || !user.institutionId) {
-      setIsLoading(false);
-      return;
-    }
-    refresh();
-  }, [authLoading, user, refresh]);
+    (async () => {
+      await refresh();
+    })();
+  }, [authLoading, refresh]);
 
   const isModuleEnabled = useCallback(
     (key: ModuleKey) => Boolean(config?.modules?.[key]?.enabled),
@@ -157,7 +164,7 @@ export function RuntimeConfigProvider({ children }: { children: React.ReactNode 
   const trialDaysLeft = (() => {
     const sub = config?.subscription;
     if (!sub || sub.status !== "TRIAL" || !sub.endsAt) return null;
-    return Math.ceil((new Date(sub.endsAt).getTime() - Date.now()) / 86_400_000);
+    return Math.ceil((new Date(sub.endsAt).getTime() - now) / 86_400_000);
   })();
 
   return (

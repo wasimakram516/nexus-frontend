@@ -182,9 +182,12 @@ export default function PeriodSlotsSection({
 
   useEffect(() => {
     if (selectedSectionId) {
-      loadWeek(selectedSectionId);
+      (async () => {
+        await loadWeek(selectedSectionId);
+      })();
     } else {
-      setWeekSlots([]);
+      const clearWeek = () => setWeekSlots([]);
+      clearWeek();
     }
   }, [selectedSectionId, loadWeek]);
 

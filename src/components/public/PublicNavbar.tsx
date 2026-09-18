@@ -17,7 +17,6 @@ import {
   Menu,
   MenuItem,
   Toolbar,
-  Typography,
 } from "@mui/material";
 import {
   AccountBalance,

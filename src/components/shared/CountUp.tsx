@@ -28,7 +28,9 @@ export default function CountUp({ value, variant = "h3", sx }: Props) {
   const isNumeric = num > 0;
 
   useEffect(() => {
-    if (!isInView || !isNumeric) { setDisplay(value); return; }
+    // No animation to run yet/at all — render already falls back to the raw
+    // `value` for the non-numeric case, so there is nothing to synchronize here.
+    if (!isInView || !isNumeric) return;
     const duration = 1200;
     const steps = 40;
     const step = duration / steps;

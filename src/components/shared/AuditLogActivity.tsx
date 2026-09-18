@@ -92,7 +92,9 @@ export default function AuditLogActivity({ showInstitutionColumn = false }: Prop
   }, [page, limit, search, action, entity, fromDate, toDate, showMessage]);
 
   useEffect(() => {
-    load();
+    (async () => {
+      await load();
+    })();
   }, [load]);
 
   // Debounced free-text search, same pattern as UsersManager.

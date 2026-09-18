@@ -73,6 +73,10 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
   const subscription = runtimeConfig?.subscription as Record<string, unknown> | null;
   const institutionId = String(institution.id ?? "");
 
+  // Read once via a lazy initializer instead of calling Date.now() during render
+  // (impure) — a trial-expiry chip only needs "now as of this mount," not a
+  // live-updating clock on every re-render.
+  const [now] = useState(() => Date.now());
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [adminsLoading, setAdminsLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
@@ -139,7 +143,9 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
   }, [institutionId, showMessage]);
 
   useEffect(() => {
-    loadAdmins();
+    (async () => {
+      await loadAdmins();
+    })();
   }, [loadAdmins]);
 
   const handleAddAdmin = async () => {
@@ -164,6 +170,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
   };
 
   const trialEndsAt = typeof subscription?.endsAt === "string" ? subscription.endsAt : null;
+  const trialExpired = trialEndsAt ? new Date(trialEndsAt).getTime() < now : false;
 
   return (
     <Grid container spacing={3}>
@@ -258,11 +265,11 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
                 {subscription.status === "TRIAL" && trialEndsAt && (
                   <Chip
                     label={
-                      new Date(trialEndsAt).getTime() < Date.now()
+                      trialExpired
                         ? `Trial expired ${formatDate(trialEndsAt)}`
                         : `Trial ends ${formatDate(trialEndsAt)}`
                     }
-                    color={new Date(trialEndsAt).getTime() < Date.now() ? "error" : "warning"}
+                    color={trialExpired ? "error" : "warning"}
                     size="small"
                   />
                 )}

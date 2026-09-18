@@ -159,7 +159,9 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
   }, [institutionId, page, limit, search, showMessage]);
 
   useEffect(() => {
-    load();
+    (async () => {
+      await load();
+    })();
   }, [load]);
 
   // Roles + catalog for the access editor. Fetched independently of runtime

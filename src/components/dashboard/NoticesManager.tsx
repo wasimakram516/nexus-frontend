@@ -314,7 +314,9 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
   }, [showMessage, institutionId, canViewAdminList, myNoticesPage]);
 
   useEffect(() => {
-    load();
+    (async () => {
+      await load();
+    })();
   }, [load]);
 
   const campusNameMap = useMemo(

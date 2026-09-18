@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -45,19 +45,18 @@ const DISMISS_KEY = "nexus-onboarding-dismissed";
  */
 export default function OnboardingChecklist({ steps }: OnboardingChecklistProps) {
   const router = useRouter();
-  const [dismissed, setDismissed] = useState(true);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(DISMISS_KEY) === "1";
-    const forcedWelcome =
-      typeof window !== "undefined" && window.location.search.includes("welcome=1");
+  // Both localStorage and window.location are available synchronously at
+  // mount, so the dismissed state is computed directly in the lazy
+  // initializer instead of via a post-mount effect.
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const forcedWelcome = window.location.search.includes("welcome=1");
     if (forcedWelcome) {
       localStorage.removeItem(DISMISS_KEY);
-      setDismissed(false);
-      return;
+      return false;
     }
-    setDismissed(stored);
-  }, []);
+    return localStorage.getItem(DISMISS_KEY) === "1";
+  });
 
   const completed = steps.filter((s) => s.done).length;
   const allDone = completed === steps.length;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Box, Breadcrumbs, Typography } from "@mui/material";
+import { Box, Breadcrumbs } from "@mui/material";
 import { Home, NavigateNext } from "@mui/icons-material";
 
 interface Crumb {

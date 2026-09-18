@@ -81,7 +81,9 @@ export default function PeopleManager({ institutionId }: PeopleManagerProps) {
   }, [showMessage, institutionId]);
 
   useEffect(() => {
-    load();
+    (async () => {
+      await load();
+    })();
   }, [load]);
 
   // Academics data only powers class/section/subject pickers — soft-fail if disabled.

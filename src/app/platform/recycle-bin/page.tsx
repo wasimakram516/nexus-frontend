@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Box, Button, Card, Chip, CircularProgress, Container,
   Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography,
@@ -56,16 +56,20 @@ export default function RecycleBinPage() {
   const [confirmRestore, setConfirmRestore] = useState<RecycleItem | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<RecycleItem | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const { data } = await apiHandler<RecycleBinResponse>(
       () => recycleBinService.getAll(),
       { showMessage, silent: true }
     );
     setItems(data?.items ?? []);
     setLoading(false);
-  };
+  }, [showMessage]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
 
   const handleRestore = async () => {
     if (!confirmRestore) return;

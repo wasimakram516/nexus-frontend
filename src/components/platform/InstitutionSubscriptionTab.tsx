@@ -58,6 +58,9 @@ export default function InstitutionSubscriptionTab({ institutionId, runtimeConfi
   const { showMessage } = useMessage();
   const subscription = runtimeConfig?.subscription as Record<string, unknown> | null;
 
+  // Read once via a lazy initializer instead of calling Date.now() during render
+  // (impure) — a trial-expiry check only needs "now as of this mount."
+  const [now] = useState(() => Date.now());
   const [plans, setPlans] = useState<Plan[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -130,7 +133,7 @@ export default function InstitutionSubscriptionTab({ institutionId, runtimeConfi
 
   const isTrial = subscription?.status === "TRIAL";
   const trialEndsAt = typeof subscription?.endsAt === "string" ? subscription.endsAt : null;
-  const trialExpired = trialEndsAt ? new Date(trialEndsAt).getTime() < Date.now() : false;
+  const trialExpired = trialEndsAt ? new Date(trialEndsAt).getTime() < now : false;
 
   return (
     <Grid container spacing={3}>

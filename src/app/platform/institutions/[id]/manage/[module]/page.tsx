@@ -56,7 +56,7 @@ export default function ModulePage() {
       setInstitutionId(String(inst?.id ?? ""));
       setLoading(false);
     });
-  }, [slugOrId]);
+  }, [slugOrId, showMessage]);
 
   if (loading) {
     return (
