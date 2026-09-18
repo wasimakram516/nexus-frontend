@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -23,7 +23,9 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Add, Delete, Edit, GroupAdd, PersonRemove } from "@mui/icons-material";
+import { Add, Delete, Edit, GroupAdd, PersonRemove, Visibility } from "@mui/icons-material";
+import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
+import { useCustomFieldForm } from "@/hooks/useCustomFieldForm";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConfirm } from "@/contexts/ConfirmContext";
@@ -34,6 +36,7 @@ import { fetchAllUsers, UserLite } from "@/lib/users";
 import { campusesService } from "@/services/campuses.service";
 
 interface Campus {
+  customFields?: Record<string, unknown>;
   id: string;
   institutionId?: string;
   name: string;
@@ -76,6 +79,9 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
   const { showMessage } = useMessage();
 
   const targetInstitutionId = institutionId ?? user?.institutionId ?? undefined;
+  const customForm = useCustomFieldForm("campus", targetInstitutionId);
+  const savingRef = useRef(false);
+  const [viewing, setViewing] = useState(false);
 
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [users, setUsers] = useState<UserLite[]>([]);
@@ -107,7 +113,7 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
   }, [showMessage, institutionId]);
 
   useEffect(() => {
-    load();
+    startTransition(() => { void load(); });
     fetchAllUsers()
       .then((all) =>
         setUsers(
@@ -126,12 +132,15 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const openCreate = () => {
+    setViewing(false);
     setEditing(null);
     setForm(emptyForm);
     setDialogOpen(true);
+    void customForm.load("create");
   };
 
-  const openEdit = (campus: Campus) => {
+  const openEdit = (campus: Campus, readOnly = false) => {
+    setViewing(readOnly);
     setEditing(campus);
     setForm({
       name: campus.name,
@@ -144,10 +153,14 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
       earlyLeaveThreshold: String(campus.earlyLeaveThreshold ?? 15),
     });
     setDialogOpen(true);
+    void customForm.load(readOnly ? "read" : "update", campus.customFields);
   };
 
   const handleSave = async () => {
+    if (viewing || savingRef.current || customForm.loading || customForm.error || customForm.missingRequired) return;
+    savingRef.current = true;
     setSaving(true);
+    try {
     const payload = {
       name: form.name,
       location: form.location,
@@ -158,15 +171,20 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
       lateThreshold: Number(form.lateThreshold),
       earlyLeaveThreshold: Number(form.earlyLeaveThreshold),
       institutionId: targetInstitutionId,
+      customFields: customForm.values,
     };
-    if (editing) {
-      await apiHandler(() => campusesService.update(editing.id, payload), { showMessage, successMessage: "Campus updated." });
-    } else {
-      await apiHandler(() => campusesService.create(payload), { showMessage, successMessage: "Campus created." });
+    const { success } = await apiHandler(
+      () => editing ? campusesService.update(editing.id, payload) : campusesService.create(payload),
+      { showMessage, successMessage: editing ? "Campus updated." : "Campus created." },
+    );
+    if (success) {
+      setDialogOpen(false);
+      void load();
     }
-    setDialogOpen(false);
+    } finally {
+    savingRef.current = false;
     setSaving(false);
-    load();
+    }
   };
 
   const handleDelete = async () => {
@@ -273,6 +291,7 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
                 </Box>
                 <Box sx={{ display: "flex", gap: 0.5 }}>
                   <Tooltip title="Manage Users"><IconButton size="small" onClick={() => openManage(campus)}><GroupAdd fontSize="small" /></IconButton></Tooltip>
+                  <Tooltip title="View details"><IconButton aria-label="View campus details" size="small" onClick={() => openEdit(campus, true)}><Visibility fontSize="small" /></IconButton></Tooltip>
                   <Tooltip title="Edit"><IconButton size="small" onClick={() => openEdit(campus)}><Edit fontSize="small" /></IconButton></Tooltip>
                   <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => setConfirmDelete(campus)}><Delete fontSize="small" /></IconButton></Tooltip>
                 </Box>
@@ -293,9 +312,10 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
       />
 
       {/* Create / edit dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>{editing ? "Edit Campus" : "New Campus"}</DialogTitle>
+      <Dialog open={dialogOpen} onClose={() => { if (!savingRef.current) setDialogOpen(false); }} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>{viewing ? "Campus details" : editing ? "Edit Campus" : "New Campus"}</DialogTitle>
         <DialogContent sx={{ pt: "16px !important" }}>
+          <Box component="fieldset" disabled={saving || viewing} sx={{ border: 0, p: 0, m: 0 }}>
           <Grid container spacing={2.5}>
             <Grid size={{ xs: 12 }}>
               <TextField label="Campus Name *" value={form.name} onChange={(e) => f("name", e.target.value)} required fullWidth />
@@ -331,13 +351,20 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
             <Grid size={{ xs: 6 }}>
               <TextField label="Early Leave Threshold (mins)" type="number" value={form.earlyLeaveThreshold} onChange={(e) => f("earlyLeaveThreshold", e.target.value)} fullWidth helperText="Minutes before end time to flag early leave." />
             </Grid>
+            <Grid size={{ xs: 12 }}>
+              {customForm.loading && <Typography role="status">Loading additional fields...</Typography>}
+              {customForm.error && <Typography role="alert" color="error">{customForm.error}</Typography>}
+              <CustomFieldInputs definitions={customForm.definitions} values={customForm.values} disabled={saving || viewing}
+                onChange={(key, value) => customForm.setValues((current) => ({ ...current, [key]: value }))} />
+            </Grid>
           </Grid>
+          </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saving || !form.name || !form.location}>
+          <Button disabled={saving} onClick={() => setDialogOpen(false)}>{viewing ? "Close" : "Cancel"}</Button>
+          {!viewing && <Button variant="contained" onClick={handleSave} disabled={saving || !form.name || !form.location || customForm.loading || Boolean(customForm.error) || customForm.missingRequired}>
             {saving ? <CircularProgress size={16} color="inherit" /> : editing ? "Save Changes" : "Create Campus"}
-          </Button>
+          </Button>}
         </DialogActions>
       </Dialog>
 
