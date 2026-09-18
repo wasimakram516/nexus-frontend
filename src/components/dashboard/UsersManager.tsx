@@ -27,9 +27,11 @@ import {
 } from "@mui/material";
 import { Add, Delete, Edit, Search } from "@mui/icons-material";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCustomFieldForm } from "@/hooks/useCustomFieldForm";
 import { useMessage } from "@/contexts/MessageContext";
 import { PermissionAction, PermissionCatalogFeature } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -52,6 +54,7 @@ interface UserRow {
   roleId?: string | null;
   permissionOverrides?: Overrides | null;
   assignedRole?: { name: string } | null;
+  customFields?: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -104,6 +107,12 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
   const { user: currentUser } = useAuth();
   const { showMessage } = useMessage();
   const isSuperadminScope = Boolean(institutionId);
+  // Gated under ModuleKey.PEOPLE server-side (users has no dedicated module
+  // key — see custom-field-entity.util.ts) — only wired into the admin edit
+  // dialog here, not the self-service /users/me profile, since the backend's
+  // UpdateProfileDto never accepted customFields at all (only
+  // UpdateUserAccessDto/updateUserRole does).
+  const custom = useCustomFieldForm("user", institutionId);
 
   const [rows, setRows] = useState<UserRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -210,10 +219,14 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
       roleId: row.roleId ?? "",
     });
     setOverrides(row.permissionOverrides ?? {});
+    void custom.load("update", row.customFields ?? {});
   };
+
+  const customValid = !custom.loading && !custom.error && !custom.missingRequired;
 
   const handleEdit = async () => {
     if (!editing) return;
+    if (!customValid) return;
     setEditSaving(true);
 
     const isConfigurable = CONFIGURABLE_ROLES.has(editForm.role);
@@ -229,6 +242,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
     const payload: Record<string, unknown> = {
       role: editForm.role,
       status: editForm.status,
+      customFields: custom.values,
     };
     if (isConfigurable) {
       payload.roleId = editForm.roleId || null;
@@ -605,11 +619,25 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
                 </Typography>
               </Grid>
             )}
+
+            <Grid size={{ xs: 12 }}>
+              <Divider />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              {custom.loading && <Typography role="status">Loading additional fields…</Typography>}
+              {custom.error && <Typography role="alert" color="error">{custom.error}</Typography>}
+              <CustomFieldInputs
+                definitions={custom.definitions}
+                values={custom.values}
+                disabled={editSaving || custom.loading}
+                onChange={(key, value) => custom.setValues((previous) => ({ ...previous, [key]: value }))}
+              />
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setEditing(null)}>Cancel</Button>
-          <Button variant="contained" onClick={handleEdit} disabled={editSaving}>
+          <Button variant="contained" onClick={handleEdit} disabled={editSaving || !customValid}>
             {editSaving ? <CircularProgress size={16} color="inherit" /> : "Save Changes"}
           </Button>
         </DialogActions>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
+import { useCustomFieldForm } from "@/hooks/useCustomFieldForm";
 import {
   Box,
   Button,
@@ -52,6 +54,7 @@ export interface Notice {
   title: string;
   body: string;
   attachments?: NoticeAttachment[] | null;
+  customFields?: Record<string, unknown>;
   publishAt: string;
   expiresAt?: string | null;
   createdAt: string;
@@ -224,6 +227,8 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
   const canManage = runtime?.canManageModule("NOTICES") ?? true;
   const canViewAdminList = runtime?.can("notices", "read") ?? true;
 
+  const custom = useCustomFieldForm("notice", institutionId);
+
   const [notices, setNotices] = useState<Notice[]>([]);
   const [campuses, setCampuses] = useState<CampusItem[]>([]);
   const [levels, setLevels] = useState<LevelItem[]>([]);
@@ -371,6 +376,7 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
     setForm(emptyForm());
     setAttempted(false);
     setDialogOpen(true);
+    void custom.load("create");
   };
 
   /**
@@ -396,6 +402,7 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
     });
     setAttempted(false);
     setDialogOpen(true);
+    void custom.load("update", notice.customFields ?? {});
   };
 
   /** Changing the Campus clears Class/Section — both narrow beneath it. */
@@ -405,7 +412,9 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
   /** Changing the Class clears Section — Section narrows beneath it. */
   const handleClassChange = (classId: string) => setForm((prev) => ({ ...prev, classId, sectionId: "" }));
 
-  const formValid = Boolean(form.title.trim() && form.body.trim());
+  const formValid =
+    Boolean(form.title.trim() && form.body.trim()) &&
+    !custom.loading && !custom.error && !custom.missingRequired;
   const err = (condition: boolean) => attempted && condition;
 
   /**
@@ -474,6 +483,7 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
       targetRole: form.targetRole || null,
       expiresAt: form.expiresAt || null,
       attachments: form.attachments,
+      customFields: custom.values,
     };
 
     setSaving(true);
@@ -808,6 +818,17 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
                 Add Attachment
               </Button>
               <input ref={fileInputRef} type="file" multiple hidden onChange={handleAttach} />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              {custom.loading && <Typography role="status">Loading additional fields…</Typography>}
+              {custom.error && <Typography role="alert" color="error">{custom.error}</Typography>}
+              <CustomFieldInputs
+                definitions={custom.definitions}
+                values={custom.values}
+                disabled={saving || custom.loading}
+                onChange={(key, value) => custom.setValues((previous) => ({ ...previous, [key]: value }))}
+              />
             </Grid>
           </Grid>
         </DialogContent>

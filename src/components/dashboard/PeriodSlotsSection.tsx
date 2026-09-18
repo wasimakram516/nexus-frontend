@@ -25,8 +25,10 @@ import {
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
+import { useCustomFieldForm } from "@/hooks/useCustomFieldForm";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { timetableService } from "@/services/timetable.service";
@@ -75,6 +77,7 @@ export interface PeriodSlot {
   dayOfWeek: DayOfWeek;
   startTime: string;
   endTime: string;
+  customFields?: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -98,6 +101,8 @@ interface PeriodSlotsSectionProps {
   teacherName: (teacherId: string) => string;
   canManage: boolean;
   onReload: () => void;
+  /** Set when a superadmin manages another institution (platform console). */
+  institutionId?: string;
 }
 
 interface SlotFormState {
@@ -145,8 +150,10 @@ export default function PeriodSlotsSection({
   teacherName,
   canManage,
   onReload,
+  institutionId,
 }: PeriodSlotsSectionProps) {
   const { showMessage } = useMessage();
+  const custom = useCustomFieldForm("period_slot", institutionId);
 
   const [selectedClassId, setSelectedClassId] = useState("");
   const [selectedSectionId, setSelectedSectionId] = useState("");
@@ -231,6 +238,7 @@ export default function PeriodSlotsSection({
     setEditing(null);
     setForm(emptySlotForm(prefill));
     setDialogOpen(true);
+    void custom.load("create");
   };
 
   const openEdit = (slot: PeriodSlot) => {
@@ -245,6 +253,7 @@ export default function PeriodSlotsSection({
       staffProfileId: slot.staffProfileId ?? "",
     });
     setDialogOpen(true);
+    void custom.load("update", slot.customFields ?? {});
   };
 
   /** Clicking a grid cell edits its slot if one exists, or opens a pre-filled create dialog. */
@@ -262,7 +271,7 @@ export default function PeriodSlotsSection({
       form.dayOfWeek &&
       form.startTime &&
       form.endTime
-  );
+  ) && !custom.loading && !custom.error && !custom.missingRequired;
 
   const handleSave = async () => {
     if (!selectedClassId || !selectedSectionId) return;
@@ -279,6 +288,7 @@ export default function PeriodSlotsSection({
       endTime: form.endTime,
       subjectId: form.subjectId || null,
       staffProfileId: form.staffProfileId || null,
+      customFields: custom.values,
     };
     // classId/sectionId are only meaningful on create — this grid is always
     // scoped to one already-selected section, so editing never reassigns them.
@@ -605,6 +615,16 @@ export default function PeriodSlotsSection({
                   <MenuItem key={t.id} value={t.id}>{teacherName(t.id)}</MenuItem>
                 ))}
               </TextField>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              {custom.loading && <Typography role="status">Loading additional fields…</Typography>}
+              {custom.error && <Typography role="alert" color="error">{custom.error}</Typography>}
+              <CustomFieldInputs
+                definitions={custom.definitions}
+                values={custom.values}
+                disabled={saving || custom.loading}
+                onChange={(key, value) => custom.setValues((previous) => ({ ...previous, [key]: value }))}
+              />
             </Grid>
           </Grid>
         </DialogContent>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ConfirmProvider } from "@/contexts/ConfirmContext";
 import { MessageProvider } from "@/contexts/MessageContext";
@@ -8,10 +8,15 @@ import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { attendanceService } from "@/services/attendance.service";
 import { academicsService } from "@/services/academics.service";
 import { campusesService } from "@/services/campuses.service";
+import { customFieldsService } from "@/services/customFields.service";
 import { peopleService } from "@/services/people.service";
 import { timetableService } from "@/services/timetable.service";
 import { fetchAllUsers } from "@/lib/users";
 import AttendanceManager from "./AttendanceManager";
+
+vi.mock("@/services/customFields.service", () => ({
+  customFieldsService: { getFormDefinitions: vi.fn() },
+}));
 
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: vi.fn(),
@@ -132,6 +137,7 @@ function mockDefaults() {
   vi.mocked(attendanceService.getAll).mockResolvedValue({ data: { data: [] } } as never);
   vi.mocked(attendanceService.getPeriodRoster).mockResolvedValue({ data: { data: [] } } as never);
   vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [] } } as never);
+  vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({ data: { data: [] } } as never);
 }
 
 function renderManager() {
@@ -148,6 +154,18 @@ function renderManager() {
 async function openDailyRegister(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByText("Daily Register"));
   await screen.findByLabelText("Class");
+}
+
+/**
+ * Navigates from the hub into Time Clock. "Time Clock" also appears in the
+ * hub's intro paragraph (bold, not the card itself), so this targets the
+ * hub card's own label specifically rather than screen.findByText, which
+ * would ambiguously match both.
+ */
+async function openTimeClock(user: ReturnType<typeof userEvent.setup>) {
+  const cardLabel = (await screen.findAllByText("Time Clock")).find((el) => el.closest("button"));
+  await user.click(cardLabel!.closest("button")!);
+  await screen.findByLabelText("Date");
 }
 
 async function selectOption(user: ReturnType<typeof userEvent.setup>, label: string, optionName: string | RegExp) {
@@ -171,6 +189,7 @@ describe("AttendanceManager", () => {
     vi.mocked(academicsService.getSections).mockReset();
     vi.mocked(timetableService.getSectionWeek).mockReset();
     vi.mocked(fetchAllUsers).mockReset();
+    vi.mocked(customFieldsService.getFormDefinitions).mockReset();
     mockDefaults();
   });
 
@@ -272,5 +291,95 @@ describe("AttendanceManager", () => {
     const payload = vi.mocked(attendanceService.bulkMark).mock.calls[0][0];
     expect(payload).not.toHaveProperty("periodId");
     expect(payload.entries).toEqual([{ userId: "user-1", status: "PRESENT" }]);
+  });
+
+  it("loads attendance custom field definitions for the Record Punch dialog and includes them in checkIn", async () => {
+    mockRuntime("DAILY");
+    vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({
+      data: { data: [{ id: "field-1", fieldKey: "reason", label: "Reason", inputType: "TEXT", isRequired: true }] },
+    } as never);
+    vi.mocked(attendanceService.checkIn).mockResolvedValue({ data: { message: "ok", data: {} } } as never);
+    const user = userEvent.setup();
+    renderManager();
+
+    await openTimeClock(user);
+    await user.click(await screen.findByRole("button", { name: "Record Punch" }));
+    const dialog = await screen.findByRole("dialog");
+
+    await waitFor(() =>
+      expect(customFieldsService.getFormDefinitions).toHaveBeenCalledWith({
+        entityType: "attendance",
+        institutionId: undefined,
+        action: "create",
+      })
+    );
+
+    await selectOption(user, "Person *", /Alice Student/i);
+    fireEvent.change(within(dialog).getByLabelText("Check-In"), { target: { value: "08:05" } });
+
+    const recordButton = within(dialog).getByRole("button", { name: "Record" });
+    expect(recordButton).toBeDisabled();
+
+    await user.type(within(dialog).getByLabelText(/Reason/), "Late bus");
+    expect(recordButton).not.toBeDisabled();
+
+    await user.click(recordButton);
+
+    await waitFor(() =>
+      expect(attendanceService.checkIn).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: "user-1", customFields: { reason: "Late bus" } })
+      )
+    );
+  });
+
+  it("preloads saved custom field values into the Edit Attendance correction dialog and sends them back on save", async () => {
+    mockRuntime("DAILY");
+    vi.mocked(attendanceService.getAll).mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: "att-1",
+            userId: "user-1",
+            role: "STUDENT",
+            campusId: "campus-1",
+            date: "2026-09-01",
+            checkIn: "2026-09-01T08:05:00.000Z",
+            checkOut: null,
+            status: "PRESENT",
+            halfDay: false,
+            remarks: null,
+            customFields: { reason: "Doctor visit" },
+          },
+        ],
+      },
+    } as never);
+    vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({
+      data: { data: [{ id: "field-1", fieldKey: "reason", label: "Reason", inputType: "TEXT", isRequired: false }] },
+    } as never);
+    vi.mocked(attendanceService.update).mockResolvedValue({ data: { message: "ok", data: {} } } as never);
+    const user = userEvent.setup();
+    renderManager();
+
+    await openTimeClock(user);
+    await user.click(await screen.findByRole("button", { name: /correct times/i }));
+    const dialog = await screen.findByRole("dialog");
+
+    await waitFor(() =>
+      expect(customFieldsService.getFormDefinitions).toHaveBeenCalledWith({
+        entityType: "attendance",
+        institutionId: undefined,
+        action: "update",
+      })
+    );
+    expect(await within(dialog).findByDisplayValue("Doctor visit")).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() =>
+      expect(attendanceService.update).toHaveBeenCalledWith(
+        "att-1",
+        expect.objectContaining({ customFields: { reason: "Doctor visit" } })
+      )
+    );
   });
 });

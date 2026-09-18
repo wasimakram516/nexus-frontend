@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MessageProvider } from "@/contexts/MessageContext";
+import { customFieldsService } from "@/services/customFields.service";
 import { timetableService } from "@/services/timetable.service";
 import PeriodSlotsSection, { PeriodSlot } from "./PeriodSlotsSection";
 
@@ -14,6 +15,10 @@ vi.mock("@/services/timetable.service", () => ({
     deletePeriodSlot: vi.fn(),
     getSectionWeek: vi.fn(),
   },
+}));
+
+vi.mock("@/services/customFields.service", () => ({
+  customFieldsService: { getFormDefinitions: vi.fn() },
 }));
 
 const levels = [{ id: "level-1", name: "Level 1", campusId: "campus-1" }];
@@ -88,6 +93,8 @@ describe("PeriodSlotsSection", () => {
     vi.mocked(timetableService.getSectionWeek).mockReset();
     vi.mocked(timetableService.updatePeriodSlot).mockReset();
     vi.mocked(timetableService.deletePeriodSlot).mockReset();
+    vi.mocked(customFieldsService.getFormDefinitions).mockReset();
+    vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({ data: { data: [] } } as never);
   });
 
   it("prompts to pick a class and section before showing any grid", () => {
@@ -189,8 +196,52 @@ describe("PeriodSlotsSection", () => {
       staffProfileId: null,
       classId: "class-1",
       sectionId: "section-1",
+      customFields: {},
     });
     expect(onReload).toHaveBeenCalled();
+  });
+
+  it("loads period_slot custom field definitions when the dialog opens, and blocks save until a required one is filled", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [] } } as never);
+    vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({
+      data: { data: [{ id: "field-1", fieldKey: "room", label: "Room", inputType: "TEXT", isRequired: true }] },
+    } as never);
+
+    renderSection();
+    await pickClassAndSection(user);
+
+    await user.click(await screen.findByRole("button", { name: "Add First Period Slot" }));
+    const dialog = await screen.findByRole("dialog");
+
+    expect(customFieldsService.getFormDefinitions).toHaveBeenCalledWith({
+      entityType: "period_slot",
+      institutionId: undefined,
+      action: "create",
+    });
+
+    await user.type(within(dialog).getByLabelText("Name *"), "Period 1");
+    await user.type(within(dialog).getByLabelText("Period Number *"), "1");
+    await user.click(within(dialog).getByLabelText(/Day of Week/));
+    await user.click(await screen.findByRole("option", { name: "Monday" }));
+    await user.type(within(dialog).getByLabelText("Start Time *"), "08:00");
+    await user.type(within(dialog).getByLabelText("End Time *"), "08:40");
+
+    const createButton = within(dialog).getByRole("button", { name: "Create" });
+    // Every base field is filled but the required custom field (Room) is not.
+    expect(createButton).toBeDisabled();
+
+    await user.type(within(dialog).getByLabelText("Room *"), "Lab 2");
+    expect(createButton).not.toBeDisabled();
+
+    vi.mocked(timetableService.createPeriodSlot).mockResolvedValue({
+      data: { message: "Period slot created.", data: { ...sampleSlot } },
+    } as never);
+    await user.click(createButton);
+
+    expect(timetableService.createPeriodSlot).toHaveBeenCalledWith(
+      expect.objectContaining({ customFields: { room: "Lab 2" } })
+    );
   });
 
   it("asks for confirmation before deleting a slot, then calls the service", async () => {

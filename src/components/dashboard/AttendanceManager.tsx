@@ -43,11 +43,13 @@ import {
   Search,
 } from "@mui/icons-material";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
+import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
 import type { DayOfWeek, PeriodSlot } from "@/components/dashboard/PeriodSlotsSection";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { useCustomFieldForm } from "@/hooks/useCustomFieldForm";
 import { useMessage } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -71,6 +73,7 @@ interface AttendanceRecord {
   status: string;
   halfDay?: boolean;
   remarks?: string | null;
+  customFields?: Record<string, unknown>;
 }
 
 interface Campus {
@@ -165,6 +168,13 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   const runtime = useOptionalRuntimeConfig();
   // Platform console (institutionId set) is superadmin — always full access.
   const canManage = institutionId ? true : (runtime?.canManageModule("ATTENDANCE") ?? true);
+
+  // Custom fields apply only to real single-row writes — check-in/out
+  // (Record Punch dialog) and manual correction (Edit Attendance dialog) —
+  // never the bulk-mark register grid or auto-absent job, per Wasim's
+  // explicit confirmation (M4.5 / P1-2a corrective milestone).
+  const punchCustom = useCustomFieldForm("attendance", institutionId);
+  const editCustom = useCustomFieldForm("attendance", institutionId);
 
   // Institution setting attendance.mode ("DAILY" | "PERIOD"), M3 Attendance
   // Dual-Mode track (design doc §5.3/§7.2) — defaults to DAILY, matching the
@@ -600,8 +610,16 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   };
 
   // ---- punches ----
+  const punchCustomValid = !punchCustom.loading && !punchCustom.error && !punchCustom.missingRequired;
+
+  const openPunch = () => {
+    setPunchOpen(true);
+    void punchCustom.load("create");
+  };
+
   const submitPunch = async () => {
     if (!punchForm.userId || (!punchForm.inTime && !punchForm.outTime)) return;
+    if (!punchCustomValid) return;
     setPunchSaving(true);
     let ok = true;
     if (punchForm.inTime) {
@@ -611,6 +629,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
             userId: punchForm.userId,
             date,
             checkIn: new Date(`${date}T${punchForm.inTime}`).toISOString(),
+            customFields: punchCustom.values,
           }),
         { showMessage, silent: true }
       );
@@ -623,6 +642,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
             userId: punchForm.userId,
             date,
             checkOut: new Date(`${date}T${punchForm.outTime}`).toISOString(),
+            customFields: punchCustom.values,
           }),
         { showMessage, silent: true }
       );
@@ -676,6 +696,8 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
     return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   };
 
+  const editCustomValid = !editCustom.loading && !editCustom.error && !editCustom.missingRequired;
+
   const openEdit = (record: AttendanceRecord) => {
     setEditing(record);
     setEditForm({
@@ -685,10 +707,12 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
       checkInTime: toLocalTime(record.checkIn),
       checkOutTime: toLocalTime(record.checkOut),
     });
+    void editCustom.load("update", record.customFields ?? {});
   };
 
   const handleEdit = async () => {
     if (!editing) return;
+    if (!editCustomValid) return;
     setEditSaving(true);
     const day = editing.date.slice(0, 10);
     const originalIn = toLocalTime(editing.checkIn);
@@ -708,6 +732,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
           ...(editForm.checkOutTime && editForm.checkOutTime !== originalOut
             ? { checkOut: new Date(`${day}T${editForm.checkOutTime}`).toISOString() }
             : {}),
+          customFields: editCustom.values,
         }),
       { showMessage, successMessage: "Attendance updated." }
     );
@@ -937,7 +962,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
               </Button>
             </>
           )}
-          <Button variant="outlined" startIcon={<MoreTime />} onClick={() => setPunchOpen(true)}>
+          <Button variant="outlined" startIcon={<MoreTime />} onClick={openPunch}>
             Record Punch
           </Button>
         </Box>
@@ -954,7 +979,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
               <Typography color="text.secondary" sx={{ mb: 2 }}>
                 No punches recorded for {formatDate(date)}.
               </Typography>
-              <Button variant="contained" startIcon={<MoreTime />} onClick={() => setPunchOpen(true)}>
+              <Button variant="contained" startIcon={<MoreTime />} onClick={openPunch}>
                 Record First Punch
               </Button>
             </CardContent>
@@ -1044,6 +1069,16 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
                   helperText="Half-day auto-computed."
                 />
               </Grid>
+              <Grid size={{ xs: 12 }}>
+                {punchCustom.loading && <Typography role="status">Loading additional fields…</Typography>}
+                {punchCustom.error && <Typography role="alert" color="error">{punchCustom.error}</Typography>}
+                <CustomFieldInputs
+                  definitions={punchCustom.definitions}
+                  values={punchCustom.values}
+                  disabled={punchSaving || punchCustom.loading}
+                  onChange={(key, value) => punchCustom.setValues((previous) => ({ ...previous, [key]: value }))}
+                />
+              </Grid>
             </Grid>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3 }}>
@@ -1051,7 +1086,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
             <Button
               variant="contained"
               onClick={submitPunch}
-              disabled={punchSaving || !punchForm.userId || (!punchForm.inTime && !punchForm.outTime)}
+              disabled={punchSaving || !punchForm.userId || (!punchForm.inTime && !punchForm.outTime) || !punchCustomValid}
             >
               {punchSaving ? <CircularProgress size={16} color="inherit" /> : "Record"}
             </Button>
@@ -1367,11 +1402,21 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
             <Grid size={{ xs: 12 }}>
               <TextField label="Remarks" value={editForm.remarks} onChange={(e) => setEditForm((p) => ({ ...p, remarks: e.target.value }))} fullWidth />
             </Grid>
+            <Grid size={{ xs: 12 }}>
+              {editCustom.loading && <Typography role="status">Loading additional fields…</Typography>}
+              {editCustom.error && <Typography role="alert" color="error">{editCustom.error}</Typography>}
+              <CustomFieldInputs
+                definitions={editCustom.definitions}
+                values={editCustom.values}
+                disabled={editSaving || editCustom.loading}
+                onChange={(key, value) => editCustom.setValues((previous) => ({ ...previous, [key]: value }))}
+              />
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setEditing(null)}>Cancel</Button>
-          <Button variant="contained" onClick={handleEdit} disabled={editSaving}>
+          <Button variant="contained" onClick={handleEdit} disabled={editSaving || !editCustomValid}>
             {editSaving ? <CircularProgress size={16} color="inherit" /> : "Save Changes"}
           </Button>
         </DialogActions>

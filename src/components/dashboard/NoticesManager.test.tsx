@@ -5,8 +5,13 @@ import { MessageProvider } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { academicsService } from "@/services/academics.service";
 import { campusesService } from "@/services/campuses.service";
+import { customFieldsService } from "@/services/customFields.service";
 import { noticesService } from "@/services/notices.service";
 import NoticesManager, { Notice, summarizeNoticeAudience } from "./NoticesManager";
+
+vi.mock("@/services/customFields.service", () => ({
+  customFieldsService: { getFormDefinitions: vi.fn() },
+}));
 
 vi.mock("@/services/notices.service", () => ({
   noticesService: {
@@ -77,6 +82,8 @@ describe("NoticesManager", () => {
     vi.mocked(academicsService.getLevels).mockReset();
     vi.mocked(academicsService.getClasses).mockReset();
     vi.mocked(academicsService.getSections).mockReset();
+    vi.mocked(customFieldsService.getFormDefinitions).mockReset();
+    vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({ data: { data: [] } } as never);
     // canManage falls back to true when there's no runtime config in scope.
     vi.mocked(useOptionalRuntimeConfig).mockReturnValue(null as never);
     mockEmptyLookups();
@@ -156,6 +163,66 @@ describe("NoticesManager", () => {
     expect(screen.queryByRole("button", { name: /add notice/i })).not.toBeInTheDocument();
     expect(noticesService.getNoticesForMe).toHaveBeenCalledWith({ page: 1, limit: 10 });
     expect(noticesService.getNotices).not.toHaveBeenCalled();
+  });
+
+  it("loads notice custom field definitions when the create dialog opens, and blocks save until a required one is filled", async () => {
+    const user = userEvent.setup();
+    vi.mocked(noticesService.getNotices).mockResolvedValue({ data: { data: [] } } as never);
+    vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({
+      data: { data: [{ id: "field-1", fieldKey: "audience_note", label: "Audience Note", inputType: "TEXT", isRequired: true }] },
+    } as never);
+
+    renderManager();
+
+    await user.click(await screen.findByRole("button", { name: "Add First Notice" }));
+    const dialog = await screen.findByRole("dialog");
+
+    expect(customFieldsService.getFormDefinitions).toHaveBeenCalledWith({
+      entityType: "notice",
+      institutionId: undefined,
+      action: "create",
+    });
+
+    await user.type(within(dialog).getByLabelText("Title *"), "Holiday Notice");
+    await user.type(within(dialog).getByLabelText("Body *"), "School is closed on Friday.");
+
+    const createButton = within(dialog).getByRole("button", { name: "Create Notice" });
+    await user.click(createButton);
+    expect(noticesService.createNotice).not.toHaveBeenCalled();
+
+    await user.type(within(dialog).getByLabelText(/Audience Note/), "Board-approved.");
+
+    vi.mocked(noticesService.createNotice).mockResolvedValue({
+      data: { message: "Notice created.", data: { ...sampleNotice } },
+    } as never);
+    await user.click(createButton);
+
+    expect(noticesService.createNotice).toHaveBeenCalledWith(
+      expect.objectContaining({ customFields: { audience_note: "Board-approved." } }),
+      undefined
+    );
+  });
+
+  it("preloads saved custom field values when editing an existing notice", async () => {
+    const user = userEvent.setup();
+    const noticeWithCustom = { ...sampleNotice, customFields: { audience_note: "Existing note" } };
+    vi.mocked(noticesService.getNotices).mockResolvedValue({ data: { data: [noticeWithCustom] } } as never);
+    vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({
+      data: { data: [{ id: "field-1", fieldKey: "audience_note", label: "Audience Note", inputType: "TEXT", isRequired: false }] },
+    } as never);
+
+    renderManager();
+
+    const row = (await screen.findByText("Announcement")).closest("tr")!;
+    await user.click(within(row).getByRole("button", { name: /edit/i }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(customFieldsService.getFormDefinitions).toHaveBeenCalledWith({
+      entityType: "notice",
+      institutionId: undefined,
+      action: "update",
+    });
+    expect(await within(dialog).findByDisplayValue("Existing note")).toBeInTheDocument();
   });
 });
 

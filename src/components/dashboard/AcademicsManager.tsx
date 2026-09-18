@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -149,7 +149,7 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
   }, [showMessage, institutionId]);
 
   useEffect(() => {
-    load();
+    startTransition(() => { void load(); });
   }, [load]);
 
   const campusName = useMemo(
@@ -367,6 +367,8 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
       {activeKey === "levels" && (
         <ResourceSection
           title="Levels"
+          customFieldEntity="level"
+          institutionId={institutionId}
           subtitle="Top-level groupings like Primary, Secondary or O-Levels."
           rows={levels}
           loading={loading}
@@ -386,6 +388,8 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
       {activeKey === "classes" && (
         <ResourceSection
           title="Classes"
+          customFieldEntity="class"
+          institutionId={institutionId}
           singular="Class"
           subtitle="Classes within a level, e.g. Grade 1, Grade 2."
           rows={classes}
@@ -406,6 +410,8 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
       {activeKey === "sections" && (
         <ResourceSection
           title="Sections"
+          customFieldEntity="section"
+          institutionId={institutionId}
           subtitle="Sections within a class, e.g. A, B, Blue, Green."
           rows={sections}
           loading={loading}
@@ -435,6 +441,7 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
           subjects={subjects}
           canManage={canManage}
           onReload={load}
+          institutionId={institutionId}
         />
       )}
 
@@ -448,12 +455,15 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
           teacherName={teacherName}
           canManage={canManageTimetable}
           onReload={load}
+          institutionId={institutionId}
         />
       )}
 
       {activeKey === "subjects" && (
         <ResourceSection
           title="Subjects"
+          customFieldEntity="subject"
+          institutionId={institutionId}
           subtitle="Subjects taught in each class."
           rows={subjects}
           loading={loading}
