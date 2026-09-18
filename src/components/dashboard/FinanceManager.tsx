@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -27,6 +27,7 @@ import {
   SwapVert,
 } from "@mui/icons-material";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
+import SalaryPaymentPreview from "@/components/dashboard/SalaryPaymentPreview";
 import ResourceSection, { FieldDef, Option } from "@/components/dashboard/ResourceSection";
 import { useMessage } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
@@ -36,6 +37,7 @@ import { fetchAllUsers, UserLite } from "@/lib/users";
 import { academicsService } from "@/services/academics.service";
 import { campusesService } from "@/services/campuses.service";
 import { financeService } from "@/services/finance.service";
+import { payrollSelection, type FeeVoucherRecord, type SalaryPaymentRecord } from "@/services/finance.types";
 import { peopleService } from "@/services/people.service";
 
 interface Row {
@@ -73,13 +75,13 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
   const [salaries, setSalaries] = useState<Row[]>([]);
   const [deductionRules, setDeductionRules] = useState<Row[]>([]);
   const [adjustments, setAdjustments] = useState<Row[]>([]);
-  const [salaryPayments, setSalaryPayments] = useState<Row[]>([]);
+  const [salaryPayments, setSalaryPayments] = useState<SalaryPaymentRecord[]>([]);
   const [bankAccounts, setBankAccounts] = useState<Row[]>([]);
   const [feeStructures, setFeeStructures] = useState<Row[]>([]);
   const [discounts, setDiscounts] = useState<Row[]>([]);
   const [fineRules, setFineRules] = useState<Row[]>([]);
   const [fines, setFines] = useState<Row[]>([]);
-  const [vouchers, setVouchers] = useState<Row[]>([]);
+  const [vouchers, setVouchers] = useState<FeeVoucherRecord[]>([]);
   const [feePayments, setFeePayments] = useState<Row[]>([]);
 
   const load = useCallback(async () => {
@@ -97,13 +99,13 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       list<Row[]>(() => financeService.getSalaries() as never),
       list<Row[]>(() => financeService.getDeductionRules() as never),
       list<Row[]>(() => financeService.getAdjustments() as never),
-      list<Row[]>(() => financeService.getSalaryPayments() as never),
+      list<SalaryPaymentRecord[]>(() => financeService.getSalaryPayments()),
       list<Row[]>(() => financeService.getBankAccounts() as never),
       list<Row[]>(() => financeService.getFeeStructures() as never),
       list<Row[]>(() => financeService.getDiscounts() as never),
       list<Row[]>(() => financeService.getFineRules() as never),
       list<Row[]>(() => financeService.getFines() as never),
-      list<Row[]>(() => financeService.getVouchers() as never),
+      list<FeeVoucherRecord[]>(() => financeService.getVouchers()),
       list<Row[]>(() => financeService.getFeePayments() as never),
     ]);
 
@@ -113,12 +115,12 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       ? allCampuses.filter((c) => c.institutionId === institutionId)
       : allCampuses;
     const campusIds = new Set(scopedCampuses.map((c) => c.id));
-    const byCampus = (rows: Row[] | null) =>
+    const byCampus = <T extends Row,>(rows: T[] | null): T[] =>
       (rows ?? []).filter((r) => !institutionId || campusIds.has(String(r.campusId)));
 
     const scopedStudents = byCampus(studentsRes.data);
     const studentIds = new Set(scopedStudents.map((s) => s.id));
-    const byStudent = (rows: Row[] | null) =>
+    const byStudent = <T extends Row,>(rows: T[] | null): T[] =>
       (rows ?? []).filter((r) => !institutionId || studentIds.has(String(r.studentId)));
 
     const scopedVouchers = byStudent(vouchersRes.data);
@@ -152,7 +154,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
   }, [showMessage, institutionId]);
 
   useEffect(() => {
-    load();
+    startTransition(() => { void load(); });
   }, [load]);
 
   const userMap = useMemo(
@@ -238,6 +240,11 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
   const studentCol = { key: "studentId", label: "Student", render: (r: Row) => studentName(r.studentId) };
   const monthCol = { key: "month", label: "Month", render: (r: Row) => `${r.month}/${r.year}` };
   const createdCol = { key: "createdAt", label: "Created", render: (r: Row) => formatDate(String(r.createdAt ?? "")) };
+  /** Loads the calculation for exactly the inputs being reviewed. */
+  const previewSalary = async (payload: Record<string, unknown>): Promise<React.ReactNode> => {
+    const response = await financeService.previewSalaryPayment(payrollSelection(payload));
+    return <SalaryPaymentPreview breakdown={response.data.data} />;
+  };
 
   const ruleFields = (kind: "percent" | "amount"): FieldDef[] => [
     { key: "campusId", label: "Campus", type: "select", options: campusOptions, required: true, cols: 6 },
@@ -263,6 +270,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       count: salaries.length,
       node: (
         <ResourceSection
+          customFieldEntity="staff_salary" institutionId={institutionId}
           title="Salaries" singular="Salary" subtitle="Base salary records for staff." rows={salaries} loading={loading}
           columns={[userCol, { key: "role", label: "Role" }, { key: "baseSalary", label: "Base Salary" },
             { key: "effectiveDate", label: "Effective", render: (r) => formatDate(String(r.effectiveDate ?? "")) },
@@ -289,6 +297,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       count: deductionRules.length,
       node: (
         <ResourceSection
+          customFieldEntity="salary_deduction_rule" institutionId={institutionId}
           title="Deduction Rules" subtitle="Attendance-based salary deduction rules per campus and role." rows={deductionRules} loading={loading}
           columns={[campusCol, { key: "role", label: "Role" },
             { key: "allowedAbsences", label: "Allowed Absences" }, { key: "absenceDeductionPercent", label: "Absence %" },
@@ -306,8 +315,9 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       count: adjustments.length,
       node: (
         <ResourceSection
+          customFieldEntity="salary_adjustment" institutionId={institutionId}
           title="Salary Adjustments" subtitle="One-off bonuses and deductions." rows={adjustments} loading={loading}
-          columns={[userCol,
+          columns={[userCol, monthCol,
             { key: "adjustmentType", label: "Type", render: (r) => <Chip label={String(r.adjustmentType)} size="small" color={r.adjustmentType === "BONUS" ? "success" : "warning"} /> },
             { key: "amount", label: "Amount" }, { key: "remarks", label: "Remarks" }, campusCol, createdCol]}
           fields={[
@@ -316,6 +326,8 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
             { key: "campusId", label: "Campus", type: "select", options: campusOptions, required: true, cols: 6 },
             { key: "adjustmentType", label: "Type", type: "select", options: [{ value: "BONUS", label: "Bonus" }, { value: "DEDUCTION", label: "Deduction" }], required: true, cols: 6 },
             { key: "amount", label: "Amount", type: "number", required: true, cols: 6 },
+            { key: "month", label: "Month", type: "select", options: MONTH_OPTIONS, required: true, cols: 6 },
+            { key: "year", label: "Year", type: "number", required: true, integer: true, min: 2000, cols: 6 },
             { key: "remarks", label: "Remarks", cols: 6 },
           ]}
           {...crud("Adjustment", { create: financeService.createAdjustment, remove: financeService.deleteAdjustment })}
@@ -330,9 +342,10 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       count: salaryPayments.length,
       node: (
         <ResourceSection
+          customFieldEntity="salary_payment" institutionId={institutionId}
           title="Salary Payments" subtitle="Monthly salary disbursements." rows={salaryPayments} loading={loading}
           columns={[userCol, monthCol,
-            { key: "netAmount", label: "Net Amount", render: (r) => String(r.netAmount ?? r.amount ?? "—") },
+            { key: "finalSalaryPaid", label: "Net Amount", render: (r: SalaryPaymentRecord) => String(r.finalSalaryPaid) },
             campusCol, createdCol]}
           fields={[
             { key: "userId", label: "Staff Member", type: "select", options: staffOptions, required: true },
@@ -341,6 +354,8 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
             { key: "month", label: "Month", type: "select", options: MONTH_OPTIONS, required: true, cols: 6 },
             { key: "year", label: "Year", type: "number", required: true, cols: 6 },
           ]}
+          previewCreate={previewSalary}
+          confirmCreateLabel="Confirm payment"
           {...crud("Salary payment", { create: financeService.createSalaryPayment, remove: financeService.deleteSalaryPayment })}
         />
       ),
@@ -353,6 +368,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       count: bankAccounts.length,
       node: (
         <ResourceSection
+          customFieldEntity="bank_account" institutionId={institutionId}
           title="Bank Accounts" subtitle="Accounts that receive fee payments." rows={bankAccounts} loading={loading}
           columns={[{ key: "bankName", label: "Bank" }, { key: "accountTitle", label: "Title" },
             { key: "accountNumber", label: "Account #" }, { key: "iban", label: "IBAN" }, campusCol, createdCol]}
@@ -376,6 +392,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       count: feeStructures.length,
       node: (
         <ResourceSection
+          customFieldEntity="fee_structure" institutionId={institutionId}
           title="Fee Structures" subtitle="Per-class fee breakdowns used to generate vouchers." rows={feeStructures} loading={loading}
           columns={[
             { key: "classId", label: "Class", render: (r) => classMap[String(r.classId)] ?? "—" },
@@ -404,6 +421,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       count: discounts.length,
       node: (
         <ResourceSection
+          customFieldEntity="student_discount" institutionId={institutionId}
           title="Student Discounts" subtitle="Sibling, merit, need-based and staff-child discounts." rows={discounts} loading={loading}
           columns={[studentCol,
             { key: "discountType", label: "Type", render: (r) => <Chip label={String(r.discountType)} size="small" /> },
@@ -426,6 +444,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       count: fineRules.length,
       node: (
         <ResourceSection
+          customFieldEntity="student_fine_rule" institutionId={institutionId}
           title="Student Fine Rules" subtitle="Attendance-based fine rules per campus." rows={fineRules} loading={loading}
           columns={[campusCol,
             { key: "classId", label: "Class", render: (r) => (r.classId ? classMap[String(r.classId)] ?? "—" : "All") },
@@ -444,6 +463,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       count: fines.length,
       node: (
         <ResourceSection
+          customFieldEntity="student_fine" institutionId={institutionId}
           title="Student Fines" subtitle="Monthly fines applied to students." rows={fines} loading={loading}
           columns={[studentCol, monthCol, { key: "totalFineAmount", label: "Amount" },
             { key: "fineReason", label: "Reason" },
@@ -469,9 +489,13 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       count: vouchers.length,
       node: (
         <ResourceSection
+          customFieldEntity="fee_voucher" institutionId={institutionId}
           title="Fee Vouchers" subtitle="Monthly fee vouchers issued to students." rows={vouchers} loading={loading}
           columns={[studentCol, monthCol,
-            { key: "totalAmount", label: "Total", render: (r) => String(r.totalAmount ?? r.amount ?? "—") },
+            { key: "finalAmountDue", label: "Total", render: (r: FeeVoucherRecord) => String(r.finalAmountDue) },
+            { key: "totalPaid", label: "Paid", render: (r: FeeVoucherRecord) => String(r.totalPaid ?? "—") },
+            { key: "remainingBalance", label: "Remaining", render: (r: FeeVoucherRecord) => String(r.remainingBalance ?? "—") },
+            ...(vouchers.some((voucher) => Number(voucher.overpaymentAmount ?? 0) > 0) ? [{ key: "overpaymentAmount", label: "Overpaid", render: (r: FeeVoucherRecord) => String(r.overpaymentAmount ?? "0.00") }] : []),
             { key: "dueDate", label: "Due", render: (r) => formatDate(String(r.dueDate ?? "")) },
             { key: "status", label: "Status", render: (r) => (r.status ? <Chip label={String(r.status)} size="small" color={r.status === "PAID" ? "success" : "warning"} /> : "—") }]}
           fields={[
@@ -495,6 +519,8 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       count: feePayments.length,
       node: (
         <ResourceSection
+          customFieldEntity="fee_payment" institutionId={institutionId}
+          idempotencyKeyField="requestKey"
           title="Fee Payments" subtitle="Payments recorded against fee vouchers." rows={feePayments} loading={loading}
           columns={[
             { key: "voucherId", label: "Voucher", render: (r) => {

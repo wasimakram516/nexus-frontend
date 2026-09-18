@@ -1,4 +1,5 @@
 import apiClient from "@/lib/axios";
+import type { FeeVoucherRecord, PayrollBreakdown, PayrollSelection, SalaryPaymentRecord } from "./finance.types";
 
 export const financeService = {
   // Salaries
@@ -31,10 +32,13 @@ export const financeService = {
     apiClient.delete(`/finance/salary-adjustments/${id}`),
 
   // Salary Payments
+  /** Retrieves the existing backend payroll calculation without recording a payment. */
+  previewSalaryPayment: (params: PayrollSelection) =>
+    apiClient.get<{ data: PayrollBreakdown }>("/finance/salary-payments/preview", { params }),
   createSalaryPayment: (payload: Record<string, unknown>) =>
     apiClient.post("/finance/salary-payments", payload),
   getSalaryPayments: (params?: Record<string, unknown>) =>
-    apiClient.get("/finance/salary-payments", { params }),
+    apiClient.get<{ data: SalaryPaymentRecord[] }>("/finance/salary-payments", { params }),
   getSalaryPayment: (id: string) => apiClient.get(`/finance/salary-payments/${id}`),
   deleteSalaryPayment: (id: string) =>
     apiClient.delete(`/finance/salary-payments/${id}`),
@@ -89,7 +93,7 @@ export const financeService = {
   createVoucher: (payload: Record<string, unknown>) =>
     apiClient.post("/finance/fee-vouchers", payload),
   getVouchers: (params?: Record<string, unknown>) =>
-    apiClient.get("/finance/fee-vouchers", { params }),
+    apiClient.get<{ data: FeeVoucherRecord[] }>("/finance/fee-vouchers", { params }),
   getVoucher: (id: string) => apiClient.get(`/finance/fee-vouchers/${id}`),
   updateVoucher: (id: string, payload: Record<string, unknown>) =>
     apiClient.patch(`/finance/fee-vouchers/${id}`, payload),
