@@ -1,5 +1,8 @@
 "use client";
 
+import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
+import { useCustomFieldForm } from "@/hooks/useCustomFieldForm";
+
 import { useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import {
@@ -35,6 +38,7 @@ import {
   Add,
   ArrowBack,
   AutoFixHigh,
+  ContactPhone,
   Delete,
   Edit,
   Link as LinkIcon,
@@ -84,6 +88,7 @@ export interface CurrentEnrollment {
 }
 
 export interface PersonRecord {
+  customFields?: Record<string, unknown>;
   id: string;
   userId: string;
   campusId: string;
@@ -165,7 +170,8 @@ const emptyProfile = {
 
 const emptyAccount = { name: "", email: "", password: "" };
 
-function generatePassword() {
+/** Generates a temporary guardian account password for inline admission. */
+function generatePassword(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#$%";
   const values = crypto.getRandomValues(new Uint32Array(12));
   return Array.from(values, (v) => chars[v % chars.length]).join("");
@@ -201,7 +207,23 @@ export default function PeopleTab({
   const { showMessage } = useMessage();
   const confirm = useConfirm();
   const cfg = KIND_CONFIG[kind];
+  const custom = useCustomFieldForm(kind === "students" ? "student" : kind === "staff" ? "staff_profile" : "guardian", institutionId);
+  const inlineGuardianCustom = useCustomFieldForm(kind === "students" ? "guardian" : undefined, institutionId);
+  const guardianLinkCustom = useCustomFieldForm(kind === "students" ? "student_guardian" : undefined, institutionId);
+  /** Manual promotion/history entry (Change Class/Section dialog) — students only. */
+  const historyCustom = useCustomFieldForm(kind === "students" ? "student_history" : undefined, institutionId);
+  /** Standalone student-guardian relationship correction, launched from the guardian's Manage Students dialog. */
+  const linkCustom = useCustomFieldForm(kind === "guardians" ? "student_guardian" : undefined, institutionId);
+  /** Add Contact dialog — available for all three person kinds. */
+  const contactCustom = useCustomFieldForm("contact", institutionId);
 
+  const [details, setDetails] = useState<PersonRecord | null>(null);
+  const detailFields = useCustomFieldForm(kind === "students" ? "student" : kind === "staff" ? "staff_profile" : "guardian", institutionId);
+  /** Uses record-read permission to display saved fields without opening an edit form. */
+  const openDetails = (row: PersonRecord): void => {
+    setDetails(row);
+    void detailFields.load("read", row.customFields ?? {});
+  };
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<PersonRecord | null>(null);
   const [activeStep, setActiveStep] = useState(0);
@@ -219,10 +241,20 @@ export default function PeopleTab({
 
   // Student create — guardians attached inline (step 3)
   type PendingGuardian =
-    | { mode: "existing"; guardianId: string }
-    | { mode: "new"; name: string; email: string; relation: string; password: string };
+    | { mode: "existing"; guardianId: string; linkCustomFields: Record<string, unknown> }
+    | {
+        mode: "new";
+        name: string;
+        email: string;
+        relation: string;
+        password: string;
+        customFields: Record<string, unknown>;
+        linkCustomFields: Record<string, unknown>;
+        userId?: string;
+      };
   const [pendingGuardians, setPendingGuardians] = useState<PendingGuardian[]>([]);
   const [newGuardian, setNewGuardian] = useState({ name: "", email: "", relation: "FATHER" });
+  const [createdStudentId, setCreatedStudentId] = useState<string | null>(null);
 
   // Guardian create — students linked inline
   const [linkStudentIds, setLinkStudentIds] = useState<string[]>([]);
@@ -231,6 +263,16 @@ export default function PeopleTab({
   const [manageRowId, setManageRowId] = useState<string | null>(null);
   const [manageStudentId, setManageStudentId] = useState("");
   const [manageLinking, setManageLinking] = useState(false);
+
+  // Standalone student-guardian relationship correction (nested inside Manage Students)
+  const [editingLink, setEditingLink] = useState<{ id: string; studentId: string } | null>(null);
+  const [linkSaving, setLinkSaving] = useState(false);
+
+  // Add Contact dialog (students / staff / guardians)
+  const [contactRow, setContactRow] = useState<PersonRecord | null>(null);
+  const [contactForm, setContactForm] = useState({ phone1: "", phone2: "", whatsapp: "", address: "" });
+  const [contactSaving, setContactSaving] = useState(false);
+  const [contactAttempted, setContactAttempted] = useState(false);
 
   // Secondary action dialogs (promote / link guardian / assign subject)
   const [actionRow, setActionRow] = useState<PersonRecord | null>(null);
@@ -307,11 +349,17 @@ export default function PeopleTab({
     setAccount((prev) => ({ ...prev, [key]: value }));
 
   const openCreate = () => {
+    void custom.load("create");
+    if (kind === "students") {
+      void inlineGuardianCustom.load("create");
+      void guardianLinkCustom.load("create");
+    }
     setEditing(null);
     setAccount(emptyAccount);
     setProfile({ ...emptyProfile, campusId: campuses.length === 1 ? campuses[0].id : "" });
     setPendingGuardians([]);
     setNewGuardian({ name: "", email: "", relation: "FATHER" });
+    setCreatedStudentId(null);
     setLinkStudentIds([]);
     setActiveStep(0);
     setAttempted(false);
@@ -320,6 +368,7 @@ export default function PeopleTab({
   };
 
   const openEdit = (row: PersonRecord) => {
+    void custom.load("update", row.customFields ?? {});
     setEditing(row);
     setProfile({
       regNo: row.regNo ?? "",
@@ -368,7 +417,7 @@ export default function PeopleTab({
   }, [profile.campusId, editing, dialogOpen, kind]);
 
   const buildProfilePayload = (): Record<string, unknown> => {
-    const payload: Record<string, unknown> = { campusId: profile.campusId };
+    const payload: Record<string, unknown> = { campusId: profile.campusId, customFields: custom.values };
     if (kind === "students") {
       Object.assign(payload, {
         // Optional on create (server generates one if omitted) — only send
@@ -420,7 +469,7 @@ export default function PeopleTab({
     : Boolean(account.name && emailLooksValid && account.password.length >= 8);
 
   const profileValid =
-    Boolean(profile.campusId) &&
+    !custom.loading && !custom.error && !custom.missingRequired && Boolean(profile.campusId) &&
     (kind === "students"
       ? // regNo is only required on create — the server generates one when
         // omitted, and on edit it's a plain optional/editable field.
@@ -428,6 +477,16 @@ export default function PeopleTab({
       : kind === "staff"
         ? Boolean(profile.gender && profile.employmentType && profile.designation && profile.joiningDate)
         : Boolean(profile.relation));
+
+  const inlineGuardianEmailValid = /.+@.+\..+/.test(newGuardian.email);
+  const inlineGuardianCanAdd =
+    Boolean(newGuardian.name && inlineGuardianEmailValid) &&
+    !inlineGuardianCustom.loading &&
+    !inlineGuardianCustom.error &&
+    !inlineGuardianCustom.missingRequired &&
+    !guardianLinkCustom.loading &&
+    !guardianLinkCustom.error &&
+    !guardianLinkCustom.missingRequired;
 
   const goToProfile = () => {
     setAttempted(true);
@@ -467,78 +526,113 @@ export default function PeopleTab({
       return;
     }
 
-    let userId = matchedUser?.id ?? "";
-    if (!matchedUser) {
-      const { data, success } = await apiHandler(
-        () =>
-          authService.register({
-            name: account.name,
-            email: account.email,
-            password: account.password,
-            role: cfg.role,
-            ...(institutionId && { institutionId }),
-          }),
-        { showMessage, silent: true }
+    let created = createdStudentId ? { id: createdStudentId } : null;
+    if (!created) {
+      let userId = matchedUser?.id ?? "";
+      if (!matchedUser) {
+        const { data, success } = await apiHandler(
+          () =>
+            authService.register({
+              name: account.name,
+              email: account.email,
+              password: account.password,
+              role: cfg.role,
+              ...(institutionId && { institutionId }),
+            }),
+          { showMessage, silent: true }
+        );
+        if (!success || !data) {
+          setSaving(false);
+          return;
+        }
+        userId = (data as { id: string }).id;
+      }
+
+      const create =
+        kind === "students"
+          ? peopleService.createStudent
+          : kind === "staff"
+            ? peopleService.createStaffProfile
+            : peopleService.createGuardian;
+
+      const { data: createdRecord, success } = await apiHandler<{ id: string }>(
+        () => create({ userId, ...buildProfilePayload() }) as never,
+        { showMessage, successMessage: `${cfg.singular} created.` }
       );
-      if (!success || !data) {
+      if (!success || !createdRecord) {
         setSaving(false);
         return;
       }
-      userId = (data as { id: string }).id;
-    }
-
-    const create =
-      kind === "students"
-        ? peopleService.createStudent
-        : kind === "staff"
-          ? peopleService.createStaffProfile
-          : peopleService.createGuardian;
-
-    const { data: created, success } = await apiHandler<{ id: string }>(
-      () => create({ userId, ...buildProfilePayload() }) as never,
-      { showMessage, successMessage: `${cfg.singular} created.` }
-    );
-    if (!success || !created) {
-      setSaving(false);
-      return;
+      created = createdRecord;
+      if (kind === "students") setCreatedStudentId(created.id);
     }
 
     // Chain relationship links so nobody has to do a second "linking" pass.
     if (kind === "students" && pendingGuardians.length > 0) {
+      const remainingGuardians: PendingGuardian[] = [];
       for (const pending of pendingGuardians) {
         let guardianId = pending.mode === "existing" ? pending.guardianId : "";
         if (pending.mode === "new") {
-          const { data: regData, success: regOk } = await apiHandler(
-            () =>
-              authService.register({
-                name: pending.name,
-                email: pending.email,
-                password: pending.password,
-                role: "GUARDIAN",
-                ...(institutionId && { institutionId }),
-              }),
-            { showMessage, silent: true }
-          );
-          if (!regOk || !regData) continue;
+          let guardianUserId = pending.userId ?? "";
+          if (!guardianUserId) {
+            const { data: regData, success: regOk } = await apiHandler(
+              () =>
+                authService.register({
+                  name: pending.name,
+                  email: pending.email,
+                  password: pending.password,
+                  role: "GUARDIAN",
+                  ...(institutionId && { institutionId }),
+                }),
+              { showMessage, silent: true }
+            );
+            if (!regOk || !regData) {
+              remainingGuardians.push(pending);
+              continue;
+            }
+            guardianUserId = (regData as { id: string }).id;
+          }
           const { data: guardianData, success: guardianOk } = await apiHandler<{ id: string }>(
             () =>
               peopleService.createGuardian({
-                userId: (regData as { id: string }).id,
+                userId: guardianUserId,
                 campusId: profile.campusId,
                 relation: pending.relation,
+                customFields: pending.customFields,
               }) as never,
             { showMessage, silent: true }
           );
-          if (!guardianOk || !guardianData) continue;
+          if (!guardianOk || !guardianData) {
+            remainingGuardians.push({ ...pending, userId: guardianUserId });
+            continue;
+          }
           guardianId = guardianData.id;
         }
         if (guardianId) {
-          await apiHandler(
-            () => peopleService.linkGuardianToStudent({ studentId: created.id, guardianId }),
+          const { success: linkOk } = await apiHandler(
+            () =>
+              peopleService.linkGuardianToStudent({
+                studentId: created.id,
+                guardianId,
+                customFields: pending.linkCustomFields,
+              }),
             { showMessage, silent: true }
           );
+          if (!linkOk) remainingGuardians.push(pending);
         }
       }
+      if (remainingGuardians.length > 0) {
+        setPendingGuardians(remainingGuardians);
+        setActiveStep(2);
+        setSaving(false);
+        onReload();
+        showMessage(
+          `Student was created, but ${remainingGuardians.length} guardian link${remainingGuardians.length !== 1 ? "s" : ""} still need attention. Fix them here and retry.`,
+          "warning"
+        );
+        return;
+      }
+      setPendingGuardians([]);
       showMessage("Guardians linked.", "success");
     }
 
@@ -553,6 +647,7 @@ export default function PeopleTab({
     }
 
     setSaving(false);
+    setCreatedStudentId(null);
     setDialogOpen(false);
     onReload();
   };
@@ -581,12 +676,16 @@ export default function PeopleTab({
       promotionDate: new Date().toISOString().slice(0, 10),
       promotionReason: "",
     });
+    void historyCustom.load("create");
   };
 
   const setAF = (key: string, value: string) => setActionForm((prev) => ({ ...prev, [key]: value }));
 
+  const actionCustomValid = !historyCustom.loading && !historyCustom.error && !historyCustom.missingRequired;
+
   const handleAction = async () => {
     if (!actionRow) return;
+    if (!actionCustomValid) return;
     setActionSaving(true);
     await apiHandler(
       () =>
@@ -602,6 +701,7 @@ export default function PeopleTab({
           ...(actionForm.newSectionId && { newSectionId: actionForm.newSectionId }),
           promotionDate: actionForm.promotionDate,
           ...(actionForm.promotionReason && { promotionReason: actionForm.promotionReason }),
+          customFields: historyCustom.values,
         }),
       { showMessage, successMessage: "Class/section change recorded." }
     );
@@ -610,7 +710,7 @@ export default function PeopleTab({
     onReload();
   };
 
-  const actionValid = Boolean(actionForm.promotionDate);
+  const actionValid = Boolean(actionForm.promotionDate) && actionCustomValid;
 
   // --- Withdraw student ---------------------------------------------------
 
@@ -720,6 +820,73 @@ export default function PeopleTab({
       successMessage: "Student unlinked.",
     });
     if (success) onReload();
+  };
+
+  /**
+   * Opens the relationship-correction dialog for an existing student-guardian
+   * link. `POST /people/student-guardians` is an upsert keyed on
+   * (studentId, guardianId) — the backend has no GET/PATCH for an individual
+   * link, so the previously saved custom values cannot be displayed here;
+   * this re-submits the definitions in "update" mode for the admin to
+   * correct/re-enter, and the resubmit updates the existing link's values
+   * without creating a duplicate relationship.
+   */
+  const openEditLink = (link: { id: string; studentId: string }) => {
+    setEditingLink(link);
+    void linkCustom.load("update");
+  };
+
+  const handleSaveLink = async () => {
+    if (!editingLink || !manageRowId) return;
+    if (linkCustom.loading || linkCustom.error || linkCustom.missingRequired) return;
+    setLinkSaving(true);
+    const { success } = await apiHandler(
+      () =>
+        peopleService.linkGuardianToStudent({
+          studentId: editingLink.studentId,
+          guardianId: manageRowId,
+          customFields: linkCustom.values,
+        }),
+      { showMessage, successMessage: "Relationship updated." }
+    );
+    setLinkSaving(false);
+    if (success) {
+      setEditingLink(null);
+      onReload();
+    }
+  };
+
+  // --- Contact create ------------------------------------------------------
+
+  const openContact = (row: PersonRecord) => {
+    setContactRow(row);
+    setContactForm({ phone1: "", phone2: "", whatsapp: "", address: "" });
+    setContactAttempted(false);
+    void contactCustom.load("create");
+  };
+
+  const contactValid =
+    !contactCustom.loading && !contactCustom.error && !contactCustom.missingRequired && Boolean(contactForm.phone1);
+
+  const handleSaveContact = async () => {
+    setContactAttempted(true);
+    if (!contactRow || !contactValid) return;
+    setContactSaving(true);
+    const { success } = await apiHandler(
+      () =>
+        peopleService.createContact({
+          personId: contactRow.id,
+          personType: cfg.role,
+          phone1: contactForm.phone1,
+          ...(contactForm.phone2 && { phone2: contactForm.phone2 }),
+          ...(contactForm.whatsapp && { whatsapp: contactForm.whatsapp }),
+          ...(contactForm.address && { address: contactForm.address }),
+          customFields: contactCustom.values,
+        }),
+      { showMessage, successMessage: "Contact added." }
+    );
+    setContactSaving(false);
+    if (success) setContactRow(null);
   };
 
   const sectionsForClass = (classId: string) =>
@@ -1103,6 +1270,7 @@ export default function PeopleTab({
       )}
 
       <Autocomplete
+        disabled={guardianLinkCustom.loading || Boolean(guardianLinkCustom.error) || guardianLinkCustom.missingRequired}
         options={guardians.filter(
           (g) => !pendingGuardians.some((p) => p.mode === "existing" && p.guardianId === g.id)
         )}
@@ -1110,12 +1278,20 @@ export default function PeopleTab({
         value={null}
         onChange={(_, value) => {
           if (value) {
-            setPendingGuardians((prev) => [...prev, { mode: "existing", guardianId: value.id }]);
+            setPendingGuardians((prev) => [
+              ...prev,
+              { mode: "existing", guardianId: value.id, linkCustomFields: guardianLinkCustom.values },
+            ]);
+            void guardianLinkCustom.load("create");
           }
         }}
         noOptionsText="No existing guardians found."
         renderInput={(params) => (
-          <TextField {...params} label="Link an existing guardian" />
+          <TextField
+            {...params}
+            label="Link an existing guardian"
+            helperText={guardianLinkCustom.missingRequired ? "Complete the required relationship fields below first." : undefined}
+          />
         )}
       />
 
@@ -1151,17 +1327,47 @@ export default function PeopleTab({
               variant="outlined"
               fullWidth
               sx={{ height: "100%" }}
-              disabled={!newGuardian.name || !/.+@.+\..+/.test(newGuardian.email)}
+              disabled={!inlineGuardianCanAdd}
               onClick={() => {
                 setPendingGuardians((prev) => [
                   ...prev,
-                  { mode: "new", ...newGuardian, password: generatePassword() },
+                  {
+                    mode: "new",
+                    ...newGuardian,
+                    password: generatePassword(),
+                    customFields: inlineGuardianCustom.values,
+                    linkCustomFields: guardianLinkCustom.values,
+                  },
                 ]);
                 setNewGuardian({ name: "", email: "", relation: "FATHER" });
+                void inlineGuardianCustom.load("create");
+                void guardianLinkCustom.load("create");
               }}
             >
               Add
             </Button>
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            {inlineGuardianCustom.loading && <Typography role="status">Loading guardian additional fields?</Typography>}
+            {inlineGuardianCustom.error && <Alert severity="error">{inlineGuardianCustom.error}</Alert>}
+            <CustomFieldInputs
+              definitions={inlineGuardianCustom.definitions}
+              values={inlineGuardianCustom.values}
+              disabled={saving || inlineGuardianCustom.loading}
+              onChange={(key, value) => inlineGuardianCustom.setValues((previous) => ({ ...previous, [key]: value }))}
+            />
+            {inlineGuardianCustom.missingRequired && <Alert severity="error" sx={{ mt: 1 }}>Complete the required guardian additional fields.</Alert>}
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            {guardianLinkCustom.loading && <Typography role="status">Loading relationship additional fields?</Typography>}
+            {guardianLinkCustom.error && <Alert severity="error">{guardianLinkCustom.error}</Alert>}
+            <CustomFieldInputs
+              definitions={guardianLinkCustom.definitions}
+              values={guardianLinkCustom.values}
+              disabled={saving || guardianLinkCustom.loading}
+              onChange={(key, value) => guardianLinkCustom.setValues((previous) => ({ ...previous, [key]: value }))}
+            />
+            {guardianLinkCustom.missingRequired && <Alert severity="error" sx={{ mt: 1 }}>Complete the required guardian relationship fields.</Alert>}
           </Grid>
         </Grid>
         <Typography variant="caption" color="text.disabled" sx={{ display: "block", mt: 1 }}>
@@ -1286,6 +1492,7 @@ export default function PeopleTab({
                 {kind === "guardians" && <TableHeaderCell>Students</TableHeaderCell>}
                 <TableHeaderCell>Campus</TableHeaderCell>
                 <TableHeaderCell>Added</TableHeaderCell>
+                <TableHeaderCell>Additional information</TableHeaderCell>
                 {canManage && <TableHeaderCell align="right">Actions</TableHeaderCell>}
               </TableRow>
             </TableHead>
@@ -1360,6 +1567,7 @@ export default function PeopleTab({
                     )}
                     <TableCell>{campusMap[row.campusId] ?? "—"}</TableCell>
                     <TableCell>{formatDate(row.createdAt)}</TableCell>
+                    <TableCell><Button size="small" onClick={() => openDetails(row)} aria-label={`View additional information for ${userMap[row.userId]?.name ?? cfg.singular}`}>View</Button></TableCell>
                     {canManage && (
                       <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
                         {kind === "students" && (
@@ -1379,6 +1587,9 @@ export default function PeopleTab({
                             <IconButton size="small" onClick={() => openManage(row)}><LinkIcon fontSize="small" /></IconButton>
                           </Tooltip>
                         )}
+                        <Tooltip title="Add Contact">
+                          <IconButton size="small" onClick={() => openContact(row)}><ContactPhone fontSize="small" /></IconButton>
+                        </Tooltip>
                         <Tooltip title="Edit">
                           <IconButton size="small" onClick={() => openEdit(row)}><Edit fontSize="small" /></IconButton>
                         </Tooltip>
@@ -1404,6 +1615,17 @@ export default function PeopleTab({
         onConfirm={handleDelete}
         onCancel={() => setConfirmDelete(null)}
       />
+
+      <Dialog open={Boolean(details)} onClose={() => setDetails(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{cfg.singular} additional information</DialogTitle>
+        <DialogContent>
+          {detailFields.loading && <Typography role="status">Loading additional fields?</Typography>}
+          {detailFields.error && <Alert severity="error">{detailFields.error}</Alert>}
+          {!detailFields.loading && !detailFields.error && !detailFields.definitions.length && <Typography>No additional fields are configured.</Typography>}
+          <CustomFieldInputs definitions={detailFields.definitions} values={detailFields.values} onChange={() => undefined} disabled />
+        </DialogContent>
+        <DialogActions><Button onClick={() => setDetails(null)}>Close</Button></DialogActions>
+      </Dialog>
 
       {/* Create / edit dialog */}
       <Dialog
@@ -1441,6 +1663,13 @@ export default function PeopleTab({
               : activeStep === 1
                 ? renderProfileStep()
                 : renderGuardiansStep()}
+          {(editing || activeStep === 1) && <Box sx={{ mt: 2 }}>
+            {custom.loading && <Typography role="status">Loading additional fields?</Typography>}
+            {custom.error && <Alert severity="error">{custom.error}</Alert>}
+            <CustomFieldInputs definitions={custom.definitions} values={custom.values} disabled={saving || custom.loading}
+              onChange={(key, value) => custom.setValues((previous) => ({ ...previous, [key]: value }))} />
+            {attempted && custom.missingRequired && <Alert severity="error">Complete the required additional fields.</Alert>}
+          </Box>}
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3 }}>
@@ -1509,6 +1738,17 @@ export default function PeopleTab({
               <TextField label="Reason" value={actionForm.promotionReason ?? ""} onChange={(e) => setAF("promotionReason", e.target.value)} fullWidth />
             </Grid>
           </Grid>
+          <Box sx={{ mt: 2 }}>
+            {historyCustom.loading && <Typography role="status">Loading additional fields?</Typography>}
+            {historyCustom.error && <Alert severity="error">{historyCustom.error}</Alert>}
+            <CustomFieldInputs
+              definitions={historyCustom.definitions}
+              values={historyCustom.values}
+              disabled={actionSaving || historyCustom.loading}
+              onChange={(key, value) => historyCustom.setValues((previous) => ({ ...previous, [key]: value }))}
+            />
+            {historyCustom.missingRequired && <Alert severity="error" sx={{ mt: 1 }}>Complete the required promotion additional fields.</Alert>}
+          </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setActionRow(null)}>Cancel</Button>
@@ -1573,11 +1813,18 @@ export default function PeopleTab({
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
                     {studentLabel(link.studentId)}
                   </Typography>
-                  <Tooltip title="Unlink">
-                    <IconButton size="small" color="error" onClick={() => handleUnlink(link)}>
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                  <Box sx={{ display: "flex", gap: 0.5 }}>
+                    <Tooltip title="Edit relationship additional fields">
+                      <IconButton size="small" onClick={() => openEditLink(link)}>
+                        <Edit fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Unlink">
+                      <IconButton size="small" color="error" onClick={() => handleUnlink(link)}>
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </Box>
               ))}
             </Box>
@@ -1585,6 +1832,110 @@ export default function PeopleTab({
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setManageRowId(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Standalone student-guardian relationship correction — edits an
+          existing link's custom values via the same upsert endpoint used to
+          create it. There is no GET/PATCH for a single link, so saved values
+          cannot be pre-filled; the admin re-enters/corrects them here. */}
+      <Dialog open={!!editingLink} onClose={() => setEditingLink(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          Edit Relationship
+          {editingLink && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 400 }}>
+              {studentLabel(editingLink.studentId)} · {manageRow ? userMap[manageRow.userId]?.name : ""}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ pt: "16px !important" }}>
+          {linkCustom.loading && <Typography role="status">Loading relationship additional fields?</Typography>}
+          {linkCustom.error && <Alert severity="error">{linkCustom.error}</Alert>}
+          {!linkCustom.loading && !linkCustom.error && !linkCustom.definitions.length && (
+            <Typography color="text.secondary">No additional fields are configured for this relationship.</Typography>
+          )}
+          <CustomFieldInputs
+            definitions={linkCustom.definitions}
+            values={linkCustom.values}
+            disabled={linkSaving || linkCustom.loading}
+            onChange={(key, value) => linkCustom.setValues((previous) => ({ ...previous, [key]: value }))}
+          />
+          {linkCustom.missingRequired && <Alert severity="error" sx={{ mt: 1 }}>Complete the required relationship fields.</Alert>}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setEditingLink(null)} disabled={linkSaving}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleSaveLink}
+            disabled={linkSaving || linkCustom.loading || Boolean(linkCustom.error) || linkCustom.missingRequired}
+          >
+            {linkSaving ? <CircularProgress size={16} color="inherit" /> : "Save Changes"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Contact dialog — contact create is the only backend surface
+          (POST /people/contacts); there is no list/get/update endpoint for
+          contacts, so this is intentionally create-only. */}
+      <Dialog open={!!contactRow} onClose={contactSaving ? undefined : () => setContactRow(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          Add Contact
+          {contactRow && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 400 }}>
+              {userMap[contactRow.userId]?.name ?? cfg.singular}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ pt: "16px !important" }}>
+          <Grid container spacing={2.5}>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Phone" required value={contactForm.phone1}
+                onChange={(e) => setContactForm((p) => ({ ...p, phone1: e.target.value }))}
+                fullWidth
+                error={contactAttempted && !contactForm.phone1}
+                helperText={contactAttempted && !contactForm.phone1 ? "Phone is required." : undefined}
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Alternate Phone" value={contactForm.phone2}
+                onChange={(e) => setContactForm((p) => ({ ...p, phone2: e.target.value }))}
+                fullWidth
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="WhatsApp" value={contactForm.whatsapp}
+                onChange={(e) => setContactForm((p) => ({ ...p, whatsapp: e.target.value }))}
+                fullWidth
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Address" value={contactForm.address}
+                onChange={(e) => setContactForm((p) => ({ ...p, address: e.target.value }))}
+                fullWidth multiline minRows={2}
+              />
+            </Grid>
+          </Grid>
+          <Box sx={{ mt: 2 }}>
+            {contactCustom.loading && <Typography role="status">Loading additional fields?</Typography>}
+            {contactCustom.error && <Alert severity="error">{contactCustom.error}</Alert>}
+            <CustomFieldInputs
+              definitions={contactCustom.definitions}
+              values={contactCustom.values}
+              disabled={contactSaving || contactCustom.loading}
+              onChange={(key, value) => contactCustom.setValues((previous) => ({ ...previous, [key]: value }))}
+            />
+            {contactAttempted && contactCustom.missingRequired && <Alert severity="error" sx={{ mt: 1 }}>Complete the required contact additional fields.</Alert>}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setContactRow(null)} disabled={contactSaving}>Cancel</Button>
+          <Button variant="contained" onClick={handleSaveContact} disabled={contactSaving}>
+            {contactSaving ? <CircularProgress size={16} color="inherit" /> : "Add Contact"}
+          </Button>
         </DialogActions>
       </Dialog>
 

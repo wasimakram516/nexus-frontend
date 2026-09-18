@@ -1,3 +1,4 @@
+import { customFieldsService } from "@/services/customFields.service";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -56,7 +57,213 @@ vi.mock("@/services/auth.service", () => ({
   },
 }));
 
+vi.mock("@/services/customFields.service", () => ({ customFieldsService: { getFormDefinitions: vi.fn() } }));
+
 const campuses = [{ id: "campus-1", name: "Main Campus" }];
+
+it("lets a read-only guardian viewer inspect saved custom fields with read permission", async () => {
+  vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({ data: { data: [{ id: "field-1", fieldKey: "CF", label: "Custom field", inputType: "TEXTAREA", isRequired: false }] } } as never);
+  const user = userEvent.setup();
+  render(<MessageProvider><ConfirmProvider><PeopleTab kind="guardians" rows={[{ id: "guardian-1", userId: "user-1", campusId: "campus-1", relation: "FATHER", createdAt: "2026-01-01", customFields: { CF: "Saved note" } }]} loading={false} users={[]} campuses={campuses} classes={[]} sections={[]} students={[]} guardians={[]} onReload={vi.fn()} institutionId="institution-1" canManage={false} /></ConfirmProvider></MessageProvider>);
+  await user.click(screen.getByRole("button", { name: /View additional information/ }));
+  const input = await screen.findByLabelText("Custom field");
+  expect(input).toHaveValue("Saved note");
+  expect(input).toBeDisabled();
+  expect(screen.queryByRole("button", { name: /Save Changes/i })).not.toBeInTheDocument();
+  expect(customFieldsService.getFormDefinitions).toHaveBeenCalledWith({ entityType: "guardian", institutionId: "institution-1", action: "read" });
+});
+
+it("loads the guardian textarea, displays its saved value and submits changes", async () => {
+  vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({ data: { data: [{ id: "field-1", fieldKey: "CF", label: "Custom field", inputType: "TEXTAREA", isRequired: false }] } } as never);
+  vi.mocked(peopleService.updateGuardian).mockResolvedValue({ data: { data: {} } } as never);
+  const user = userEvent.setup();
+  render(<MessageProvider><ConfirmProvider><PeopleTab kind="guardians" rows={[{ id: "guardian-1", userId: "user-1", campusId: "campus-1", relation: "FATHER", createdAt: "2026-01-01", customFields: { CF: "Existing note" } }]} loading={false} users={[]} campuses={campuses} classes={[]} sections={[]} students={[]} guardians={[]} onReload={vi.fn()} institutionId="institution-1" canManage /></ConfirmProvider></MessageProvider>);
+  const edit = screen.getByTestId("EditIcon").closest("button");
+  if (!edit) throw new Error("Missing edit button");
+  await user.click(edit);
+  const input = await screen.findByLabelText("Custom field");
+  expect(input).toHaveValue("Existing note");
+  await user.clear(input);
+  await user.type(input, "Updated note");
+  await user.click(screen.getByRole("button", { name: /Save Changes/i }));
+  await waitFor(() => expect(peopleService.updateGuardian).toHaveBeenCalledWith("guardian-1", expect.objectContaining({ customFields: { CF: "Updated note" } })));
+  expect(customFieldsService.getFormDefinitions).toHaveBeenCalledWith({ entityType: "guardian", institutionId: "institution-1", action: "update" });
+});
+
+it("adds a contact for a student with its required additional fields", async () => {
+  vi.mocked(customFieldsService.getFormDefinitions).mockImplementation(({ entityType }) => {
+    const definitions =
+      entityType === "contact"
+        ? [{ id: "contact-cf", fieldKey: "NOTE", label: "Contact note", inputType: "TEXT", isRequired: true }]
+        : [];
+    return Promise.resolve({ data: { data: definitions } }) as never;
+  });
+  vi.mocked(peopleService.createContact).mockResolvedValue({ data: { message: "Contact added.", data: { id: "contact-1" } } } as never);
+  const user = userEvent.setup();
+  render(
+    <MessageProvider>
+      <ConfirmProvider>
+        <PeopleTab
+          kind="students"
+          rows={[{ id: "student-1", userId: "user-1", campusId: "campus-1", createdAt: "2026-01-01" }]}
+          loading={false}
+          users={studentUsers}
+          campuses={studentCampuses}
+          classes={[]}
+          sections={[]}
+          students={[]}
+          guardians={[]}
+          onReload={vi.fn()}
+          canManage
+        />
+      </ConfirmProvider>
+    </MessageProvider>
+  );
+
+  await user.click(screen.getByRole("button", { name: "Add Contact" }));
+  const dialog = await screen.findByRole("dialog");
+  await user.type(within(dialog).getByLabelText(/^Phone/), "0300-1234567");
+  await user.type(await within(dialog).findByLabelText(/^Contact note/), "Emergency contact");
+  await user.click(within(dialog).getByRole("button", { name: "Add Contact" }));
+
+  await waitFor(() =>
+    expect(peopleService.createContact).toHaveBeenCalledWith({
+      personId: "student-1",
+      personType: "STUDENT",
+      phone1: "0300-1234567",
+      customFields: { NOTE: "Emergency contact" },
+    })
+  );
+  expect(customFieldsService.getFormDefinitions).toHaveBeenCalledWith(
+    expect.objectContaining({ entityType: "contact", action: "create" })
+  );
+});
+
+it("blocks and then records a manual class/section change with its required history fields", async () => {
+  vi.mocked(customFieldsService.getFormDefinitions).mockImplementation(({ entityType }) => {
+    const definitions =
+      entityType === "student_history"
+        ? [{ id: "history-cf", fieldKey: "REASON_CODE", label: "Reason code", inputType: "TEXT", isRequired: true }]
+        : [];
+    return Promise.resolve({ data: { data: definitions } }) as never;
+  });
+  vi.mocked(peopleService.recordStudentPromotion).mockResolvedValue({ data: { message: "Class/section change recorded.", data: { id: "history-1" } } } as never);
+  const onReload = vi.fn();
+  const user = userEvent.setup();
+  const row: PersonRecord = {
+    id: "student-1",
+    userId: "user-1",
+    campusId: "campus-1",
+    regNo: "STD-0001",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  };
+  render(
+    <MessageProvider>
+      <ConfirmProvider>
+        <PeopleTab
+          kind="students"
+          rows={[row]}
+          loading={false}
+          users={studentUsers}
+          campuses={studentCampuses}
+          classes={[]}
+          sections={[]}
+          students={[row]}
+          guardians={[]}
+          onReload={onReload}
+          canManage
+        />
+      </ConfirmProvider>
+    </MessageProvider>
+  );
+
+  await user.click(screen.getByRole("button", { name: "Change Class/Section" }));
+  const dialog = await screen.findByRole("dialog");
+
+  // Missing the required history custom field blocks the save (the button
+  // is disabled rather than clicked, since MUI sets pointer-events: none).
+  await within(dialog).findByLabelText(/^Reason code/);
+  expect(within(dialog).getByRole("button", { name: "Save Change" })).toBeDisabled();
+  expect(peopleService.recordStudentPromotion).not.toHaveBeenCalled();
+
+  await user.type(within(dialog).getByLabelText(/^Reason code/), "TRANSFER");
+  await user.click(within(dialog).getByRole("button", { name: "Save Change" }));
+
+  await waitFor(() =>
+    expect(peopleService.recordStudentPromotion).toHaveBeenCalledWith(
+      expect.objectContaining({ studentId: "student-1", customFields: { REASON_CODE: "TRANSFER" } })
+    )
+  );
+  expect(onReload).toHaveBeenCalled();
+});
+
+it("corrects an existing student-guardian link's additional fields from Manage Students", async () => {
+  vi.mocked(customFieldsService.getFormDefinitions).mockImplementation(({ entityType }) => {
+    const definitions =
+      entityType === "student_guardian"
+        ? [{ id: "link-cf", fieldKey: "REL_NOTE", label: "Relationship note", inputType: "TEXT", isRequired: true }]
+        : [];
+    return Promise.resolve({ data: { data: definitions } }) as never;
+  });
+  vi.mocked(peopleService.linkGuardianToStudent).mockResolvedValue({ data: { message: "Guardian linked successfully", data: { id: "student-1:guardian-1" } } } as never);
+  const onReload = vi.fn();
+  const user = userEvent.setup();
+  const guardianRow: PersonRecord = {
+    id: "guardian-1",
+    userId: "user-2",
+    campusId: "campus-1",
+    relation: "FATHER",
+    createdAt: "2026-01-01",
+    students: [{ id: "link-1", studentId: "student-1" }],
+  };
+  const studentRow: PersonRecord = {
+    id: "student-1",
+    userId: "user-1",
+    campusId: "campus-1",
+    regNo: "STD-0001",
+    createdAt: "2026-01-01",
+  };
+  render(
+    <MessageProvider>
+      <ConfirmProvider>
+        <PeopleTab
+          kind="guardians"
+          rows={[guardianRow]}
+          loading={false}
+          users={[...studentUsers, { id: "user-2", name: "Guardian Khan", email: "g@school.edu", role: "GUARDIAN", status: "ACTIVE", institutionId: null, createdAt: "2026-01-01T00:00:00.000Z" }]}
+          campuses={studentCampuses}
+          classes={[]}
+          sections={[]}
+          students={[studentRow]}
+          guardians={[guardianRow]}
+          onReload={onReload}
+          canManage
+        />
+      </ConfirmProvider>
+    </MessageProvider>
+  );
+
+  await user.click(screen.getByRole("button", { name: "Manage Students" }));
+  const manageDialog = await screen.findByRole("dialog");
+  await user.click(within(manageDialog).getByRole("button", { name: "Edit relationship additional fields" }));
+
+  // A second (stacked) dialog now opens on top of Manage Students — MUI's
+  // modal manager marks the one behind it aria-hidden, so the accessible
+  // "dialog" role query resolves uniquely to the new top dialog.
+  const editDialog = await screen.findByRole("dialog");
+  expect(within(editDialog).getByText("Edit Relationship")).toBeInTheDocument();
+  await user.type(await within(editDialog).findByLabelText(/^Relationship note/), "Pickup allowed");
+  await user.click(within(editDialog).getByRole("button", { name: "Save Changes" }));
+
+  await waitFor(() =>
+    expect(peopleService.linkGuardianToStudent).toHaveBeenCalledWith({
+      studentId: "student-1",
+      guardianId: "guardian-1",
+      customFields: { REL_NOTE: "Pickup allowed" },
+    })
+  );
+  expect(onReload).toHaveBeenCalled();
+});
 
 function renderStaffTab(onReload = vi.fn()) {
   return {
@@ -96,6 +303,7 @@ async function fillAccountStepAndContinue(user: ReturnType<typeof userEvent.setu
 
 describe("PeopleTab (staff)", () => {
   beforeEach(() => {
+    vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({ data: { data: [] } } as never);
     vi.mocked(peopleService.createStaffProfile).mockReset();
     vi.mocked(authService.register).mockReset();
   });
@@ -142,6 +350,7 @@ describe("PeopleTab (staff)", () => {
       expect.objectContaining({ name: "Jane Doe", email: "jane@school.edu", role: "STAFF" })
     );
     expect(peopleService.createStaffProfile).toHaveBeenCalledWith({
+      customFields: {},
       userId: "user-1",
       campusId: "campus-1",
       gender: "MALE",
@@ -207,9 +416,24 @@ async function fillStudentAccountStepAndContinue(user: ReturnType<typeof userEve
   return dialog;
 }
 
+/** Fills required student profile fields and advances to guardian linking. */
+async function fillStudentProfileStepAndContinue(user: ReturnType<typeof userEvent.setup>, dialog: HTMLElement) {
+  await user.click(within(dialog).getByLabelText(/Campus/));
+  await user.click(await screen.findByRole("option", { name: "Main Campus" }));
+  await user.type(within(dialog).getByLabelText(/Registration No/), "STD-1001");
+  await user.type(within(dialog).getByLabelText(/Date of Birth/), "2015-01-10");
+  await user.click(within(dialog).getByLabelText(/Gender/));
+  await user.click(await screen.findByRole("option", { name: "MALE" }));
+  await user.click(within(dialog).getByRole("button", { name: "Continue" }));
+}
+
 describe("PeopleTab (students)", () => {
   beforeEach(() => {
+    vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({ data: { data: [] } } as never);
     vi.mocked(peopleService.getNextRegNo).mockReset();
+    vi.mocked(peopleService.createStudent).mockReset();
+    vi.mocked(peopleService.createGuardian).mockReset();
+    vi.mocked(peopleService.linkGuardianToStudent).mockReset();
     vi.mocked(peopleService.withdrawStudentEnrollment).mockReset();
     vi.mocked(academicsService.getAcademicYears).mockReset().mockResolvedValue({
       data: { data: [] },
@@ -315,4 +539,74 @@ describe("PeopleTab (students)", () => {
       acknowledgeOutstandingDues: true,
     });
   });
+
+  it("sends custom fields when creating an inline guardian during student admission", async () => {
+    const user = userEvent.setup({ delay: null });
+    vi.mocked(customFieldsService.getFormDefinitions).mockImplementation(({ entityType }) => {
+      const definitions =
+        entityType === "guardian"
+          ? [{ id: "guardian-cf", fieldKey: "CF", label: "Custom field", inputType: "TEXTAREA", isRequired: true }]
+          : entityType === "student_guardian"
+            ? [{ id: "link-cf", fieldKey: "REL_NOTE", label: "Relationship note", inputType: "TEXT", isRequired: true }]
+            : [];
+      return Promise.resolve({ data: { data: definitions } }) as never;
+    });
+    vi.mocked(authService.register)
+      .mockResolvedValueOnce({ data: { data: { id: "student-user-1" } } } as never)
+      .mockResolvedValueOnce({ data: { data: { id: "guardian-user-1" } } } as never);
+    vi.mocked(peopleService.createStudent).mockResolvedValue({ data: { data: { id: "student-1" } } } as never);
+    vi.mocked(peopleService.createGuardian).mockResolvedValue({ data: { data: { id: "guardian-1" } } } as never);
+    vi.mocked(peopleService.linkGuardianToStudent).mockResolvedValue({ data: { data: { id: "link-1" } } } as never);
+
+    renderStudentsTab();
+    const dialog = await fillStudentAccountStepAndContinue(user);
+    await fillStudentProfileStepAndContinue(user, dialog);
+
+    await waitFor(() => expect(customFieldsService.getFormDefinitions).toHaveBeenCalledWith(expect.objectContaining({ entityType: "guardian" })));
+    await waitFor(() => expect(customFieldsService.getFormDefinitions).toHaveBeenCalledWith(expect.objectContaining({ entityType: "student_guardian" })));
+    await user.type(await within(dialog).findByLabelText(/Custom field/), "Guardian note");
+    await user.type(await within(dialog).findByLabelText(/Relationship note/), "Pickup allowed");
+    await user.type(within(dialog).getByLabelText("Name"), "Guardian Khan");
+    await user.type(within(dialog).getByLabelText("Email"), "guardian@school.edu");
+    await user.click(within(dialog).getByRole("button", { name: "Add" }));
+    await user.click(within(dialog).getByRole("button", { name: /Create Student \+ 1 Guardian Link/ }));
+
+    await waitFor(() => expect(peopleService.createGuardian).toHaveBeenCalled(), { timeout: 5000 });
+    expect(peopleService.createGuardian).toHaveBeenCalledWith(expect.objectContaining({
+      userId: "guardian-user-1",
+      campusId: "campus-1",
+      relation: "FATHER",
+      customFields: { CF: "Guardian note" },
+    }));
+    expect(peopleService.linkGuardianToStudent).toHaveBeenCalledWith({
+      studentId: "student-1",
+      guardianId: "guardian-1",
+      customFields: { REL_NOTE: "Pickup allowed" },
+    });
+  }, 30000);
+
+  it("keeps student admission open when inline guardian linking fails after the student is created", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onReload = vi.fn();
+    vi.mocked(authService.register)
+      .mockResolvedValueOnce({ data: { data: { id: "student-user-1" } } } as never)
+      .mockResolvedValueOnce({ data: { data: { id: "guardian-user-1" } } } as never);
+    vi.mocked(peopleService.createStudent).mockResolvedValue({ data: { data: { id: "student-1" } } } as never);
+    vi.mocked(peopleService.createGuardian).mockResolvedValue({ data: { data: { id: "guardian-1" } } } as never);
+    vi.mocked(peopleService.linkGuardianToStudent).mockRejectedValueOnce(new Error("Link failed"));
+
+    renderStudentsTab({ onReload });
+    const dialog = await fillStudentAccountStepAndContinue(user);
+    await fillStudentProfileStepAndContinue(user, dialog);
+
+    await user.type(within(dialog).getByLabelText("Name"), "Guardian Khan");
+    await user.type(within(dialog).getByLabelText("Email"), "guardian@school.edu");
+    await user.click(within(dialog).getByRole("button", { name: "Add" }));
+    await user.click(within(dialog).getByRole("button", { name: /Create Student \+ 1 Guardian Link/ }));
+
+    expect(await screen.findByText(/still need attention/, {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(peopleService.createStudent).toHaveBeenCalledTimes(1);
+    expect(onReload).toHaveBeenCalled();
+  }, 30000);
 });

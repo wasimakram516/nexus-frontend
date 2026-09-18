@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -25,10 +26,12 @@ import {
   Typography,
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
+import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
+import { useCustomFieldForm } from "@/hooks/useCustomFieldForm";
 import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
 import { peopleService } from "@/services/people.service";
@@ -66,6 +69,8 @@ interface TeachingAssignmentsSectionProps {
   subjects: (NamedItem & { classId?: string })[];
   canManage: boolean;
   onReload: () => void;
+  /** Set when a superadmin manages another institution's assignment definitions. */
+  institutionId?: string;
 }
 
 /**
@@ -84,9 +89,11 @@ export default function TeachingAssignmentsSection({
   subjects,
   canManage,
   onReload,
+  institutionId,
 }: TeachingAssignmentsSectionProps) {
   const confirm = useConfirm();
   const { showMessage } = useMessage();
+  const custom = useCustomFieldForm("teacher_subject", institutionId);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -126,8 +133,11 @@ export default function TeachingAssignmentsSection({
 
   const openCreate = () => {
     setForm({ classId: "", sectionId: "", subjectId: "", teacherId: "" });
+    void custom.load("create");
     setDialogOpen(true);
   };
+
+  const customValid = !custom.loading && !custom.error && !custom.missingRequired;
 
   const handleSave = async () => {
     const campusId = campusOfClass(form.classId);
@@ -135,6 +145,7 @@ export default function TeachingAssignmentsSection({
       showMessage("Pick a class first.", "warning");
       return;
     }
+    if (!customValid) return;
     setSaving(true);
     const { success } = await apiHandler(
       () =>
@@ -144,6 +155,7 @@ export default function TeachingAssignmentsSection({
           subjectId: form.subjectId,
           sectionId: form.sectionId,
           campusId,
+          customFields: custom.values,
         }),
       { showMessage, successMessage: "Teacher assigned." }
     );
@@ -169,7 +181,7 @@ export default function TeachingAssignmentsSection({
     if (success) onReload();
   };
 
-  const formValid = Boolean(form.classId && form.sectionId && form.subjectId && form.teacherId);
+  const formValid = Boolean(form.classId && form.sectionId && form.subjectId && form.teacherId) && customValid;
 
   return (
     <Box>
@@ -304,6 +316,17 @@ export default function TeachingAssignmentsSection({
               </TextField>
             </Grid>
           </Grid>
+          <Box sx={{ mt: 2 }}>
+            {custom.loading && <Typography role="status">Loading additional fields?</Typography>}
+            {custom.error && <Alert severity="error">{custom.error}</Alert>}
+            <CustomFieldInputs
+              definitions={custom.definitions}
+              values={custom.values}
+              disabled={saving || custom.loading}
+              onChange={(key, value) => custom.setValues((previous) => ({ ...previous, [key]: value }))}
+            />
+            {custom.missingRequired && <Alert severity="error" sx={{ mt: 1 }}>Complete the required assignment additional fields.</Alert>}
+          </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setDialogOpen(false)} disabled={saving}>Cancel</Button>
