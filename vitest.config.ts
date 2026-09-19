@@ -1,3 +1,6 @@
+// Run every test in a browser zone (UTC-7/-8) that differs from the campus zones the
+// attendance tests use (Asia/Karachi), so campus-local handling is proven, not coincidental.
+process.env.TZ = "America/Los_Angeles";
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -18,6 +21,9 @@ export default defineConfig({
     // Default 5s is too tight for jsdom + MUI render/interaction tests under
     // parallel-worker CPU contention; raised to cut spurious CI flakiness.
     testTimeout: 20000,
+    // Keep jsdom/MUI workers bounded so full-suite resource pressure is reproducible.
+    pool: "threads",
+    maxWorkers: 1,
     env: {
       NEXT_PUBLIC_API_BASE_URL: "http://localhost:4000",
       NEXT_PUBLIC_API_VERSION: "v1",
@@ -30,19 +36,13 @@ export default defineConfig({
       reportOnFailure: true,
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/**/*.d.ts", "src/test/**"],
-      // The 70% bar used on the backend (nexus-backend) isn't realistic here yet:
-      // most Next.js route pages and shared components have no tests at all
-      // (only the dashboard "*Manager" components built for M4.5 do). These
-      // thresholds are set just under the actual current numbers (as of
-      // 2026-09-18: ~42.8/39.4/34.7/44.2%) so CI reports real coverage instead
-      // of silently claiming 70%, and fails only on a genuine regression below
-      // today's baseline. Raise them incrementally as real tests are added —
-      // closing this gap to 70% is tracked as backlog, not done in one pass.
+      // Preserve the agreed engineering gate. Missing coverage must fail CI
+      // until verified behavior tests meet it; do not lower the target.
       thresholds: {
-        statements: 40,
-        branches: 37,
-        functions: 32,
-        lines: 42,
+        statements: 70,
+        branches: 70,
+        functions: 70,
+        lines: 70,
       },
     },
   },
