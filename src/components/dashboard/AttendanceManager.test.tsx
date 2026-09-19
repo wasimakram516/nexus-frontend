@@ -32,6 +32,7 @@ vi.mock("@/lib/users", () => ({
 
 vi.mock("@/services/attendance.service", () => ({
   attendanceService: {
+    getContext: vi.fn(),
     checkIn: vi.fn(),
     checkOut: vi.fn(),
     markLeave: vi.fn(),
@@ -72,7 +73,7 @@ vi.mock("@/services/timetable.service", () => ({
   },
 }));
 
-const campus = { id: "campus-1", name: "Main Campus", institutionId: "inst-1" };
+const campus = { id: "campus-1", name: "Main Campus", institutionId: "inst-1", timezone: "Asia/Karachi" };
 const classItem = { id: "class-1", name: "Class 1" };
 const sectionItem = { id: "section-1", name: "Section A", classId: "class-1" };
 const student = {
@@ -128,6 +129,7 @@ function mockDefaults() {
     user: { id: "admin-1", email: "admin@test.com", name: "Admin", role: "ADMIN", institutionId: "inst-1", sessionId: "s1" },
   } as never);
   vi.mocked(campusesService.getAll).mockResolvedValue({ data: { data: { items: [campus] } } } as never);
+  vi.mocked(attendanceService.getContext).mockResolvedValue({ data: { data: { campusId: campus.id, timezone: campus.timezone } } } as never);
   vi.mocked(campusesService.getCampusUsers).mockResolvedValue({ data: { data: [] } } as never);
   vi.mocked(peopleService.getStudents).mockResolvedValue({ data: { data: [student] } } as never);
   vi.mocked(peopleService.getStaffProfiles).mockResolvedValue({ data: { data: [] } } as never);
@@ -174,6 +176,12 @@ async function selectOption(user: ReturnType<typeof userEvent.setup>, label: str
 }
 
 describe("AttendanceManager", () => {
+  // The campus zone is Asia/Karachi (UTC+5); vitest.config.ts runs the browser in
+  // America/Los_Angeles, so these tests prove campus-local handling.
+  it("runs with a browser zone different from the campus zone", () => {
+    expect(new Date("2026-09-01T00:00:00Z").getTimezoneOffset()).toBe(420);
+  });
+
   beforeEach(() => {
     vi.mocked(attendanceService.checkIn).mockReset();
     vi.mocked(attendanceService.checkOut).mockReset();
@@ -299,6 +307,7 @@ describe("AttendanceManager", () => {
       data: { data: [{ id: "field-1", fieldKey: "reason", label: "Reason", inputType: "TEXT", isRequired: true }] },
     } as never);
     vi.mocked(attendanceService.checkIn).mockResolvedValue({ data: { message: "ok", data: {} } } as never);
+    vi.mocked(attendanceService.checkOut).mockRejectedValueOnce(new Error("Temporary checkout failure")).mockResolvedValue({ data: { data: {} } } as never);
     const user = userEvent.setup();
     renderManager();
 
@@ -316,6 +325,7 @@ describe("AttendanceManager", () => {
 
     await selectOption(user, "Person *", /Alice Student/i);
     fireEvent.change(within(dialog).getByLabelText("Check-In"), { target: { value: "08:05" } });
+    fireEvent.change(within(dialog).getByLabelText("Check-Out"), { target: { value: "14:00" } });
 
     const recordButton = within(dialog).getByRole("button", { name: "Record" });
     expect(recordButton).toBeDisabled();
@@ -330,9 +340,17 @@ describe("AttendanceManager", () => {
         expect.objectContaining({ userId: "user-1", customFields: { reason: "Late bus" } })
       )
     );
+    await waitFor(() => expect(recordButton).not.toBeDisabled());
+    expect(within(dialog).getByLabelText("Check-In")).toHaveValue("");
+    await user.click(recordButton);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(attendanceService.checkIn).toHaveBeenCalledTimes(1);
+    expect(attendanceService.checkOut).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(attendanceService.checkIn).mock.calls[0][0].checkIn).toMatch(/T03:05:00.000Z$/);
+    expect(vi.mocked(attendanceService.checkOut).mock.calls[1][0]).toEqual(expect.objectContaining({ checkOut: expect.stringMatching(/T09:00:00.000Z$/), customFields: { reason: "Late bus" } }));
   });
 
-  it("preloads saved custom field values into the Edit Attendance correction dialog and sends them back on save", async () => {
+  it("preserves saved values through corrections and checkout-only punches", async () => {
     mockRuntime("DAILY");
     vi.mocked(attendanceService.getAll).mockResolvedValue({
       data: {
@@ -372,6 +390,8 @@ describe("AttendanceManager", () => {
       })
     );
     expect(await within(dialog).findByDisplayValue("Doctor visit")).toBeInTheDocument();
+    // 08:05Z is 13:05 at the Karachi campus, not the browser's 01:05.
+    expect(within(dialog).getByDisplayValue("13:05")).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: "Save Changes" }));
 
@@ -381,5 +401,16 @@ describe("AttendanceManager", () => {
         expect.objectContaining({ customFields: { reason: "Doctor visit" } })
       )
     );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    vi.mocked(attendanceService.checkOut).mockResolvedValue({ data: { data: {} } } as never);
+    await user.click(screen.getByRole("button", { name: "Record Punch" }));
+    await selectOption(user, "Person *", /Alice Student/i);
+    const punchDialog = screen.getByRole("dialog");
+    expect(await within(punchDialog).findByDisplayValue("Doctor visit")).toBeInTheDocument();
+    fireEvent.change(within(punchDialog).getByLabelText("Check-Out"), { target: { value: "14:00" } });
+    await user.click(within(punchDialog).getByRole("button", { name: "Record" }));
+    await waitFor(() => expect(attendanceService.checkOut).toHaveBeenCalledWith(expect.objectContaining({
+      userId: "user-1", customFields: { reason: "Doctor visit" },
+    })));
   });
 });

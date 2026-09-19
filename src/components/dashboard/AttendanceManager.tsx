@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Autocomplete,
   Box,
   Button,
@@ -31,18 +32,17 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import {
-  AccessTime,
-  ArrowBack,
-  Checklist,
-  Edit,
-  FactCheck,
-  Login,
-  Logout,
-  MoreTime,
-  Search,
-} from "@mui/icons-material";
+import AccessTime from "@mui/icons-material/AccessTime";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import Checklist from "@mui/icons-material/Checklist";
+import Edit from "@mui/icons-material/Edit";
+import FactCheck from "@mui/icons-material/FactCheck";
+import Login from "@mui/icons-material/Login";
+import Logout from "@mui/icons-material/Logout";
+import MoreTime from "@mui/icons-material/MoreTime";
+import Search from "@mui/icons-material/Search";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
+import AttendanceCalendarSettings from "./AttendanceCalendarSettings";
 import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
 import type { DayOfWeek, PeriodSlot } from "@/components/dashboard/PeriodSlotsSection";
 import DataTableCard from "@/components/shared/DataTableCard";
@@ -54,6 +54,7 @@ import { useMessage } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
+import { campusDate, campusTime, campusInstant } from "@/lib/campus-time";
 import { parseSettingObject } from "@/lib/settings";
 import { fetchAllUsers, UserLite } from "@/lib/users";
 import { attendanceService, PeriodRosterStudent } from "@/services/attendance.service";
@@ -80,6 +81,8 @@ interface Campus {
   id: string;
   name: string;
   institutionId?: string;
+  timezone?: string | null;
+  institution?: { timezone: string } | null;
 }
 
 interface StudentItem {
@@ -153,13 +156,10 @@ const DAY_OF_WEEK_BY_INDEX: DayOfWeek[] = [
 ];
 
 const today = () => new Date().toISOString().slice(0, 10);
-const nowTime = () => new Date().toTimeString().slice(0, 5);
 
 /** Day-of-week for a `YYYY-MM-DD` string, parsed as local time (not UTC) to avoid off-by-one at timezone edges. */
 const dayOfWeekOf = (dateStr: string): DayOfWeek => DAY_OF_WEEK_BY_INDEX[new Date(`${dateStr}T00:00:00`).getDay()];
 
-const formatTime = (value?: string | null) =>
-  value ? new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
 
 export default function AttendanceManager({ institutionId }: AttendanceManagerProps) {
   const { user: authUser } = useAuth();
@@ -193,6 +193,16 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   const [date, setDate] = useState(today());
   const [campusId, setCampusId] = useState("");
   const [campuses, setCampuses] = useState<Campus[]>([]);
+  const [selfContext, setSelfContext] = useState<{ campusId: string; timezone: string } | null>(null);
+  /** Uses server-resolved metadata; missing timezone never silently becomes browser time. */
+  const timezoneForCampus = (id: string): string => {
+    const campus = campuses.find((item) => item.id === id);
+    return campus?.timezone ?? campus?.institution?.timezone ?? (selfContext?.campusId === id ? selfContext.timezone : "");
+  };
+  const formatTime = (value?: string | null, id = campusId): string => {
+    const timezone = timezoneForCampus(id);
+    return value && timezone ? campusTime(timezone, new Date(value)) : "—";
+  };
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(true);
   const [staticLoading, setStaticLoading] = useState(true);
@@ -266,6 +276,13 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
       // Personal mode needs no reference data — the backend self-scopes records
       // and the campuses endpoint sits behind the academics permission anyway.
       if (!canManage) {
+        if (authUser && authUser.role !== "GUARDIAN") {
+          const { data } = await apiHandler(() => attendanceService.getContext(), { showMessage, silent: true });
+          if (data) {
+            setSelfContext(data);
+            setDate(campusDate(data.timezone));
+          }
+        }
         setStaticLoading(false);
         return;
       }
@@ -280,6 +297,8 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
         : allCampuses;
       setCampuses(scoped);
       setCampusId((prev) => prev || (scoped[0]?.id ?? ""));
+      const initialTimezone = scoped[0]?.timezone ?? scoped[0]?.institution?.timezone;
+      if (initialTimezone) setDate(campusDate(initialTimezone));
 
       if (canManage) {
         const [studentsRes, staffProfilesRes, classesRes, sectionsRes] = await Promise.all([
@@ -303,7 +322,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
       setStaticLoading(false);
     };
     loadStatic();
-  }, [showMessage, institutionId, canManage]);
+  }, [showMessage, institutionId, canManage, authUser]);
 
   // Admin/accountant campus membership comes from UserCampus assignments.
   useEffect(() => {
@@ -625,6 +644,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   const punchCustomValid = !punchCustom.loading && !punchCustom.error && !punchCustom.missingRequired;
 
   const openPunch = () => {
+    setPunchForm({ userId: "", inTime: "", outTime: "" });
     setPunchOpen(true);
     void punchCustom.load("create");
   };
@@ -633,6 +653,12 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
     if (!punchForm.userId || (!punchForm.inTime && !punchForm.outTime)) return;
     if (!punchCustomValid) return;
     setPunchSaving(true);
+    const { data: context } = await apiHandler(() => attendanceService.getContext(punchForm.userId), { showMessage, silent: true });
+    if (!context || context.campusId !== campusId) {
+      setPunchSaving(false);
+      showMessage("The person's attendance campus could not be confirmed. Reload and select their campus before retrying.", "error");
+      return;
+    }
     let ok = true;
     if (punchForm.inTime) {
       const { success } = await apiHandler(
@@ -640,12 +666,18 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
           attendanceService.checkIn({
             userId: punchForm.userId,
             date,
-            checkIn: new Date(`${date}T${punchForm.inTime}`).toISOString(),
+            checkIn: campusInstant(context.timezone, date, punchForm.inTime),
             customFields: punchCustom.values,
           }),
         { showMessage, silent: true }
       );
       ok = success;
+      if (!success) {
+        setPunchSaving(false);
+        return;
+      }
+      // Retain the committed check-in by retrying only the outstanding checkout.
+      setPunchForm((previous) => ({ ...previous, inTime: "" }));
     }
     if (punchForm.outTime) {
       const { success } = await apiHandler(
@@ -653,7 +685,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
           attendanceService.checkOut({
             userId: punchForm.userId,
             date,
-            checkOut: new Date(`${date}T${punchForm.outTime}`).toISOString(),
+            checkOut: campusInstant(context.timezone, date, punchForm.outTime),
             customFields: punchCustom.values,
           }),
         { showMessage, silent: true }
@@ -674,8 +706,8 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
       () =>
         attendanceService.checkOut({
           userId: record.userId,
-          date,
-          checkOut: new Date(`${date}T${nowTime()}`).toISOString(),
+          date: record.date.slice(0, 10),
+          checkOut: new Date().toISOString(),
         }),
       { showMessage, successMessage: "Checked out." }
     );
@@ -683,17 +715,19 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   };
 
   const handleSelfPunch = async (kind: "in" | "out") => {
-    if (!authUser) return;
+    if (!authUser || !selfContext) return;
     setSelfSaving(kind);
-    const timestamp = new Date(`${today()}T${nowTime()}`).toISOString();
+    const now = new Date();
+    const timestamp = now.toISOString();
+    const localDate = campusDate(selfContext.timezone, now);
     if (kind === "in") {
       await apiHandler(
-        () => attendanceService.checkIn({ userId: authUser.id, date: today(), checkIn: timestamp }),
+        () => attendanceService.checkIn({ userId: authUser.id, date: localDate, checkIn: timestamp }),
         { showMessage, successMessage: "Checked in." }
       );
     } else {
       await apiHandler(
-        () => attendanceService.checkOut({ userId: authUser.id, date: today(), checkOut: timestamp }),
+        () => attendanceService.checkOut({ userId: authUser.id, date: localDate, checkOut: timestamp }),
         { showMessage, successMessage: "Checked out." }
       );
     }
@@ -702,10 +736,10 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   };
 
   // ---- corrections ----
-  const toLocalTime = (value?: string | null) => {
+  const toLocalTime = (value?: string | null, id = campusId) => {
     if (!value) return "";
-    const d = new Date(value);
-    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    const timezone = timezoneForCampus(id);
+    return timezone ? campusTime(timezone, new Date(value)) : "";
   };
 
   const editCustomValid = !editCustom.loading && !editCustom.error && !editCustom.missingRequired;
@@ -716,8 +750,8 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
       status: record.status,
       halfDay: record.halfDay ? "true" : "false",
       remarks: record.remarks ?? "",
-      checkInTime: toLocalTime(record.checkIn),
-      checkOutTime: toLocalTime(record.checkOut),
+      checkInTime: toLocalTime(record.checkIn, record.campusId),
+      checkOutTime: toLocalTime(record.checkOut, record.campusId),
     });
     void editCustom.load("update", record.customFields ?? {});
   };
@@ -725,12 +759,14 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   const handleEdit = async () => {
     if (!editing) return;
     if (!editCustomValid) return;
+    const timezone = timezoneForCampus(editing.campusId);
+    if (!timezone) { showMessage("Campus timezone could not be loaded. Reload before editing attendance.", "error"); return; }
     setEditSaving(true);
     const day = editing.date.slice(0, 10);
-    const originalIn = toLocalTime(editing.checkIn);
-    const originalOut = toLocalTime(editing.checkOut);
+    const originalIn = toLocalTime(editing.checkIn, editing.campusId);
+    const originalOut = toLocalTime(editing.checkOut, editing.campusId);
 
-    await apiHandler(
+    const { success } = await apiHandler(
       () =>
         attendanceService.update(editing.id, {
           status: editForm.status,
@@ -739,16 +775,17 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
           // Only send times the admin actually changed — a changed check-out
           // makes the backend recompute half-day from campus thresholds.
           ...(editForm.checkInTime && editForm.checkInTime !== originalIn
-            ? { checkIn: new Date(`${day}T${editForm.checkInTime}`).toISOString() }
+            ? { checkIn: campusInstant(timezone, day, editForm.checkInTime) }
             : {}),
           ...(editForm.checkOutTime && editForm.checkOutTime !== originalOut
-            ? { checkOut: new Date(`${day}T${editForm.checkOutTime}`).toISOString() }
+            ? { checkOut: campusInstant(timezone, day, editForm.checkOutTime) }
             : {}),
           customFields: editCustom.values,
         }),
       { showMessage, successMessage: "Attendance updated." }
     );
     setEditSaving(false);
+    if (!success) return;
     setEditing(null);
     loadRecords();
   };
@@ -774,11 +811,13 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
     return (
       <>
         {canPunch && (
+          <>
+          {!staticLoading && !selfContext && <Alert severity="error">Attendance timezone could not be loaded. Reload this page before recording a punch.</Alert>}
           <Box sx={{ display: "flex", gap: 1, mb: 3, flexWrap: "wrap" }}>
             <Button
               variant="contained"
               startIcon={selfSaving === "in" ? <CircularProgress size={16} color="inherit" /> : <Login />}
-              disabled={selfSaving !== null}
+              disabled={selfSaving !== null || !selfContext}
               onClick={() => handleSelfPunch("in")}
             >
               Check In Now
@@ -786,12 +825,13 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
             <Button
               variant="outlined"
               startIcon={selfSaving === "out" ? <CircularProgress size={16} color="inherit" /> : <Logout />}
-              disabled={selfSaving !== null}
+              disabled={selfSaving !== null || !selfContext}
               onClick={() => handleSelfPunch("out")}
             >
               Check Out Now
             </Button>
           </Box>
+          </>
         )}
 
         <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
@@ -826,8 +866,8 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
                 {myRecords.map((record) => (
                   <TableRow key={record.id} hover>
                     <TableCell>{formatDate(record.date)}</TableCell>
-                    <TableCell>{formatTime(record.checkIn)}</TableCell>
-                    <TableCell>{formatTime(record.checkOut)}</TableCell>
+                    <TableCell>{formatTime(record.checkIn, record.campusId)}</TableCell>
+                    <TableCell>{formatTime(record.checkOut, record.campusId)}</TableCell>
                     <TableCell>
                       <Chip
                         label={record.halfDay ? `${record.status} · HALF` : record.status}
@@ -869,6 +909,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
 
     return (
       <>
+        <AttendanceCalendarSettings institutionId={institutionId} campuses={campuses} />
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Two ways to record attendance: <strong>Register</strong> for roll-call status marking,{" "}
           <strong>Time Clock</strong> for real check-in/out times. They share the same records.
@@ -959,7 +1000,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
               <Button
                 variant="contained"
                 startIcon={selfSaving === "in" ? <CircularProgress size={16} color="inherit" /> : <Login />}
-                disabled={selfSaving !== null}
+                disabled={selfSaving !== null || !selfContext}
                 onClick={() => handleSelfPunch("in")}
               >
                 My Check-In
@@ -967,7 +1008,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
               <Button
                 variant="outlined"
                 startIcon={selfSaving === "out" ? <CircularProgress size={16} color="inherit" /> : <Logout />}
-                disabled={selfSaving !== null}
+                disabled={selfSaving !== null || !selfContext}
                 onClick={() => handleSelfPunch("out")}
               >
                 My Check-Out
@@ -980,7 +1021,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
         </Box>
 
         <Typography variant="caption" color="text.disabled" sx={{ display: "block", mb: 2 }}>
-          Late is decided automatically against campus start time + threshold; half-day against end time − threshold.
+          Times use the campus timezone{timezoneForCampus(campusId) ? ` (${timezoneForCampus(campusId)})` : ""}. Late is decided automatically against campus start time + threshold; half-day against end time − threshold.
         </Typography>
 
         {recordsLoading ? (
@@ -1017,8 +1058,8 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
                     <TableCell>
                       <Typography variant="caption" color="text.secondary">{record.role}</Typography>
                     </TableCell>
-                    <TableCell>{formatTime(record.checkIn)}</TableCell>
-                    <TableCell>{formatTime(record.checkOut)}</TableCell>
+                    <TableCell>{formatTime(record.checkIn, record.campusId)}</TableCell>
+                    <TableCell>{formatTime(record.checkOut, record.campusId)}</TableCell>
                     <TableCell>
                       <Chip
                         label={record.halfDay ? `${record.status} · HALF` : record.status}
@@ -1060,7 +1101,11 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
                   options={combinedRoster}
                   getOptionLabel={(row) => `${row.name}${row.meta ? ` (${row.meta})` : ""}`}
                   value={combinedRoster.find((row) => row.userId === punchForm.userId) ?? null}
-                  onChange={(_, value) => setPunchForm((p) => ({ ...p, userId: value?.userId ?? "" }))}
+                  onChange={(_, value) => {
+                    setPunchForm((p) => ({ ...p, userId: value?.userId ?? "" }));
+                    const existing = punchRecords.find((record) => record.userId === value?.userId);
+                    void punchCustom.load(existing ? "update" : "create", existing?.customFields ?? {});
+                  }}
                   noOptionsText="No one found in this campus."
                   renderInput={(params) => <TextField {...params} label="Person *" />}
                 />
@@ -1085,7 +1130,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
                 {punchCustom.loading && <Typography role="status">Loading additional fields…</Typography>}
                 {punchCustom.error && <Typography role="alert" color="error">{punchCustom.error}</Typography>}
                 <CustomFieldInputs
-                  definitions={punchCustom.definitions}
+                  definitions={punchCustom.definitions} onBusyChange={punchCustom.setUploading}
                   values={punchCustom.values}
                   disabled={punchSaving || punchCustom.loading}
                   onChange={(key, value) => punchCustom.setValues((previous) => ({ ...previous, [key]: value }))}
@@ -1418,7 +1463,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
               {editCustom.loading && <Typography role="status">Loading additional fields…</Typography>}
               {editCustom.error && <Typography role="alert" color="error">{editCustom.error}</Typography>}
               <CustomFieldInputs
-                definitions={editCustom.definitions}
+                definitions={editCustom.definitions} onBusyChange={editCustom.setUploading}
                 values={editCustom.values}
                 disabled={editSaving || editCustom.loading}
                 onChange={(key, value) => editCustom.setValues((previous) => ({ ...previous, [key]: value }))}

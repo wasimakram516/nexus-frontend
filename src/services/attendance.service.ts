@@ -22,6 +22,7 @@ export interface PeriodRosterStudent {
 }
 
 export const attendanceService = {
+  getContext: (userId?: string) => apiClient.get<{ data: { campusId: string; timezone: string } }>("/attendance/context", { params: { userId } }),
   checkIn: (payload: Record<string, unknown>) =>
     apiClient.post("/attendance/check-in", payload),
 
