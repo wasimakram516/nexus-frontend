@@ -12,7 +12,6 @@ vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: 
 vi.mock("@/contexts/RuntimeConfigContext", () => ({ useRuntimeConfig: () => state.runtime }));
 vi.mock("framer-motion", () => ({ useInView: () => state.inView }));
 
-import ContactForm from "./public/ContactForm";
 import CountUp from "./shared/CountUp";
 import ScrollToTop from "./shared/ScrollToTop";
 import ModuleGate from "./dashboard/ModuleGate";
@@ -27,25 +26,6 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
-});
-
-describe("ContactForm", () => {
-  it("submits after a delay, confirms to the user and resets the form", async () => {
-    vi.useFakeTimers();
-    render(<ContactForm />);
-    fireEvent.change(screen.getByLabelText(/Full Name/), { target: { value: "Ali" } });
-    fireEvent.change(screen.getByLabelText(/Email Address/), { target: { value: "ali@x.io" } });
-    fireEvent.change(screen.getByLabelText(/^Message/), { target: { value: "Hello there" } });
-    fireEvent.mouseDown(screen.getByRole("combobox"));
-    fireEvent.click(screen.getByRole("option", { name: "Pricing Question" }));
-    fireEvent.click(screen.getByRole("button", { name: "Send Message" }));
-    expect(screen.getByRole("button", { name: "" })).toBeDisabled();
-    expect(state.showMessage).not.toHaveBeenCalled();
-    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
-    expect(state.showMessage).toHaveBeenCalledWith("Message sent! We'll get back to you within 24 hours.", "success");
-    expect(screen.getByLabelText(/Full Name/)).toHaveValue("");
-    expect(screen.getByLabelText(/^Message/)).toHaveValue("");
-  });
 });
 
 describe("CountUp", () => {

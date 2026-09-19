@@ -71,6 +71,8 @@ describe("PlatformLayout", () => {
     expect(institutions.className).not.toBe(overview.className);
     fireEvent.click(screen.getByText("Plans"));
     expect(mocks.push).toHaveBeenCalledWith("/platform/plans");
+    fireEvent.click(screen.getByText("Inquiries"));
+    expect(mocks.push).toHaveBeenCalledWith("/platform/inquiries");
     fireEvent.click(screen.getByText("Recycle Bin"));
     expect(mocks.push).toHaveBeenCalledWith("/platform/recycle-bin");
     expect(screen.getByText("Back to Site").closest("a")).toHaveAttribute("href", "/");

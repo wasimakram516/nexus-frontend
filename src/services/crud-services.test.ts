@@ -15,6 +15,7 @@ import { attendanceCalendarService } from "./attendanceCalendar.service";
 import { auditLogsService } from "./auditLogs.service";
 import { authService } from "./auth.service";
 import { campusesService } from "./campuses.service";
+import { contactInquiriesService, contactService } from "./contact.service";
 import { customFieldsService } from "./customFields.service";
 import { financeService } from "./finance.service";
 import { noticesService } from "./notices.service";
@@ -124,6 +125,10 @@ describe("attendanceCalendarService", () => {
 
 describe("auditLogs / auth / campuses / customFields / recycleBin / users", () => {
   runTable([
+    ["contact.submitInquiry", () => contactService.submitInquiry({ name: "n", email: "e", inquiryType: "Other", message: "m" }), "post", "/contact/inquiries", [{ name: "n", email: "e", inquiryType: "Other", message: "m" }]],
+    ["contactInquiries.getAll", () => contactInquiriesService.getAll(params), "get", "/platform/contact-inquiries", [{ params }]],
+    ["contactInquiries.updateStatus", () => contactInquiriesService.updateStatus("i1", "READ"), "patch", "/platform/contact-inquiries/i1/status", [{ status: "READ" }]],
+    ["contactInquiries.remove", () => contactInquiriesService.remove("i1"), "delete", "/platform/contact-inquiries/i1", []],
     ["auditLogs.getAll", () => auditLogsService.getAll(params), "get", "/audit-logs", [{ params }]],
     ["auth.login", () => authService.login({ identifier: "a", password: "b" }), "post", "/auth/login", [{ identifier: "a", password: "b" }]],
     ["auth.register", () => authService.register({ name: "n", email: "e", password: "p", role: "ADMIN" }), "post", "/auth/register", [{ name: "n", email: "e", password: "p", role: "ADMIN" }]],

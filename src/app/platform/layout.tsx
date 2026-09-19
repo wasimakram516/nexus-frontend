@@ -23,6 +23,7 @@ import ChevronRight from "@mui/icons-material/ChevronRight";
 import Dashboard from "@mui/icons-material/Dashboard";
 import Delete from "@mui/icons-material/Delete";
 import Layers from "@mui/icons-material/Layers";
+import Inbox from "@mui/icons-material/Inbox";
 import Language from "@mui/icons-material/Language";
 import Logout from "@mui/icons-material/Logout";
 import Person from "@mui/icons-material/Person";
@@ -42,6 +43,7 @@ const navItems = [
   { label: "Overview",       href: "/platform",              icon: <Dashboard /> },
   { label: "Institutions",   href: "/platform/institutions", icon: <AccountTree /> },
   { label: "Plans",          href: "/platform/plans",        icon: <Layers /> },
+  { label: "Inquiries",     href: "/platform/inquiries",   icon: <Inbox /> },
   { label: "Audit Logs",     href: "/platform/audit-logs",   icon: <Assessment /> },
   { label: "Recycle Bin",    href: "/platform/recycle-bin",  icon: <Delete /> },
 ];
