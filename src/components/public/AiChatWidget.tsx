@@ -91,6 +91,17 @@ export default function AiChatWidget() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
 
+  /**
+   * Opens or closes the panel and plays the matching sound (shared by every open/close path).
+   * @param {boolean} next - Desired open state.
+   * @returns {void}
+   */
+  const toggleOpen = (next: boolean): void => {
+    setOpen(next);
+    if (next) playOpen();
+    else playClose();
+  };
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || typing) return;
     playSend();
@@ -150,7 +161,7 @@ export default function AiChatWidget() {
                 </Typography>
               </Box>
             </Box>
-            <IconButton size="small" onClick={() => setOpen(false)} sx={{ color: "#fff" }}>
+            <IconButton size="small" aria-label="Close chat" onClick={() => toggleOpen(false)} sx={{ color: "#fff" }}>
               <Close fontSize="small" />
             </IconButton>
           </Box>
@@ -336,15 +347,7 @@ export default function AiChatWidget() {
       <Tooltip title={AI_POSITIONING.chatTooltip} placement="left">
         <Fab
           size="small"
-          onClick={() => {
-            const next = !open;
-            setOpen(next);
-            if (next) {
-              playOpen();
-            } else {
-              playClose();
-            }
-          }}
+          onClick={() => toggleOpen(!open)}
           sx={{
             position: "fixed",
             bottom: 24,

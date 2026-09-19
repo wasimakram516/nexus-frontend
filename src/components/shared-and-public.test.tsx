@@ -161,11 +161,12 @@ describe("AiChatWidget", () => {
     expect(screen.getByText(/Hi! I'm Nexus AI/)).toBeInTheDocument();
     fireEvent.click(screen.getAllByTestId("CloseIcon")[0].closest("button")!);
     expect(screen.queryByPlaceholderText("Ask about Nexus...")).not.toBeInTheDocument();
+    expect(mocks.sounds.playClose).toHaveBeenCalledTimes(1);
     openChat();
     const icons = screen.getAllByTestId("CloseIcon");
     fireEvent.click(icons[icons.length - 1].closest("button")!);
     expect(screen.queryByPlaceholderText("Ask about Nexus...")).not.toBeInTheDocument();
-    expect(mocks.sounds.playClose).toHaveBeenCalledTimes(1);
+    expect(mocks.sounds.playClose).toHaveBeenCalledTimes(2);
   });
 
   it("answers a typed question after a short delay and offers suggestions", async () => {
