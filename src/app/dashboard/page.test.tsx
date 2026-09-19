@@ -62,6 +62,14 @@ beforeEach(() => {
   state.getAll.mockImplementation(() => ok([]));
 });
 
+describe("Dashboard greeting fallback", () => {
+  it.each([[null], [undefined], [""], ["   "]])("uses 'there' when the name is %j", (name) => {
+    state.user = { id: "u", name, email: "a@x.io", role: "ADMIN" };
+    render(<DashboardOverviewPage />);
+    expect(screen.getByText("Welcome back, there")).toBeInTheDocument();
+  });
+});
+
 describe("Dashboard overview: admin", () => {
   it("shows counts, today's attendance and onboarding progress from real data", async () => {
     render(<DashboardOverviewPage />);

@@ -241,7 +241,7 @@ export default function DashboardOverviewPage() {
       <Box sx={{ px: 4, py: 3, borderBottom: "1px solid", borderColor: "divider", backgroundColor: "background.paper", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            Welcome back, {user?.name?.split(" ")[0] ?? "there"}
+            Welcome back, {user?.name?.trim().split(/\s+/)[0] || "there"}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {config?.branding?.displayName ?? "Your institution"} at a glance.
