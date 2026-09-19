@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 export type UserRole =
   | "SUPERADMIN"
@@ -32,7 +32,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 /**
  * Reads the persisted auth pair from sessionStorage. Both the user record and
  * the token must be present together, otherwise the session is treated as
- * empty (matches the previous effect-based bootstrap logic).
+ * empty. Browser-only: never call this while rendering, only after mount.
  */
 function readStoredAuth(): { user: AuthUser | null; token: string | null } {
   if (typeof window === "undefined") return { user: null, token: null };
@@ -47,11 +47,22 @@ function readStoredAuth(): { user: AuthUser | null; token: string | null } {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => readStoredAuth().user);
-  const [accessToken, setAccessToken] = useState<string | null>(() => readStoredAuth().token);
-  // Auth state is resolved synchronously above (sessionStorage is available at mount),
-  // so there is no longer an async bootstrap window — kept as `false` for API stability.
-  const isLoading = false;
+  // The first render must match the server (no session, still loading), so the
+  // stored session is restored after mount. Reading sessionStorage while rendering
+  // makes the server HTML differ from the client and causes hydration errors.
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const restoreSession = () => {
+      const stored = readStoredAuth();
+      setUser(stored.user);
+      setAccessToken(stored.token);
+      setIsLoading(false);
+    };
+    restoreSession();
+  }, []);
 
   const setAuth = useCallback((authUser: AuthUser, token: string) => {
     setUser(authUser);

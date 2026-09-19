@@ -15,20 +15,19 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<ThemeMode>(() => {
-    if (typeof window === "undefined") return "light";
-    const stored = localStorage.getItem("nexus-theme") as ThemeMode | null;
-    return stored ?? "light";
-  });
-  // `mounted` intentionally stays effect-driven: it exists to defer applying the
-  // resolved theme until after hydration so server and first client render match,
-  // which is a real cross-render (SSR vs. client) synchronization, not a value
-  // that's computable once during render.
+  // The first render must match the server, so the saved theme is applied after
+  // mount. Reading localStorage while rendering makes anything that shows the
+  // mode (e.g. the theme toggle icon) differ between server and client.
+  const [mode, setMode] = useState<ThemeMode>("light");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const markMounted = () => setMounted(true);
-    markMounted();
+    const restoreTheme = () => {
+      const stored = localStorage.getItem("nexus-theme") as ThemeMode | null;
+      if (stored === "dark" || stored === "light") setMode(stored);
+      setMounted(true);
+    };
+    restoreTheme();
   }, []);
 
   const toggleTheme = useCallback(() => {
