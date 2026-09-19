@@ -1,7 +1,8 @@
 "use client";
 
 import { startTransition, useCallback, useEffect, useState } from "react";
-import { Alert, Chip } from "@mui/material";
+import { Alert, Chip, TextField } from "@mui/material";
+import CustomFieldDefaultEditor from "./CustomFieldDefaultEditor";
 import ResourceSection from "@/components/dashboard/ResourceSection";
 import CustomFieldOptionsEditor from "@/components/dashboard/CustomFieldOptionsEditor";
 import CustomFieldVisibilityEditor from "@/components/dashboard/CustomFieldVisibilityEditor";
@@ -24,6 +25,8 @@ interface Definition {
   sortOrder?: number;
   validation?: unknown;
   visibilityRules?: unknown;
+  defaultValue?: unknown;
+  planKeys?: string[];
 }
 
 interface CustomFieldsManagerProps {
@@ -35,6 +38,17 @@ const INPUT_TYPES = [
   "TEXT", "TEXTAREA", "NUMBER", "EMAIL", "PHONE", "DATE", "DATETIME",
   "SELECT", "MULTI_SELECT", "CHECKBOX", "RADIO", "BOOLEAN", "FILE", "IMAGE", "URL",
 ];
+
+/** Keeps partially typed separators visible while submitting normalized plan keys. */
+function PlanKeysInput({ value, onChange, disabled }: { value: string; onChange: (value: string) => void; disabled: boolean }) {
+  const [text, setText] = useState(() => value ? (JSON.parse(value) as string[]).join(", ") : "");
+  return <TextField fullWidth label="Plan keys" disabled={disabled}
+    helperText="Comma-separated plan keys. Leave empty for all plans." value={text}
+    onChange={(event) => {
+      setText(event.target.value);
+      onChange(JSON.stringify(event.target.value.split(",").map((key) => key.trim()).filter(Boolean)));
+    }} />;
+}
 
 /** Manages definitions using the backend's supported entity catalog. */
 export default function CustomFieldsManager({ institutionId }: CustomFieldsManagerProps) {
@@ -71,6 +85,10 @@ export default function CustomFieldsManager({ institutionId }: CustomFieldsManag
     <>
     {loadError && <Alert severity="error">Custom field definitions could not be loaded. Reload this page to retry.</Alert>}
     <ResourceSection
+      rowToForm={(row) => ({
+        ...Object.fromEntries(Object.entries(row).map(([key, value]) => [key, value == null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value)])),
+        defaultValue: row.defaultValue == null ? "" : JSON.stringify(row.defaultValue),
+      })}
       title="Field Definitions"
       subtitle="Define additional information to collect for each record type."
       createLabel="Add Field"
@@ -101,6 +119,8 @@ export default function CustomFieldsManager({ institutionId }: CustomFieldsManag
         { key: "entityType", label: "Entity Type", type: "select", options: entities.map((entity) => ({ value: entity.entityType, label: entity.entityType.replaceAll("_", " ") })), required: true, cols: 6, createOnly: true },
         { key: "inputType", label: "Input Type", type: "select", options: INPUT_TYPES.map((t) => ({ value: t, label: t })), required: true, cols: 6 },
         { key: "options", label: "Choices", type: "json", renderInput: (value, onChange, disabled) => <CustomFieldOptionsEditor value={value} onChange={onChange} disabled={disabled} /> },
+        { key: "defaultValue", label: "Default value", type: "json", renderInput: (value, onChange, disabled, form, onBusyChange) => <CustomFieldDefaultEditor value={value} onChange={onChange} disabled={disabled} form={form} onBusyChange={onBusyChange} /> },
+        { key: "planKeys", label: "Available plans", type: "json", renderInput: (value, onChange, disabled) => <PlanKeysInput value={value} onChange={onChange} disabled={disabled} /> },
         { key: "sortOrder", label: "Sort Order", type: "number", cols: 6 },
         { key: "placeholder", label: "Placeholder", cols: 6 },
         { key: "helpText", label: "Help Text", cols: 6 },

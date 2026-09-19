@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AttachFile from "@mui/icons-material/AttachFile";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -18,6 +18,7 @@ interface Props {
   values: Record<string, unknown>;
   onChange: (fieldKey: string, value: unknown) => void;
   disabled?: boolean;
+  onBusyChange?: (busy: boolean) => void;
 }
 
 /** Derives a short display label for an uploaded value — mirrors NoticesManager's attachmentLabel. */
@@ -40,11 +41,12 @@ function formatBytes(bytes: number): string {
  * the field's value, matching what entity-custom-fields.service.ts and
  * custom-field-validation.util.ts now expect for these input types.
  */
-function UploadFieldInput({ definition, value, onChange, disabled }: {
+function UploadFieldInput({ definition, value, onChange, disabled, onBusyChange }: {
   definition: CustomFieldDefinition;
   value: unknown;
   onChange: (value: unknown) => void;
   disabled: boolean;
+  onBusyChange: (busy: boolean) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -52,6 +54,12 @@ function UploadFieldInput({ definition, value, onChange, disabled }: {
   const [error, setError] = useState<string | null>(null);
   const statusId = `custom-field-upload-status-${definition.id}`;
   const current = value && typeof value === "object" ? (value as UploadResult) : null;
+  const externalUrl = typeof value === "string" ? value : null;
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   const handleSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -59,17 +67,19 @@ function UploadFieldInput({ definition, value, onChange, disabled }: {
     if (!file) return;
     setError(null);
     setUploading(true);
+    onBusyChange(true);
     setProgress(0);
     try {
       const result = await uploadFile(file, {
         subfolder: definition.inputType === "IMAGE" ? "images" : "documents",
         onProgress: setProgress,
       });
-      onChange(result);
+      if (mounted.current) onChange(result);
     } catch (uploadErr) {
       setError((uploadErr as Error).message || `Failed to upload "${file.name}".`);
     } finally {
       setUploading(false);
+      onBusyChange(false);
       setProgress(0);
     }
   };
@@ -92,6 +102,10 @@ function UploadFieldInput({ definition, value, onChange, disabled }: {
             onDelete={disabled ? undefined : () => onChange(null)}
             deleteIcon={<span aria-label={`Remove ${definition.label}`} role="button">&times;</span>}
           />
+        ) : externalUrl ? (
+          <Chip component="a" href={externalUrl} target="_blank" rel="noopener noreferrer" clickable
+            label={externalUrl} onDelete={disabled ? undefined : () => onChange(null)}
+            deleteIcon={<span aria-label={`Remove ${definition.label}`} role="button">&times;</span>} />
         ) : (
           <Typography variant="body2" color="text.secondary">No file selected.</Typography>
         )}
@@ -103,7 +117,7 @@ function UploadFieldInput({ definition, value, onChange, disabled }: {
           disabled={disabled || uploading}
           aria-describedby={statusId}
         >
-          {current ? "Replace" : "Upload"}
+          {current || externalUrl ? "Replace" : "Upload"}
           <input
             id={`${statusId}-input`}
             ref={inputRef}
@@ -137,7 +151,8 @@ function UploadFieldInput({ definition, value, onChange, disabled }: {
 }
 
 /** Renders typed custom values using the same value contract as the API. */
-export default function CustomFieldInputs({ definitions, values, onChange, disabled = false }: Props) {
+export default function CustomFieldInputs({ definitions, values, onChange, disabled = false, onBusyChange }: Props) {
+  const pendingUploads = useRef(new Set<string>());
   if (!definitions.length) return null;
   return <Box role="group" aria-label="Additional information" sx={{ display: "grid", gap: 2 }}>
     <Typography variant="subtitle2">Additional information</Typography>
@@ -151,6 +166,13 @@ export default function CustomFieldInputs({ definitions, values, onChange, disab
             value={value}
             onChange={(next) => onChange(definition.fieldKey, next)}
             disabled={disabled}
+            onBusyChange={(busy) => {
+              const wasBusy = pendingUploads.current.size > 0;
+              if (busy) pendingUploads.current.add(definition.id);
+              else pendingUploads.current.delete(definition.id);
+              const isBusy = pendingUploads.current.size > 0;
+              if (wasBusy !== isBusy) onBusyChange?.(isBusy);
+            }}
           />
         );
       }

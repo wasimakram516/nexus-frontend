@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { customFieldsService, type CustomFieldDefinition } from "@/services/customFields.service";
 
 /** Shares definition loading, defaults and required-value state across record forms. */
@@ -9,6 +9,9 @@ export function useCustomFieldForm(entityType?: string, institutionId?: string) 
   const [definitions, setDefinitions] = useState<CustomFieldDefinition[]>([]);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(false);
+  const [uploadCount, setUploadCount] = useState(0);
+  /** Counts active input groups, including per-student relationship forms. */
+  const setUploading = useCallback((busy: boolean) => setUploadCount((count) => Math.max(0, count + (busy ? 1 : -1))), []);
   const [error, setError] = useState<string | null>(null);
 
   /** Discards stale responses and preserves saved falsy values instead of replacing them with defaults. */
@@ -37,5 +40,5 @@ export function useCustomFieldForm(entityType?: string, institutionId?: string) 
     const value = values[definition.fieldKey];
     return definition.isRequired && (value === null || value === undefined || value === "" || (Array.isArray(value) && !value.length));
   });
-  return { definitions, values, setValues, loading, error, load, missingRequired };
+  return { definitions, values, setValues, loading: loading || uploadCount > 0, setUploading, error, load, missingRequired };
 }

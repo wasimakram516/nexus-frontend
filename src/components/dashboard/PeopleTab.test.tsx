@@ -1,6 +1,6 @@
 import { customFieldsService } from "@/services/customFields.service";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ConfirmProvider } from "@/contexts/ConfirmContext";
 import { MessageProvider } from "@/contexts/MessageContext";
@@ -201,7 +201,8 @@ it("corrects an existing student-guardian link's additional fields from Manage S
   vi.mocked(customFieldsService.getFormDefinitions).mockImplementation(({ entityType }) => {
     const definitions =
       entityType === "student_guardian"
-        ? [{ id: "link-cf", fieldKey: "REL_NOTE", label: "Relationship note", inputType: "TEXT", isRequired: true }]
+        ? [{ id: "link-cf", fieldKey: "REL_NOTE", label: "Relationship note", inputType: "TEXT", isRequired: true },
+           { id: "pickup-cf", fieldKey: "PICKUP", label: "Pickup code", inputType: "TEXT", isRequired: false }]
         : [];
     return Promise.resolve({ data: { data: definitions } }) as never;
   });
@@ -214,7 +215,7 @@ it("corrects an existing student-guardian link's additional fields from Manage S
     campusId: "campus-1",
     relation: "FATHER",
     createdAt: "2026-01-01",
-    students: [{ id: "link-1", studentId: "student-1" }],
+    students: [{ id: "link-1", studentId: "student-1", customFields: { REL_NOTE: "Old note", PICKUP: "KEEP" } }],
   };
   const studentRow: PersonRecord = {
     id: "student-1",
@@ -252,17 +253,69 @@ it("corrects an existing student-guardian link's additional fields from Manage S
   // "dialog" role query resolves uniquely to the new top dialog.
   const editDialog = await screen.findByRole("dialog");
   expect(within(editDialog).getByText("Edit Relationship")).toBeInTheDocument();
-  await user.type(await within(editDialog).findByLabelText(/^Relationship note/), "Pickup allowed");
+  const note = await within(editDialog).findByLabelText(/^Relationship note/);
+  expect(note).toHaveValue("Old note");
+  expect(within(editDialog).getByLabelText("Pickup code")).toHaveValue("KEEP");
+  await user.clear(note);
+  await user.type(note, "Pickup allowed");
   await user.click(within(editDialog).getByRole("button", { name: "Save Changes" }));
 
   await waitFor(() =>
     expect(peopleService.linkGuardianToStudent).toHaveBeenCalledWith({
       studentId: "student-1",
       guardianId: "guardian-1",
-      customFields: { REL_NOTE: "Pickup allowed" },
+      customFields: { REL_NOTE: "Pickup allowed", PICKUP: "KEEP" },
     })
   );
   expect(onReload).toHaveBeenCalled();
+});
+
+/** Renders guardian creation/linking against one real selectable student. */
+function renderGuardianLinks(rows: PersonRecord[] = []) {
+  const student: PersonRecord = { id: "student-1", userId: "user-1", campusId: "campus-1", createdAt: "2026-01-01", regNo: "STD-1" };
+  render(<MessageProvider><ConfirmProvider><PeopleTab kind="guardians" rows={rows} loading={false}
+    users={studentUsers} campuses={campuses} classes={[]} sections={[]} students={[student]} guardians={rows} onReload={vi.fn()} canManage /></ConfirmProvider></MessageProvider>);
+}
+
+it("requires relationship values when adding a student from Manage Students", async () => {
+  vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({ data: { data: [{ id: "note", fieldKey: "note", label: "Pickup note", inputType: "TEXT", isRequired: true }] } } as never);
+  vi.mocked(peopleService.linkGuardianToStudent).mockReset().mockResolvedValue({ data: { data: {} } } as never);
+  renderGuardianLinks([{ id: "guardian-1", userId: "guardian-user", campusId: "campus-1", createdAt: "2026-01-01", students: [] }]);
+  fireEvent.click(screen.getByRole("button", { name: "Manage Students" }));
+  const input = await screen.findByLabelText("Link a student");
+  fireEvent.change(input, { target: { value: "Sara" } });
+  fireEvent.click(await screen.findByRole("option", { name: /Sara/ }));
+  expect(screen.getByRole("button", { name: "Link" })).toBeDisabled();
+  fireEvent.change(await screen.findByLabelText(/Pickup note/), { target: { value: "Pickup approved" } });
+  fireEvent.click(screen.getByRole("button", { name: "Link" }));
+  await waitFor(() => expect(peopleService.linkGuardianToStudent).toHaveBeenCalledWith({ studentId: "student-1", guardianId: "guardian-1", customFields: { note: "Pickup approved" } }));
+});
+
+it("retries failed new-guardian student linking without recreating the account or profile", async () => {
+  vi.mocked(customFieldsService.getFormDefinitions).mockImplementation(({ entityType }) => Promise.resolve({ data: { data: entityType === "student_guardian" ? [{ id: "note", fieldKey: "note", label: "Pickup note", inputType: "TEXT", isRequired: true }] : [] } }) as never);
+  vi.mocked(authService.register).mockReset().mockResolvedValue({ data: { data: { id: "guardian-user" } } } as never);
+  vi.mocked(peopleService.createGuardian).mockReset().mockResolvedValue({ data: { data: { id: "guardian-1" } } } as never);
+  vi.mocked(peopleService.linkGuardianToStudent).mockReset().mockRejectedValueOnce(new Error("Temporary failure")).mockResolvedValue({ data: { data: {} } } as never);
+  renderGuardianLinks();
+  fireEvent.click(screen.getByRole("button", { name: "Add Guardian" }));
+  const dialog = await screen.findByRole("dialog");
+  fireEvent.change(within(dialog).getByLabelText(/Full Name/), { target: { value: "Guardian One" } });
+  fireEvent.change(within(dialog).getByLabelText(/Email Address/), { target: { value: "guardian@example.test" } });
+  fireEvent.change(within(dialog).getByLabelText(/Password/), { target: { value: "StrongPass123" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Continue" }));
+  fireEvent.mouseDown(within(dialog).getByLabelText(/Relation to Student/));
+  fireEvent.click(await screen.findByRole("option", { name: "FATHER" }));
+  fireEvent.change(within(dialog).getByLabelText("Link to students (optional)"), { target: { value: "Sara" } });
+  fireEvent.click(await screen.findByRole("option", { name: /Sara/ }));
+  fireEvent.change(await within(dialog).findByLabelText(/Pickup note/), { target: { value: "Approved" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Create Guardian" }));
+  expect(await screen.findByText(/Guardian was created, but/)).toBeInTheDocument();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Create Guardian" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(authService.register).toHaveBeenCalledTimes(1);
+  expect(peopleService.createGuardian).toHaveBeenCalledTimes(1);
+  expect(peopleService.linkGuardianToStudent).toHaveBeenCalledTimes(2);
+  expect(peopleService.linkGuardianToStudent).toHaveBeenLastCalledWith({ studentId: "student-1", guardianId: "guardian-1", customFields: { note: "Approved" } });
 });
 
 function renderStaffTab(onReload = vi.fn()) {
@@ -593,7 +646,9 @@ describe("PeopleTab (students)", () => {
       .mockResolvedValueOnce({ data: { data: { id: "guardian-user-1" } } } as never);
     vi.mocked(peopleService.createStudent).mockResolvedValue({ data: { data: { id: "student-1" } } } as never);
     vi.mocked(peopleService.createGuardian).mockResolvedValue({ data: { data: { id: "guardian-1" } } } as never);
-    vi.mocked(peopleService.linkGuardianToStudent).mockRejectedValueOnce(new Error("Link failed"));
+    vi.mocked(peopleService.linkGuardianToStudent)
+      .mockRejectedValueOnce(new Error("Link failed"))
+      .mockResolvedValueOnce({ data: { data: { id: "student-1:guardian-1" } } } as never);
 
     renderStudentsTab({ onReload });
     const dialog = await fillStudentAccountStepAndContinue(user);
@@ -606,6 +661,11 @@ describe("PeopleTab (students)", () => {
 
     expect(await screen.findByText(/still need attention/, {}, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: /Create Student \+ 1 Guardian Link/ }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(authService.register).toHaveBeenCalledTimes(2);
+    expect(peopleService.createGuardian).toHaveBeenCalledTimes(1);
+    expect(peopleService.linkGuardianToStudent).toHaveBeenCalledTimes(2);
     expect(peopleService.createStudent).toHaveBeenCalledTimes(1);
     expect(onReload).toHaveBeenCalled();
   }, 30000);

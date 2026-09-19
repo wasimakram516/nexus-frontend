@@ -5,8 +5,13 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 interface ValidationRules {
+  [key: string]: unknown;
   allowedFormats?: string[];
   maxBytes?: number;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
 }
 
 interface Props {
@@ -19,10 +24,12 @@ const BYTES_PER_MB = 1024 * 1024;
 
 /** Serializes rules, dropping unset keys so an empty configuration is omitted from the payload entirely. */
 function serialize(rules: ValidationRules): string {
-  const cleaned: ValidationRules = {};
-  if (rules.allowedFormats?.length) cleaned.allowedFormats = rules.allowedFormats;
-  if (typeof rules.maxBytes === "number" && Number.isFinite(rules.maxBytes)) cleaned.maxBytes = rules.maxBytes;
-  return Object.keys(cleaned).length ? JSON.stringify(cleaned) : "";
+  const cleaned: ValidationRules = { ...rules };
+  if (!rules.allowedFormats?.length) delete cleaned.allowedFormats;
+  for (const key of ["maxBytes", "min", "max", "minLength", "maxLength"] as const) {
+    if (typeof cleaned[key] !== "number" || !Number.isFinite(cleaned[key])) delete cleaned[key];
+  }
+  return JSON.stringify(cleaned);
 }
 
 /**
@@ -41,9 +48,14 @@ export default function CustomFieldValidationEditor({ value, onChange, disabled 
 
   return (
     <Box component="fieldset" disabled={disabled} sx={{ border: 0, p: 0, m: 0, display: "grid", gap: 1.5 }}>
-      <Typography component="legend">File / image rules</Typography>
+      <Typography component="legend">Validation rules</Typography>
+      {([ ["min", "Minimum number"], ["max", "Maximum number"], ["minLength", "Minimum text length"], ["maxLength", "Maximum text length"] ] as const).map(([key, label]) => (
+        <TextField key={key} label={label} type="number" disabled={disabled} value={rules[key] ?? ""}
+          slotProps={{ htmlInput: { ...(key.endsWith("Length") ? { min: 0, step: 1 } : { step: "any" }) } }}
+          onChange={(event) => onChange(serialize({ ...rules, [key]: event.target.value === "" ? undefined : Number(event.target.value) }))} />
+      ))}
       <Typography variant="body2" color="text.secondary">
-        Only applies to File and Image fields; ignored for other input types.
+        Number and text limits apply to their matching field types. File limits below apply to uploaded files and images; when a format or size limit is set, external URLs are rejected because they carry no metadata to check.
       </Typography>
       <TextField
         label="Allowed formats"

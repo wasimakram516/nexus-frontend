@@ -8,12 +8,12 @@ describe("CustomFieldVisibilityEditor", () => {
     expect(screen.getByLabelText("Visible to roles")).toBeInTheDocument();
   });
 
-  it("emits an empty string when every role is cleared, leaving the field visible to everyone", () => {
+  it("emits an explicit empty allow-list so an edit clears the saved restriction", () => {
     const onChange = vi.fn();
     render(<CustomFieldVisibilityEditor value={JSON.stringify({ roles: ["STAFF"] })} onChange={onChange} disabled={false} />);
     fireEvent.mouseDown(screen.getByLabelText("Visible to roles"));
     fireEvent.click(screen.getByRole("option", { name: "Staff" }));
-    expect(onChange).toHaveBeenCalledWith("");
+    expect(onChange).toHaveBeenCalledWith(JSON.stringify({ roles: [] }));
   });
 
   it("adds a role to the allow-list and serializes it as { roles }", () => {

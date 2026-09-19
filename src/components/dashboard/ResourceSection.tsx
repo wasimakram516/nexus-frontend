@@ -23,7 +23,10 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Add, Delete, Edit, Visibility } from "@mui/icons-material";
+import Add from "@mui/icons-material/Add";
+import Delete from "@mui/icons-material/Delete";
+import Edit from "@mui/icons-material/Edit";
+import Visibility from "@mui/icons-material/Visibility";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
@@ -48,7 +51,7 @@ export interface FieldDef {
   min?: number;
   max?: number;
   integer?: boolean;
-  renderInput?: (value: string, onChange: (value: string) => void, disabled: boolean) => React.ReactNode;
+  renderInput?: (value: string, onChange: (value: string) => void, disabled: boolean, form: Readonly<Record<string, string>>, onBusyChange: (busy: boolean) => void) => React.ReactNode;
 }
 
 export interface ColumnDef<T> {
@@ -343,7 +346,7 @@ export default function ResourceSection<T extends { id: string }>({
           <Grid container spacing={2.5}>
             {dialogFields.map((field) => (
               <Grid key={field.key} size={{ xs: 12, sm: field.cols ?? 12 }}>
-                {field.renderInput ? field.renderInput(form[field.key] ?? "", (value) => setField(field.key, value), saving || viewing) : <TextField
+                {field.renderInput ? field.renderInput(form[field.key] ?? "", (value) => setField(field.key, value), saving || viewing, form, customForm.setUploading) : <TextField
                   label={field.required ? `${field.label} *` : field.label}
                   value={form[field.key] ?? ""}
                   disabled={saving || viewing}
@@ -377,7 +380,7 @@ export default function ResourceSection<T extends { id: string }>({
             ))}
             {customLoading && <Grid size={{ xs: 12 }}><Typography role="status">Loading additional fields...</Typography></Grid>}
             {customError && <Grid size={{ xs: 12 }}><Typography role="alert" color="error">{customError}</Typography></Grid>}
-            {customDefinitions.length > 0 && <Grid size={{ xs: 12 }}><CustomFieldInputs definitions={customDefinitions} values={customValues} disabled={saving || viewing}
+            {customDefinitions.length > 0 && <Grid size={{ xs: 12 }}><CustomFieldInputs definitions={customDefinitions} onBusyChange={customForm.setUploading} values={customValues} disabled={saving || viewing}
               onChange={(fieldKey, value) => { setPrepared(null); setCustomValues((current) => ({ ...current, [fieldKey]: value })); }} /></Grid>}
             {prepared && <Grid size={{ xs: 12 }}><Box aria-live="polite">{prepared.content}</Box></Grid>}
             {formError && (

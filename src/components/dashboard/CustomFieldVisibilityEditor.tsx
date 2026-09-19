@@ -40,7 +40,7 @@ export default function CustomFieldVisibilityEditor({ value, onChange, disabled 
   const selectedRoles = Array.isArray(rules.roles) ? rules.roles : [];
 
   const update = (nextRoles: string[]): void => {
-    onChange(nextRoles.length ? JSON.stringify({ roles: nextRoles }) : "");
+    onChange(JSON.stringify({ ...rules, roles: nextRoles }));
   };
 
   return (

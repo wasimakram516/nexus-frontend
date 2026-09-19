@@ -36,6 +36,24 @@ beforeEach(() => {
 });
 
 describe("CustomFieldInputs", () => {
+  it("displays a saved external URL in a read-only file field", () => {
+    render(<CustomFieldInputs definitions={[fileDefinition]} values={{ report: "https://example.com/report.pdf" }} onChange={vi.fn()} disabled />);
+    expect(screen.getByRole("link", { name: "https://example.com/report.pdf" })).toHaveAttribute("href", "https://example.com/report.pdf");
+    expect(screen.queryByText("No file selected.")).not.toBeInTheDocument();
+  });
+  it("keeps the parent busy until an optional file upload completes", async () => {
+    let finish!: (value: typeof uploadResult) => void;
+    mocks.uploadFile.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    const onBusyChange = vi.fn();
+    const onChange = vi.fn();
+    render(<CustomFieldInputs definitions={[{ ...fileDefinition, isRequired: false }]} values={{}} onChange={onChange} onBusyChange={onBusyChange} />);
+    fireEvent.change(screen.getByLabelText("Report file", { selector: "input" }), { target: { files: [new File(["data"], "report.pdf")] } });
+    expect(onBusyChange).toHaveBeenLastCalledWith(true);
+    expect(onChange).not.toHaveBeenCalled();
+    finish(uploadResult);
+    await waitFor(() => expect(onBusyChange).toHaveBeenLastCalledWith(false));
+    expect(onChange).toHaveBeenCalledWith("report", uploadResult);
+  });
   it("renders nothing when there are no definitions", () => {
     const { container } = render(
       <CustomFieldInputs definitions={[]} values={{}} onChange={vi.fn()} />,
