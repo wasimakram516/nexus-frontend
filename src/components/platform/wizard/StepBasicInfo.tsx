@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Card, CardContent, Grid, MenuItem, TextField, Tooltip, Typography } from "@mui/material";
-import { InfoOutlined } from "@mui/icons-material";
+import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import { WizardData } from "@/app/platform/institutions/new/page";
 import { toSlug } from "@/lib/slugify";
 

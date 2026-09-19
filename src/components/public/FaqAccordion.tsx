@@ -1,7 +1,7 @@
 "use client";
 
 import { Accordion, AccordionDetails, AccordionSummary, Typography } from "@mui/material";
-import { ExpandMore } from "@mui/icons-material";
+import ExpandMore from "@mui/icons-material/ExpandMore";
 
 interface FaqItem {
   q: string;

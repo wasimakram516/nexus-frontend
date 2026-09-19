@@ -6,7 +6,9 @@ import {
   DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid,
   Switch, Typography,
 } from "@mui/material";
-import { CheckCircle, Cancel, Edit } from "@mui/icons-material";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Cancel from "@mui/icons-material/Cancel";
+import Edit from "@mui/icons-material/Edit";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";

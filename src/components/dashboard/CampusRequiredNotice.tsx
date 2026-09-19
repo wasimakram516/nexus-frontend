@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button, Card, CardContent, Typography } from "@mui/material";
-import { AddBusiness } from "@mui/icons-material";
+import AddBusiness from "@mui/icons-material/AddBusiness";
 
 interface CampusRequiredNoticeProps {
   /** Name of the module the user tried to use, e.g. "people". */

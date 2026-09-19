@@ -5,10 +5,18 @@ import { useParams } from "next/navigation";
 import {
   Box, Card, CardContent, CircularProgress, Container, Typography,
 } from "@mui/material";
-import {
-  AccountBalance, AccountTree, AssignmentTurnedIn, AutoStories,
-  Campaign, Description, Forum, Group, ManageAccounts, QueryStats, School, Tune,
-} from "@mui/icons-material";
+import AccountBalance from "@mui/icons-material/AccountBalance";
+import AccountTree from "@mui/icons-material/AccountTree";
+import AssignmentTurnedIn from "@mui/icons-material/AssignmentTurnedIn";
+import AutoStories from "@mui/icons-material/AutoStories";
+import Campaign from "@mui/icons-material/Campaign";
+import Description from "@mui/icons-material/Description";
+import Forum from "@mui/icons-material/Forum";
+import Group from "@mui/icons-material/Group";
+import ManageAccounts from "@mui/icons-material/ManageAccounts";
+import QueryStats from "@mui/icons-material/QueryStats";
+import School from "@mui/icons-material/School";
+import Tune from "@mui/icons-material/Tune";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";

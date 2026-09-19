@@ -1,7 +1,8 @@
 "use client";
 
 import { Box, Card, CardContent, CircularProgress, Typography } from "@mui/material";
-import { LockOutlined, VisibilityOff } from "@mui/icons-material";
+import LockOutlined from "@mui/icons-material/LockOutlined";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { ModuleKey, useRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 
 interface ModuleGateProps {

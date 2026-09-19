@@ -16,18 +16,16 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import {
-  AccountTree,
-  Assessment,
-  ChevronLeft,
-  ChevronRight,
-  Dashboard,
-  Delete,
-  Layers,
-  Language,
-  Logout,
-  Person,
-} from "@mui/icons-material";
+import AccountTree from "@mui/icons-material/AccountTree";
+import Assessment from "@mui/icons-material/Assessment";
+import ChevronLeft from "@mui/icons-material/ChevronLeft";
+import ChevronRight from "@mui/icons-material/ChevronRight";
+import Dashboard from "@mui/icons-material/Dashboard";
+import Delete from "@mui/icons-material/Delete";
+import Layers from "@mui/icons-material/Layers";
+import Language from "@mui/icons-material/Language";
+import Logout from "@mui/icons-material/Logout";
+import Person from "@mui/icons-material/Person";
 import NexusLogo from "@/components/shared/NexusLogo";
 import ProfileDialog from "@/components/shared/ProfileDialog";
 import ThemeToggle from "@/components/shared/ThemeToggle";

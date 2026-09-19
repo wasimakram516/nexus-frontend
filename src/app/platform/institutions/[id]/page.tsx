@@ -6,9 +6,13 @@ import {
   Box, Button, Chip, CircularProgress,
   Container, Tab, Tabs, Typography,
 } from "@mui/material";
-import {
-  Brush, Dashboard, Extension, Info, Lock, Payment, Tune,
-} from "@mui/icons-material";
+import Brush from "@mui/icons-material/Brush";
+import Dashboard from "@mui/icons-material/Dashboard";
+import Extension from "@mui/icons-material/Extension";
+import Info from "@mui/icons-material/Info";
+import Lock from "@mui/icons-material/Lock";
+import Payment from "@mui/icons-material/Payment";
+import Tune from "@mui/icons-material/Tune";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";

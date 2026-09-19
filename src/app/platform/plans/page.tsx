@@ -6,7 +6,8 @@ import {
   Container, Dialog, DialogActions, DialogContent, DialogTitle,
   Grid, IconButton, MenuItem, TextField, Tooltip, Typography,
 } from "@mui/material";
-import { Add, Edit } from "@mui/icons-material";
+import Add from "@mui/icons-material/Add";
+import Edit from "@mui/icons-material/Edit";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";

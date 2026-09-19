@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Box, CircularProgress, IconButton, Popover, Typography } from "@mui/material";
-import { InfoOutlined } from "@mui/icons-material";
+import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import { usersService } from "@/services/users.service";
 import { formatDateTimeLong } from "@/lib/dateFormat";
 

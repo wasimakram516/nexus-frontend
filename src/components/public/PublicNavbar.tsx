@@ -18,21 +18,19 @@ import {
   MenuItem,
   Toolbar,
 } from "@mui/material";
-import {
-  AccountBalance,
-  AssignmentTurnedIn,
-  BarChart,
-  CalendarToday,
-  Close as CloseIcon,
-  ExpandMore,
-  Groups,
-  KeyboardArrowRight,
-  Login,
-  Menu as MenuIcon,
-  SchoolOutlined,
-  Tune,
-  Verified,
-} from "@mui/icons-material";
+import AccountBalance from "@mui/icons-material/AccountBalance";
+import AssignmentTurnedIn from "@mui/icons-material/AssignmentTurnedIn";
+import BarChart from "@mui/icons-material/BarChart";
+import CalendarToday from "@mui/icons-material/CalendarToday";
+import CloseIcon from "@mui/icons-material/Close";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import Groups from "@mui/icons-material/Groups";
+import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
+import Login from "@mui/icons-material/Login";
+import MenuIcon from "@mui/icons-material/Menu";
+import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
+import Tune from "@mui/icons-material/Tune";
+import Verified from "@mui/icons-material/Verified";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import NexusLogo from "@/components/shared/NexusLogo";
 import { useAuth } from "@/contexts/AuthContext";

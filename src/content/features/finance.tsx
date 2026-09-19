@@ -1,4 +1,4 @@
-import { AccountBalance } from "@mui/icons-material";
+import AccountBalance from "@mui/icons-material/AccountBalance";
 import { FeatureModule } from "./types";
 
 export const financeFeature: FeatureModule = {

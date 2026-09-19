@@ -23,7 +23,12 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Add, Delete, Edit, GroupAdd, PersonRemove, Visibility } from "@mui/icons-material";
+import Add from "@mui/icons-material/Add";
+import Delete from "@mui/icons-material/Delete";
+import Edit from "@mui/icons-material/Edit";
+import GroupAdd from "@mui/icons-material/GroupAdd";
+import PersonRemove from "@mui/icons-material/PersonRemove";
+import Visibility from "@mui/icons-material/Visibility";
 import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
 import { useCustomFieldForm } from "@/hooks/useCustomFieldForm";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -41,6 +46,7 @@ interface Campus {
   institutionId?: string;
   name: string;
   location?: string;
+  timezone?: string | null;
   studentStartTime?: string;
   studentEndTime?: string;
   staffStartTime?: string;
@@ -65,6 +71,7 @@ interface CampusesManagerProps {
 const emptyForm = {
   name: "",
   location: "",
+  timezone: "",
   studentStartTime: "08:00",
   studentEndTime: "14:00",
   staffStartTime: "07:30",
@@ -145,6 +152,7 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
     setForm({
       name: campus.name,
       location: campus.location ?? "",
+      timezone: campus.timezone ?? "",
       studentStartTime: campus.studentStartTime ?? "08:00",
       studentEndTime: campus.studentEndTime ?? "14:00",
       staffStartTime: campus.staffStartTime ?? "07:30",
@@ -164,6 +172,7 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
     const payload = {
       name: form.name,
       location: form.location,
+      timezone: form.timezone.trim() || null,
       studentStartTime: form.studentStartTime,
       studentEndTime: form.studentEndTime,
       staffStartTime: form.staffStartTime,
@@ -322,6 +331,7 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField label="Location *" value={form.location} onChange={(e) => f("location", e.target.value)} fullWidth placeholder="e.g. 123 Main Street, Lahore" />
+              <TextField label="Campus timezone" value={form.timezone} onChange={(e) => f("timezone", e.target.value)} fullWidth helperText="Optional IANA zone, for example Asia/Dubai. Leave empty to use the institution timezone." />
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
@@ -354,7 +364,7 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
             <Grid size={{ xs: 12 }}>
               {customForm.loading && <Typography role="status">Loading additional fields...</Typography>}
               {customForm.error && <Typography role="alert" color="error">{customForm.error}</Typography>}
-              <CustomFieldInputs definitions={customForm.definitions} values={customForm.values} disabled={saving || viewing}
+              <CustomFieldInputs definitions={customForm.definitions} onBusyChange={customForm.setUploading} values={customForm.values} disabled={saving || viewing}
                 onChange={(key, value) => customForm.setValues((current) => ({ ...current, [key]: value }))} />
             </Grid>
           </Grid>

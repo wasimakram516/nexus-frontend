@@ -17,7 +17,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Edit, RocketLaunch } from "@mui/icons-material";
+import Edit from "@mui/icons-material/Edit";
+import RocketLaunch from "@mui/icons-material/RocketLaunch";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";

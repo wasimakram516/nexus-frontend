@@ -12,14 +12,12 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
-import {
-  AccountTree,
-  Add,
-  CheckCircle,
-  Layers,
-  PauseCircle,
-  TrendingUp,
-} from "@mui/icons-material";
+import AccountTree from "@mui/icons-material/AccountTree";
+import Add from "@mui/icons-material/Add";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Layers from "@mui/icons-material/Layers";
+import PauseCircle from "@mui/icons-material/PauseCircle";
+import TrendingUp from "@mui/icons-material/TrendingUp";
 import { useRouter } from "next/navigation";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";

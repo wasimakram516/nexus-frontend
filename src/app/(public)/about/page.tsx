@@ -9,7 +9,10 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-import { BarChart, Lock, RocketLaunch, School } from "@mui/icons-material";
+import BarChart from "@mui/icons-material/BarChart";
+import Lock from "@mui/icons-material/Lock";
+import RocketLaunch from "@mui/icons-material/RocketLaunch";
+import School from "@mui/icons-material/School";
 import { AI_POSITIONING } from "@/content/ai";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
 import CountUp from "@/components/shared/CountUp";

@@ -23,24 +23,22 @@ import {
   ThemeProvider as BrandThemeProvider,
   useTheme,
 } from "@mui/material/styles";
-import {
-  AccountBalance,
-  Assessment,
-  Business,
-  Campaign,
-  ChevronLeft,
-  ChevronRight,
-  Dashboard,
-  Groups,
-  Language,
-  Logout,
-  ManageAccounts,
-  Person,
-  SchoolOutlined,
-  Shield,
-  Today,
-  Tune,
-} from "@mui/icons-material";
+import AccountBalance from "@mui/icons-material/AccountBalance";
+import Assessment from "@mui/icons-material/Assessment";
+import Business from "@mui/icons-material/Business";
+import Campaign from "@mui/icons-material/Campaign";
+import ChevronLeft from "@mui/icons-material/ChevronLeft";
+import ChevronRight from "@mui/icons-material/ChevronRight";
+import Dashboard from "@mui/icons-material/Dashboard";
+import Groups from "@mui/icons-material/Groups";
+import Language from "@mui/icons-material/Language";
+import Logout from "@mui/icons-material/Logout";
+import ManageAccounts from "@mui/icons-material/ManageAccounts";
+import Person from "@mui/icons-material/Person";
+import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
+import Shield from "@mui/icons-material/Shield";
+import Today from "@mui/icons-material/Today";
+import Tune from "@mui/icons-material/Tune";
 import NexusLogo from "@/components/shared/NexusLogo";
 import ProfileDialog from "@/components/shared/ProfileDialog";
 import ThemeToggle from "@/components/shared/ThemeToggle";

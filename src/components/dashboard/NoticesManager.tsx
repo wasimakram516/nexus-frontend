@@ -27,7 +27,10 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Add, AttachFile, Delete, Edit } from "@mui/icons-material";
+import Add from "@mui/icons-material/Add";
+import AttachFile from "@mui/icons-material/AttachFile";
+import Delete from "@mui/icons-material/Delete";
+import Edit from "@mui/icons-material/Edit";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
@@ -826,7 +829,7 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
               {custom.loading && <Typography role="status">Loading additional fields…</Typography>}
               {custom.error && <Typography role="alert" color="error">{custom.error}</Typography>}
               <CustomFieldInputs
-                definitions={custom.definitions}
+                definitions={custom.definitions} onBusyChange={custom.setUploading}
                 values={custom.values}
                 disabled={saving || custom.loading}
                 onChange={(key, value) => custom.setValues((previous) => ({ ...previous, [key]: value }))}

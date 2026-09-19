@@ -4,7 +4,7 @@ import {
   Box, Chip, Dialog, DialogContent, DialogTitle, IconButton, Table,
   TableBody, TableCell, TableHead, TableRow, Typography,
 } from "@mui/material";
-import { Close } from "@mui/icons-material";
+import Close from "@mui/icons-material/Close";
 import { formatDateTimeLong } from "@/lib/dateFormat";
 
 export interface AuditLogDiffTarget {

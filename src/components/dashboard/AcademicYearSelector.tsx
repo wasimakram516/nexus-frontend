@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Chip } from "@mui/material";
-import { CalendarMonth } from "@mui/icons-material";
+import CalendarMonth from "@mui/icons-material/CalendarMonth";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { useRuntimeConfig } from "@/contexts/RuntimeConfigContext";

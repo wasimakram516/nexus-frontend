@@ -13,7 +13,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import type { WizardData } from "@/app/platform/institutions/new/page";
 
 interface Props {

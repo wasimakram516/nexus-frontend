@@ -1,4 +1,4 @@
-import { Tune } from "@mui/icons-material";
+import Tune from "@mui/icons-material/Tune";
 import { FeatureModule } from "./types";
 
 export const customFieldsFeature: FeatureModule = {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Fab, Tooltip, Zoom } from "@mui/material";
-import { KeyboardArrowUp } from "@mui/icons-material";
+import KeyboardArrowUp from "@mui/icons-material/KeyboardArrowUp";
 
 export default function ScrollToTop() {
   const [visible, setVisible] = useState(false);

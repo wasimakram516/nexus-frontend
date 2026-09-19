@@ -11,7 +11,10 @@ import {
   DialogContentText,
   DialogTitle,
 } from "@mui/material";
-import { Cancel, CheckCircle, Delete, Warning } from "@mui/icons-material";
+import Cancel from "@mui/icons-material/Cancel";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Delete from "@mui/icons-material/Delete";
+import Warning from "@mui/icons-material/Warning";
 
 interface Props {
   open: boolean;

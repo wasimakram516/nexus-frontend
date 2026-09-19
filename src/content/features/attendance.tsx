@@ -1,4 +1,4 @@
-import { Today } from "@mui/icons-material";
+import Today from "@mui/icons-material/Today";
 import { FeatureModule } from "./types";
 
 export const attendanceFeature: FeatureModule = {

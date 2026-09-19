@@ -25,7 +25,8 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Add, Delete } from "@mui/icons-material";
+import Add from "@mui/icons-material/Add";
+import Delete from "@mui/icons-material/Delete";
 import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
@@ -320,7 +321,7 @@ export default function TeachingAssignmentsSection({
             {custom.loading && <Typography role="status">Loading additional fields?</Typography>}
             {custom.error && <Alert severity="error">{custom.error}</Alert>}
             <CustomFieldInputs
-              definitions={custom.definitions}
+              definitions={custom.definitions} onBusyChange={custom.setUploading}
               values={custom.values}
               disabled={saving || custom.loading}
               onChange={(key, value) => custom.setValues((previous) => ({ ...previous, [key]: value }))}

@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  AutoAwesome,
-  CheckCircle,
-  Insights,
-  Psychology,
-  SchoolOutlined,
-  Settings,
-  SmartToy,
-  Timeline,
-} from "@mui/icons-material";
+import AutoAwesome from "@mui/icons-material/AutoAwesome";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Insights from "@mui/icons-material/Insights";
+import Psychology from "@mui/icons-material/Psychology";
+import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
+import Settings from "@mui/icons-material/Settings";
+import SmartToy from "@mui/icons-material/SmartToy";
+import Timeline from "@mui/icons-material/Timeline";
 import {
   Box,
   Button,
@@ -20,14 +18,12 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import {
-  AccountBalance,
-  ArrowForward,
-  CalendarToday,
-  Groups,
-  Tune,
-  Verified,
-} from "@mui/icons-material";
+import AccountBalance from "@mui/icons-material/AccountBalance";
+import ArrowForward from "@mui/icons-material/ArrowForward";
+import CalendarToday from "@mui/icons-material/CalendarToday";
+import Groups from "@mui/icons-material/Groups";
+import Tune from "@mui/icons-material/Tune";
+import Verified from "@mui/icons-material/Verified";
 import { AI_POSITIONING } from "@/content/ai";
 import HeroSection from "@/components/public/HeroSection";
 import AnimatedSection from "@/components/shared/AnimatedSection";

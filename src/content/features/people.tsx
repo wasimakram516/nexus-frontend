@@ -1,4 +1,4 @@
-import { Groups } from "@mui/icons-material";
+import Groups from "@mui/icons-material/Groups";
 import { FeatureModule } from "./types";
 
 export const peopleFeature: FeatureModule = {

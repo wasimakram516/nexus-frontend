@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Box, Breadcrumbs } from "@mui/material";
-import { Home, NavigateNext } from "@mui/icons-material";
+import Home from "@mui/icons-material/Home";
+import NavigateNext from "@mui/icons-material/NavigateNext";
 
 interface Crumb {
   label: string;

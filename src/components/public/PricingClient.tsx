@@ -18,13 +18,11 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import {
-  CheckCircle,
-  Email,
-  Message,
-  RocketLaunch,
-  Support,
-} from "@mui/icons-material";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Email from "@mui/icons-material/Email";
+import Message from "@mui/icons-material/Message";
+import RocketLaunch from "@mui/icons-material/RocketLaunch";
+import Support from "@mui/icons-material/Support";
 import { AI_POSITIONING } from "@/content/ai";
 import FaqAccordion from "@/components/public/FaqAccordion";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";

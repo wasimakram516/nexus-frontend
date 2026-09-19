@@ -11,13 +11,11 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import {
-  ArrowForward,
-  CheckCircle,
-  Hub,
-  Insights,
-  RocketLaunch,
-} from "@mui/icons-material";
+import ArrowForward from "@mui/icons-material/ArrowForward";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Hub from "@mui/icons-material/Hub";
+import Insights from "@mui/icons-material/Insights";
+import RocketLaunch from "@mui/icons-material/RocketLaunch";
 import { AI_POSITIONING } from "@/content/ai";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
 import { featureModuleMap, featureModules } from "@/content/features";

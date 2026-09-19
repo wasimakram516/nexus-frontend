@@ -23,7 +23,8 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Add, Delete } from "@mui/icons-material";
+import Add from "@mui/icons-material/Add";
+import Delete from "@mui/icons-material/Delete";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
 import DataTableCard from "@/components/shared/DataTableCard";
@@ -623,7 +624,7 @@ export default function PeriodSlotsSection({
               {custom.loading && <Typography role="status">Loading additional fields…</Typography>}
               {custom.error && <Typography role="alert" color="error">{custom.error}</Typography>}
               <CustomFieldInputs
-                definitions={custom.definitions}
+                definitions={custom.definitions} onBusyChange={custom.setUploading}
                 values={custom.values}
                 disabled={saving || custom.loading}
                 onChange={(key, value) => custom.setValues((previous) => ({ ...previous, [key]: value }))}

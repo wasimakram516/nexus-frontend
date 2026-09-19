@@ -12,20 +12,18 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
-import {
-  AccountBalanceWallet,
-  ArrowBack,
-  Discount,
-  Gavel,
-  MoneyOff,
-  Paid,
-  Payments,
-  Percent,
-  PointOfSale,
-  ReceiptLong,
-  RequestQuote,
-  SwapVert,
-} from "@mui/icons-material";
+import AccountBalanceWallet from "@mui/icons-material/AccountBalanceWallet";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import Discount from "@mui/icons-material/Discount";
+import Gavel from "@mui/icons-material/Gavel";
+import MoneyOff from "@mui/icons-material/MoneyOff";
+import Paid from "@mui/icons-material/Paid";
+import Payments from "@mui/icons-material/Payments";
+import Percent from "@mui/icons-material/Percent";
+import PointOfSale from "@mui/icons-material/PointOfSale";
+import ReceiptLong from "@mui/icons-material/ReceiptLong";
+import RequestQuote from "@mui/icons-material/RequestQuote";
+import SwapVert from "@mui/icons-material/SwapVert";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
 import SalaryPaymentPreview from "@/components/dashboard/SalaryPaymentPreview";
 import ResourceSection, { FieldDef, Option } from "@/components/dashboard/ResourceSection";

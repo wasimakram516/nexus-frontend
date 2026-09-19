@@ -27,7 +27,10 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { ArrowBack, Close, NavigateNext, Warning } from "@mui/icons-material";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import Close from "@mui/icons-material/Close";
+import NavigateNext from "@mui/icons-material/NavigateNext";
+import Warning from "@mui/icons-material/Warning";
 import type { AcademicYear } from "@/components/dashboard/AcademicYearsSection";
 import type { NamedItem, PersonRecord } from "@/components/dashboard/PeopleTab";
 import { useMessage } from "@/contexts/MessageContext";

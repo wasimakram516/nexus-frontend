@@ -11,7 +11,9 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Close, Send, SmartToy } from "@mui/icons-material";
+import Close from "@mui/icons-material/Close";
+import Send from "@mui/icons-material/Send";
+import SmartToy from "@mui/icons-material/SmartToy";
 import NexusLogo from "@/components/shared/NexusLogo";
 import { AI_POSITIONING } from "@/content/ai";
 import { getResponse } from "@/lib/chatEngine";

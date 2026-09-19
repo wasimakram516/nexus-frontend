@@ -1,7 +1,8 @@
 "use client";
 
 import { Box, Button, Card, CardContent, IconButton, TextField, Typography } from "@mui/material";
-import { Add, Delete } from "@mui/icons-material";
+import Add from "@mui/icons-material/Add";
+import Delete from "@mui/icons-material/Delete";
 import { WizardData } from "@/app/platform/institutions/new/page";
 import { toSnakeCase } from "@/lib/slugify";
 

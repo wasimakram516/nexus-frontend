@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Box, Button, Card, CardContent, Chip, CircularProgress, Divider, Grid, Typography } from "@mui/material";
-import { ArrowBack, Check } from "@mui/icons-material";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import Check from "@mui/icons-material/Check";
 import { WizardData } from "@/app/platform/institutions/new/page";
 import { apiHandler } from "@/lib/apiHandler";
 import { useMessage } from "@/contexts/MessageContext";

@@ -20,7 +20,9 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Add, ArrowForward, Search } from "@mui/icons-material";
+import Add from "@mui/icons-material/Add";
+import ArrowForward from "@mui/icons-material/ArrowForward";
+import Search from "@mui/icons-material/Search";
 import { formatDate } from "@/lib/dateFormat";
 import { useRouter } from "next/navigation";
 import { useMessage } from "@/contexts/MessageContext";
@@ -196,4 +198,3 @@ export default function InstitutionsPage() {
     </Box>
   );
 }
-

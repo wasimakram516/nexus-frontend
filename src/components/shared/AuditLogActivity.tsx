@@ -5,7 +5,7 @@ import {
   Box, Chip, CircularProgress, InputAdornment, MenuItem, Table, TableBody,
   TableCell, TableHead, TablePagination, TableRow, TextField, Tooltip, Typography,
 } from "@mui/material";
-import { Search } from "@mui/icons-material";
+import Search from "@mui/icons-material/Search";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import AuditLogDiffViewer, { AuditLogDiffTarget } from "@/components/shared/AuditLogDiffViewer";

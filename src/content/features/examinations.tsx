@@ -1,4 +1,4 @@
-import { AssignmentTurnedIn } from "@mui/icons-material";
+import AssignmentTurnedIn from "@mui/icons-material/AssignmentTurnedIn";
 import { FeatureModule } from "./types";
 
 export const examinationsFeature: FeatureModule = {

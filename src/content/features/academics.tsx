@@ -1,4 +1,4 @@
-import { SchoolOutlined } from "@mui/icons-material";
+import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
 import { FeatureModule } from "./types";
 
 export const academicsFeature: FeatureModule = {

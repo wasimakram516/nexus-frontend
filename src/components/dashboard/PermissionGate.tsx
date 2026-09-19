@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Card, CardContent, CircularProgress, Typography } from "@mui/material";
-import { VisibilityOff } from "@mui/icons-material";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { PermissionAction, useRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 
 interface PermissionGateProps {

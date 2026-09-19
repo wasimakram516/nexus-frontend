@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowForward, RocketLaunch } from "@mui/icons-material";
+import ArrowForward from "@mui/icons-material/ArrowForward";
+import RocketLaunch from "@mui/icons-material/RocketLaunch";
 import { Box, Button, Chip, Container, Stack, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { motion } from "framer-motion";

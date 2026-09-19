@@ -13,12 +13,10 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import {
-  CheckCircle,
-  ExpandMore,
-  RocketLaunch,
-  ViewModule,
-} from "@mui/icons-material";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import RocketLaunch from "@mui/icons-material/RocketLaunch";
+import ViewModule from "@mui/icons-material/ViewModule";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";

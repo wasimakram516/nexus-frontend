@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Box, Button, CircularProgress, MenuItem, TextField, Typography } from "@mui/material";
-import { Send } from "@mui/icons-material";
+import Send from "@mui/icons-material/Send";
 import { useMessage } from "@/contexts/MessageContext";
 
 const inquiryTypes = [

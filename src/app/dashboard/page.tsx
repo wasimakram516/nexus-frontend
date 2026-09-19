@@ -19,18 +19,16 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import {
-  AccountBalance,
-  Business,
-  EventAvailable,
-  EventBusy,
-  Groups,
-  HourglassBottom,
-  SchoolOutlined,
-  SupervisorAccount,
-  Person,
-  Today,
-} from "@mui/icons-material";
+import AccountBalance from "@mui/icons-material/AccountBalance";
+import Business from "@mui/icons-material/Business";
+import EventAvailable from "@mui/icons-material/EventAvailable";
+import EventBusy from "@mui/icons-material/EventBusy";
+import Groups from "@mui/icons-material/Groups";
+import HourglassBottom from "@mui/icons-material/HourglassBottom";
+import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
+import SupervisorAccount from "@mui/icons-material/SupervisorAccount";
+import Person from "@mui/icons-material/Person";
+import Today from "@mui/icons-material/Today";
 import OnboardingChecklist, { OnboardingStep } from "@/components/dashboard/OnboardingChecklist";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRuntimeConfig } from "@/contexts/RuntimeConfigContext";

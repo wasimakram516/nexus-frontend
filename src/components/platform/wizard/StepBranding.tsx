@@ -5,7 +5,9 @@ import {
   Box, Button, Card, CardContent, CircularProgress,
   Grid, IconButton, LinearProgress, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
 } from "@mui/material";
-import { CloudUpload, Delete, Refresh } from "@mui/icons-material";
+import CloudUpload from "@mui/icons-material/CloudUpload";
+import Delete from "@mui/icons-material/Delete";
+import Refresh from "@mui/icons-material/Refresh";
 import { WizardData } from "@/app/platform/institutions/new/page";
 import { uploadFile } from "@/lib/upload";
 import { useMessage } from "@/contexts/MessageContext";

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import ContactForm from "@/components/public/ContactForm";
 import { Box, Card, CardContent, Container, Grid, Typography } from "@mui/material";
-import { Email, Language } from "@mui/icons-material";
+import Email from "@mui/icons-material/Email";
+import Language from "@mui/icons-material/Language";
 import { AI_POSITIONING } from "@/content/ai";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
 

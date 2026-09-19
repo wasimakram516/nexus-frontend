@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import FaqAccordion from "@/components/public/FaqAccordion";
 import { Box, Card, CardContent, Container, Typography } from "@mui/material";
-import { Email, Message } from "@mui/icons-material";
+import Email from "@mui/icons-material/Email";
+import Message from "@mui/icons-material/Message";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
 
 export const metadata: Metadata = {

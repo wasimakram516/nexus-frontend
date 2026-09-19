@@ -6,10 +6,13 @@ import {
   Box, Button, Card, CardContent, Chip, Container, Divider, List, ListItem,
   ListItemIcon, ListItemText, Step, StepLabel, Stepper, Typography,
 } from "@mui/material";
-import {
-  ArrowBack, ArrowForward, Cancel, CheckCircle, ManageAccounts,
-  RemoveCircleOutlined, RocketLaunch,
-} from "@mui/icons-material";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import ArrowForward from "@mui/icons-material/ArrowForward";
+import Cancel from "@mui/icons-material/Cancel";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import ManageAccounts from "@mui/icons-material/ManageAccounts";
+import RemoveCircleOutlined from "@mui/icons-material/RemoveCircleOutlined";
+import RocketLaunch from "@mui/icons-material/RocketLaunch";
 import { useMessage } from "@/contexts/MessageContext";
 import { DEFAULT_BRANDING_COLORS } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";

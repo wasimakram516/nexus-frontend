@@ -23,15 +23,13 @@ import {
   Typography,
 } from "@mui/material";
 import { formatDate, formatDateTime } from "@/lib/dateFormat";
-import {
-  AccountCircle,
-  CalendarToday,
-  Domain,
-  Edit,
-  Email,
-  PersonAdd,
-  Phone,
-} from "@mui/icons-material";
+import AccountCircle from "@mui/icons-material/AccountCircle";
+import CalendarToday from "@mui/icons-material/CalendarToday";
+import Domain from "@mui/icons-material/Domain";
+import Edit from "@mui/icons-material/Edit";
+import Email from "@mui/icons-material/Email";
+import PersonAdd from "@mui/icons-material/PersonAdd";
+import Phone from "@mui/icons-material/Phone";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { authService } from "@/services/auth.service";

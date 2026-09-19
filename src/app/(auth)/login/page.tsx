@@ -13,14 +13,12 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import {
-  AccountBalance,
-  Groups,
-  SchoolOutlined,
-  Today,
-  Visibility,
-  VisibilityOff,
-} from "@mui/icons-material";
+import AccountBalance from "@mui/icons-material/AccountBalance";
+import Groups from "@mui/icons-material/Groups";
+import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
+import Today from "@mui/icons-material/Today";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Box, Card, CardContent, Chip, CircularProgress, Grid, MenuItem, TextField, Typography } from "@mui/material";
-import { CheckCircle } from "@mui/icons-material";
+import CheckCircle from "@mui/icons-material/CheckCircle";
 import { WizardData } from "@/app/platform/institutions/new/page";
 import env from "@/config/env";
 

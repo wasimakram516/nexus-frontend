@@ -5,7 +5,9 @@ import {
   Box, Button, Card, CardContent, CircularProgress, Dialog, DialogActions,
   DialogContent, DialogTitle, Divider, IconButton, TextField, Tooltip, Typography,
 } from "@mui/material";
-import { Add, Delete, Edit } from "@mui/icons-material";
+import Add from "@mui/icons-material/Add";
+import Delete from "@mui/icons-material/Delete";
+import Edit from "@mui/icons-material/Edit";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import PermissionMatrixEditor, { PermissionMatrixValue } from "@/components/dashboard/PermissionMatrixEditor";
 import { useMessage } from "@/contexts/MessageContext";

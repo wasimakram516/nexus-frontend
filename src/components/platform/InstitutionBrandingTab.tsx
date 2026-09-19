@@ -5,7 +5,7 @@ import {
   Box, Button, Card, CardContent, Dialog, DialogActions, DialogContent,
   DialogTitle, Grid, TextField, ToggleButton, ToggleButtonGroup, Typography,
 } from "@mui/material";
-import { Edit } from "@mui/icons-material";
+import Edit from "@mui/icons-material/Edit";
 import { platformService } from "@/services/platform.service";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";

@@ -13,11 +13,9 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import {
-  CheckCircleOutlined,
-  Visibility,
-  VisibilityOff,
-} from "@mui/icons-material";
+import CheckCircleOutlined from "@mui/icons-material/CheckCircleOutlined";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";

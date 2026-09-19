@@ -5,7 +5,8 @@ import {
   Box, Button, Card, Chip, CircularProgress, Container,
   Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography,
 } from "@mui/material";
-import { Delete, RestoreFromTrash } from "@mui/icons-material";
+import Delete from "@mui/icons-material/Delete";
+import RestoreFromTrash from "@mui/icons-material/RestoreFromTrash";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { recycleBinService } from "@/services/recycleBin.service";

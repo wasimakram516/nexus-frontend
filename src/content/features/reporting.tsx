@@ -1,4 +1,4 @@
-import { BarChart } from "@mui/icons-material";
+import BarChart from "@mui/icons-material/BarChart";
 import { FeatureModule } from "./types";
 
 export const reportingFeature: FeatureModule = {

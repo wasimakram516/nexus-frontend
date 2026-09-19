@@ -1,4 +1,4 @@
-import { Verified } from "@mui/icons-material";
+import Verified from "@mui/icons-material/Verified";
 import { FeatureModule } from "./types";
 
 export const campusesFeature: FeatureModule = {

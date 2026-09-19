@@ -12,7 +12,10 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
-import { ArrowBack, FamilyRestroom, Person, SchoolOutlined } from "@mui/icons-material";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import FamilyRestroom from "@mui/icons-material/FamilyRestroom";
+import Person from "@mui/icons-material/Person";
+import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
 import PeopleTab, { NamedItem, PersonKind, PersonRecord } from "@/components/dashboard/PeopleTab";
 import { useMessage } from "@/contexts/MessageContext";

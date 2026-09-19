@@ -12,16 +12,14 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
-import {
-  ArrowBack,
-  AssignmentInd,
-  CalendarMonth,
-  GridView,
-  Layers,
-  MenuBook,
-  Schedule,
-  Workspaces,
-} from "@mui/icons-material";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import AssignmentInd from "@mui/icons-material/AssignmentInd";
+import CalendarMonth from "@mui/icons-material/CalendarMonth";
+import GridView from "@mui/icons-material/GridView";
+import Layers from "@mui/icons-material/Layers";
+import MenuBook from "@mui/icons-material/MenuBook";
+import Schedule from "@mui/icons-material/Schedule";
+import Workspaces from "@mui/icons-material/Workspaces";
 import AcademicYearsSection, { AcademicYear } from "@/components/dashboard/AcademicYearsSection";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
 import PeriodSlotsSection, { PeriodSlot } from "@/components/dashboard/PeriodSlotsSection";

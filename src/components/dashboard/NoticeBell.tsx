@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge, Box, IconButton, Popover, Tooltip, Typography } from "@mui/material";
-import { NotificationsNone } from "@mui/icons-material";
+import NotificationsNone from "@mui/icons-material/NotificationsNone";
 import type { Notice } from "@/components/dashboard/NoticesManager";
 import { useMessage } from "@/contexts/MessageContext";
 import { useRuntimeConfig } from "@/contexts/RuntimeConfigContext";

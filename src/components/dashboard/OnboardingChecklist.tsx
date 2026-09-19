@@ -17,12 +17,10 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import {
-  ArrowForwardIos,
-  CheckCircle,
-  Close,
-  RadioButtonUnchecked,
-} from "@mui/icons-material";
+import ArrowForwardIos from "@mui/icons-material/ArrowForwardIos";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Close from "@mui/icons-material/Close";
+import RadioButtonUnchecked from "@mui/icons-material/RadioButtonUnchecked";
 
 export interface OnboardingStep {
   key: string;
