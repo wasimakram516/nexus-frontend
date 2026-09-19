@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { afterEach } from "vitest";
+import { afterEach, vi } from "vitest";
 
 afterEach(() => {
   cleanup();
@@ -22,3 +22,8 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => false,
   }),
 });
+
+// Never open a real socket from any test; suites that care re-mock this.
+vi.mock("socket.io-client", () => ({
+  io: () => ({ on: () => undefined, off: () => undefined, disconnect: () => undefined }),
+}));

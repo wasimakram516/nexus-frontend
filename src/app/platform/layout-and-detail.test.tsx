@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   logout: vi.fn(),
   getInstitution: vi.fn(),
   getRuntimeConfig: vi.fn(),
+  getInquiries: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -25,6 +26,7 @@ vi.mock("@/contexts/ConfirmContext", () => ({ useConfirm: () => mocks.confirm })
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ user: { name: "Super Admin", email: "root@nexus.io" }, clearAuth: mocks.clearAuth }),
 }));
+vi.mock("@/services/contact.service", () => ({ contactInquiriesService: { getAll: mocks.getInquiries } }));
 vi.mock("@/services/auth.service", () => ({ authService: { logout: mocks.logout } }));
 vi.mock("@/services/platform.service", () => ({
   platformService: { getInstitution: mocks.getInstitution, getRuntimeConfig: mocks.getRuntimeConfig },
@@ -57,6 +59,7 @@ beforeEach(() => {
   mocks.params = { id: "green-school" };
   mocks.confirm.mockResolvedValue(true);
   mocks.logout.mockImplementation(() => ok());
+  mocks.getInquiries.mockImplementation(() => ok({ items: [], total: 0 }));
 });
 
 describe("PlatformLayout", () => {
@@ -76,6 +79,24 @@ describe("PlatformLayout", () => {
     fireEvent.click(screen.getByText("Recycle Bin"));
     expect(mocks.push).toHaveBeenCalledWith("/platform/recycle-bin");
     expect(screen.getByText("Back to Site").closest("a")).toHaveAttribute("href", "/");
+  });
+
+  it("shows an unread badge on Inquiries only when there are NEW inquiries", async () => {
+    mocks.getInquiries.mockImplementation(() => ok({ items: [], total: 3 }));
+    render(<PlatformLayout><div /></PlatformLayout>);
+    expect(await screen.findByLabelText("3 new inquiries")).toBeInTheDocument();
+    expect(mocks.getInquiries).toHaveBeenCalledWith({ status: "NEW", page: 1, limit: 1 });
+  });
+
+  it("shows no badge when the count is zero or the request fails", async () => {
+    render(<PlatformLayout><div /></PlatformLayout>);
+    await waitFor(() => expect(mocks.getInquiries).toHaveBeenCalled());
+    expect(screen.queryByLabelText(/new inquiries/)).not.toBeInTheDocument();
+    mocks.getInquiries.mockRejectedValue(new Error("boom"));
+    mocks.pathname = "/platform/plans";
+    render(<PlatformLayout><div /></PlatformLayout>);
+    await waitFor(() => expect(mocks.getInquiries).toHaveBeenCalledTimes(2));
+    expect(screen.queryByLabelText(/new inquiries/)).not.toBeInTheDocument();
   });
 
   it("only treats /platform exactly as the Overview route", () => {

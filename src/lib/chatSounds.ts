@@ -51,3 +51,40 @@ export function playClose() {
   tone(523, 0, 0.18, 0.07);
   tone(440, 0.08, 0.18, 0.07);
 }
+
+/** Distinct two-note chime for a new inquiry (fails silently if audio is blocked). */
+export function playInquiry() {
+  try {
+    tone(784, 0, 0.3, 0.12, "triangle");
+    tone(1047, 0.16, 0.4, 0.12, "triangle");
+  } catch {
+    // Autoplay blocked or no audio device: ignore.
+  }
+}
+
+const SOUND_PREF_KEY = "nexus-inquiry-sound";
+
+/**
+ * Whether the inquiry alert sound is enabled (default on).
+ * @returns {boolean} False only when the user explicitly turned it off.
+ */
+export function isInquirySoundEnabled(): boolean {
+  try {
+    return localStorage.getItem(SOUND_PREF_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Persists the inquiry sound preference.
+ * @param {boolean} enabled Desired state.
+ */
+export function setInquirySoundEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(SOUND_PREF_KEY, enabled ? "on" : "off");
+    window.dispatchEvent(new Event("inquiry-sound:changed"));
+  } catch {
+    // Storage unavailable: preference just won't persist.
+  }
+}

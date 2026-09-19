@@ -58,6 +58,8 @@ describe("Inquiries page", () => {
   });
 
   it("opens a NEW message, marks it read automatically and can archive it", async () => {
+    const changed = vi.fn();
+    window.addEventListener("inquiries:changed", changed);
     render(<InquiriesPage />);
     await screen.findByText("Ada Lovelace");
     fireEvent.click(screen.getAllByRole("button", { name: "Open" })[0]);
@@ -68,6 +70,8 @@ describe("Inquiries page", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Archive" }));
     await waitFor(() => expect(mocks.updateStatus).toHaveBeenLastCalledWith("i1", "ARCHIVED"));
     expect(mocks.showMessage).toHaveBeenCalledWith("Marked as archived.", "success");
+    expect(changed).toHaveBeenCalledTimes(2);
+    window.removeEventListener("inquiries:changed", changed);
   });
 
   it("marks a message as read from the dialog and does not re-mark a READ message on open", async () => {
@@ -80,6 +84,8 @@ describe("Inquiries page", () => {
   });
 
   it("asks for confirmation before deleting and only deletes on confirm", async () => {
+    const changed = vi.fn();
+    window.addEventListener("inquiries:changed", changed);
     render(<InquiriesPage />);
     await screen.findByText("Ada Lovelace");
     fireEvent.click(screen.getAllByRole("button", { name: /Delete/ })[0]);
@@ -95,5 +101,24 @@ describe("Inquiries page", () => {
     fireEvent.click(within(again).getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith("i1"));
     expect(mocks.showMessage).toHaveBeenCalledWith("Inquiry deleted.", "success");
+    await waitFor(() => expect(changed).toHaveBeenCalledTimes(1));
+    window.removeEventListener("inquiries:changed", changed);
+  });
+});
+
+describe("Inquiries page sound toggle", () => {
+  it("persists the mute preference and flips the control", async () => {
+    render(<InquiriesPage />);
+    await screen.findByText("Ada Lovelace");
+    fireEvent.click(screen.getByRole("button", { name: "Mute new inquiry sound" }));
+    expect(localStorage.getItem("nexus-inquiry-sound")).toBe("off");
+    fireEvent.click(screen.getByRole("button", { name: "Unmute new inquiry sound" }));
+    expect(localStorage.getItem("nexus-inquiry-sound")).toBe("on");
+  });
+
+  it("starts muted when the stored preference is off", async () => {
+    localStorage.setItem("nexus-inquiry-sound", "off");
+    render(<InquiriesPage />);
+    expect(await screen.findByRole("button", { name: "Unmute new inquiry sound" })).toBeInTheDocument();
   });
 });

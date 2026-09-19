@@ -1,16 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import {
   Box, Button, Card, Chip, CircularProgress, Container, Dialog, DialogActions,
-  DialogContent, DialogTitle, MenuItem, Table, TableBody, TableCell, TableHead,
-  TablePagination, TableRow, TextField, Typography,
+  DialogContent, DialogTitle, IconButton, MenuItem, Table, TableBody, TableCell, TableHead,
+  TablePagination, TableRow, TextField, Tooltip, Typography,
 } from "@mui/material";
 import Archive from "@mui/icons-material/Archive";
 import Delete from "@mui/icons-material/Delete";
+import VolumeOff from "@mui/icons-material/VolumeOff";
+import VolumeUp from "@mui/icons-material/VolumeUp";
+import { isInquirySoundEnabled, setInquirySoundEnabled } from "@/lib/chatSounds";
 import MarkEmailRead from "@mui/icons-material/MarkEmailRead";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
+import { notifyInquiriesChanged } from "@/hooks/useNewInquiryCount";
 import { formatDateTime } from "@/lib/dateFormat";
 import { contactInquiriesService } from "@/services/contact.service";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -42,9 +46,21 @@ const STATUS_COLOR: Record<InquiryStatus, "primary" | "default" | "warning"> = {
   ARCHIVED: "warning",
 };
 
+/** Subscribes to sound-preference changes (same tab via custom event, other tabs via storage). */
+function subscribeSoundPref(cb: () => void): () => void {
+  window.addEventListener("inquiry-sound:changed", cb);
+  window.addEventListener("storage", cb);
+  return () => {
+    window.removeEventListener("inquiry-sound:changed", cb);
+    window.removeEventListener("storage", cb);
+  };
+}
+
 /** Superadmin inbox for public contact form submissions. */
 export default function InquiriesPage() {
   const { showMessage } = useMessage();
+  const soundOn = useSyncExternalStore(subscribeSoundPref, isInquirySoundEnabled, () => true);
+  const toggleSound = () => setInquirySoundEnabled(!soundOn);
   const [items, setItems] = useState<Inquiry[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -83,6 +99,7 @@ export default function InquiriesPage() {
     if (success) {
       setSelected((cur) => (cur && cur.id === inquiry.id ? { ...cur, status: next } : cur));
       await load();
+      notifyInquiriesChanged();
     }
     return success;
   };
@@ -101,13 +118,25 @@ export default function InquiriesPage() {
     if (success && selected?.id === confirmDelete.id) setSelected(null);
     setConfirmDelete(null);
     await load();
+    notifyInquiriesChanged();
   };
 
   return (
     <Box sx={{ flex: 1, overflow: "auto" }}>
       <Box sx={{ px: 4, py: 3, borderBottom: "1px solid", borderColor: "divider", backgroundColor: "background.paper" }}>
         <PlatformBreadcrumbs crumbs={[{ label: "Platform", href: "/platform" }, { label: "Inquiries" }]} />
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>Inquiries</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>Inquiries</Typography>
+          <Tooltip title={soundOn ? "Mute new inquiry sound" : "Unmute new inquiry sound"}>
+            <IconButton
+              onClick={toggleSound}
+              aria-label={soundOn ? "Mute new inquiry sound" : "Unmute new inquiry sound"}
+              aria-pressed={soundOn}
+            >
+              {soundOn ? <VolumeUp /> : <VolumeOff />}
+            </IconButton>
+          </Tooltip>
+        </Box>
         <Typography variant="body2" color="text.secondary">
           Messages sent through the public Contact page.
         </Typography>

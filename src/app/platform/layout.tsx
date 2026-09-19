@@ -5,6 +5,7 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Avatar,
+  Badge,
   Box,
   Divider,
   Drawer,
@@ -33,6 +34,7 @@ import ThemeToggle from "@/components/shared/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
+import { useNewInquiryCount } from "@/hooks/useNewInquiryCount";
 import { apiHandler } from "@/lib/apiHandler";
 import { authService } from "@/services/auth.service";
 
@@ -56,6 +58,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   const { user, clearAuth } = useAuth();
   const confirm = useConfirm();
   const { showMessage } = useMessage();
+  const newInquiries = useNewInquiryCount(pathname, { announce: true });
   const drawerWidth = collapsed ? DRAWER_COLLAPSED : DRAWER_EXPANDED;
 
   const handleLogout = async () => {
@@ -142,7 +145,13 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: active ? "#fff" : "text.secondary" }}>
-                    {item.icon}
+                    {item.href === "/platform/inquiries" && newInquiries > 0 ? (
+                      <Badge badgeContent={newInquiries} color="error" max={99} aria-label={`${newInquiries} new inquiries`}>
+                        {item.icon}
+                      </Badge>
+                    ) : (
+                      item.icon
+                    )}
                   </ListItemIcon>
                   {!collapsed && (
                     <ListItemText

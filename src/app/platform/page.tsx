@@ -15,11 +15,13 @@ import {
 import AccountTree from "@mui/icons-material/AccountTree";
 import Add from "@mui/icons-material/Add";
 import CheckCircle from "@mui/icons-material/CheckCircle";
+import Inbox from "@mui/icons-material/Inbox";
 import Layers from "@mui/icons-material/Layers";
 import PauseCircle from "@mui/icons-material/PauseCircle";
 import TrendingUp from "@mui/icons-material/TrendingUp";
 import { useRouter } from "next/navigation";
 import { useMessage } from "@/contexts/MessageContext";
+import { useNewInquiryCount } from "@/hooks/useNewInquiryCount";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
 
@@ -44,6 +46,7 @@ export default function PlatformOverviewPage() {
   const [loading, setLoading] = useState(true);
   const { showMessage } = useMessage();
   const router = useRouter();
+  const newInquiries = useNewInquiryCount();
 
   useEffect(() => {
     const load = async () => {
@@ -72,9 +75,16 @@ export default function PlatformOverviewPage() {
           <Typography variant="h5" sx={{ fontWeight: 700 }}>Platform Overview</Typography>
           <Typography variant="body2" color="text.secondary">Superadmin console â€” manage institutions, plans, and platform settings.</Typography>
         </Box>
-        <Button variant="contained" startIcon={<Add />} onClick={() => router.push("/platform/institutions/new")}>
-          New Institution
-        </Button>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          {newInquiries > 0 && (
+            <Button variant="outlined" color="error" startIcon={<Inbox />} onClick={() => router.push("/platform/inquiries")}>
+              {newInquiries} new {newInquiries === 1 ? "inquiry" : "inquiries"}
+            </Button>
+          )}
+          <Button variant="contained" startIcon={<Add />} onClick={() => router.push("/platform/institutions/new")}>
+            New Institution
+          </Button>
+        </Box>
       </Box>
 
       <Container maxWidth="xl" sx={{ py: 4 }}>

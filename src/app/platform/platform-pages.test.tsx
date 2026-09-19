@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   showMessage: vi.fn(),
   getInstitutions: vi.fn(),
+  getInquiries: vi.fn(),
   getAll: vi.fn(),
   restore: vi.fn(),
   permanentDelete: vi.fn(),
@@ -13,6 +14,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: mocks.showMessage }) }));
 vi.mock("@/services/platform.service", () => ({ platformService: { getInstitutions: mocks.getInstitutions } }));
+vi.mock("@/services/contact.service", () => ({ contactInquiriesService: { getAll: mocks.getInquiries } }));
 vi.mock("@/services/recycleBin.service", () => ({
   recycleBinService: { getAll: mocks.getAll, restore: mocks.restore, permanentDelete: mocks.permanentDelete },
 }));
@@ -34,6 +36,7 @@ const institutions = [
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.getInstitutions.mockImplementation(() => ok(institutions));
+  mocks.getInquiries.mockImplementation(() => ok({ items: [], total: 0 }));
 });
 
 describe("Platform overview page", () => {
@@ -55,6 +58,23 @@ describe("Platform overview page", () => {
     expect(mocks.push).toHaveBeenCalledWith("/platform/institutions/new");
     fireEvent.click(screen.getByRole("button", { name: /View All/ }));
     expect(mocks.push).toHaveBeenCalledWith("/platform/institutions");
+  });
+
+  it("shows a shortcut to unread inquiries only when there are some", async () => {
+    render(<PlatformOverviewPage />);
+    await screen.findByText("Alpha School");
+    expect(screen.queryByRole("button", { name: /new inquir/ })).not.toBeInTheDocument();
+
+    mocks.getInquiries.mockImplementation(() => ok({ items: [], total: 1 }));
+    const { unmount } = render(<PlatformOverviewPage />);
+    const single = await screen.findByRole("button", { name: "1 new inquiry" });
+    fireEvent.click(single);
+    expect(mocks.push).toHaveBeenCalledWith("/platform/inquiries");
+    unmount();
+
+    mocks.getInquiries.mockImplementation(() => ok({ items: [], total: 4 }));
+    render(<PlatformOverviewPage />);
+    expect(await screen.findByRole("button", { name: "4 new inquiries" })).toBeInTheDocument();
   });
 
   it("shows an empty state when the request fails or returns nothing", async () => {
