@@ -108,7 +108,8 @@ describe("ContactForm", () => {
     expect(honeypot).toHaveAttribute("tabindex", "-1");
     expect(honeypot.closest("[aria-hidden='true']")).not.toBeNull();
     fill();
-    fireEvent.change(honeypot, { target: { name: "website", value: "http://spam" } });
+    expect(honeypot).not.toHaveAttribute("name", "website");
+    fireEvent.change(honeypot, { target: { value: "http://spam" } });
     submit();
     await waitFor(() =>
       expect(mocks.submitInquiry).toHaveBeenCalledWith(expect.objectContaining({ website: "http://spam" })),

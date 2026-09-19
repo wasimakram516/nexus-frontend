@@ -91,19 +91,21 @@ export default function ContactForm() {
       </Typography>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-        {/* Honeypot: visually hidden, skipped by keyboard and screen readers. */}
+        {/* Honeypot: visually hidden, skipped by keyboard and screen readers. Its HTML name is
+            deliberately meaningless: browsers autofill fields named like "website", which
+            silently dropped real visitors. The API payload key stays `website`. */}
         <Box
           aria-hidden="true"
           sx={{ position: "absolute", left: "-10000px", width: 1, height: 1, overflow: "hidden" }}
         >
           <input
             type="text"
-            name="website"
+            name="cf_ref_x9"
             data-testid="contact-honeypot"
             tabIndex={-1}
             autoComplete="off"
             value={form.website}
-            onChange={handleChange}
+            onChange={(e) => setForm((prev) => ({ ...prev, website: e.target.value }))}
           />
         </Box>
         <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
