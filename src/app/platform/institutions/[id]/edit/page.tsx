@@ -92,6 +92,10 @@ export default function EditInstitutionWizard() {
       const sub = config?.subscription as Record<string, unknown> | null;
       const modulesRaw = config?.modules as Record<string, { enabled: boolean }> | undefined;
 
+      // Backend returns subscriptions newest first; the first is the current one.
+      const subs = Array.isArray(inst?.subscriptions) ? (inst.subscriptions as Record<string, unknown>[]) : [];
+      const currentSub = subs[0] ?? null;
+
       setInstitutionId(String(inst?.id ?? ""));
       setSlug(String(inst?.slug ?? ""));
 
@@ -114,9 +118,9 @@ export default function EditInstitutionWizard() {
         adminName: "", adminEmail: "", adminPassword: "", skipAdmin: true,
         planId: String(sub?.planId ?? ""),
         planName: String(sub?.planName ?? ""),
-        billingCycle: "MONTHLY",
+        billingCycle: currentSub?.billingCycle ? String(currentSub.billingCycle) : "MONTHLY",
         agreedPrice: "",
-        currency: "PKR",
+        currency: currentSub?.currency ? String(currentSub.currency) : "PKR",
         setupFee: "",
         displayName: String(branding?.displayName ?? ""),
         logoUrl: String(branding?.logoUrl ?? ""),

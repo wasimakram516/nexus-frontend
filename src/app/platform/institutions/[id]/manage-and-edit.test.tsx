@@ -146,6 +146,17 @@ describe("Manage module page", () => {
 });
 
 describe("EditInstitutionWizard", () => {
+  it("preserves the real YEARLY billing cycle and non-PKR currency when billing is untouched", async () => {
+    mocks.getInstitution.mockImplementation(() =>
+      ok({ ...inst, subscriptions: [{ planId: "plan-1", billingCycle: "YEARLY", currency: "USD" }, { planId: "old", billingCycle: "MONTHLY", currency: "PKR" }] }));
+    render(<EditInstitutionWizard />);
+    await screen.findByText(/^basic/);
+    fireEvent.click(screen.getByText("Review & Save"));
+    fireEvent.click(screen.getByText("save-all"));
+    await waitFor(() => expect(mocks.push).toHaveBeenCalled());
+    expect(mocks.updateSubscription).toHaveBeenCalledWith("uuid-1", { planId: "plan-1", billingCycle: "YEARLY", currency: "USD" });
+  });
+
   it("pre-fills the wizard from the institution and runtime config", async () => {
     render(<EditInstitutionWizard />);
     expect(await screen.findByText("basic Green School|green-school|hi@g.io|n")).toBeInTheDocument();
