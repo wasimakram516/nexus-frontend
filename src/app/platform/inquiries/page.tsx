@@ -15,6 +15,7 @@ import MarkEmailRead from "@mui/icons-material/MarkEmailRead";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { notifyInquiriesChanged } from "@/hooks/useNewInquiryCount";
+import { subscribeInquiryCreated } from "@/lib/inquirySocket";
 import { formatDateTime } from "@/lib/dateFormat";
 import { contactInquiriesService } from "@/services/contact.service";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -90,6 +91,9 @@ export default function InquiriesPage() {
       await load();
     })();
   }, [load]);
+
+  // A live inquiry arrived: reload the list in place, keeping the current page and filter.
+  useEffect(() => subscribeInquiryCreated(() => void load()), [load]);
 
   const changeStatus = async (inquiry: Inquiry, next: InquiryStatus, quiet = false) => {
     const { success } = await apiHandler(

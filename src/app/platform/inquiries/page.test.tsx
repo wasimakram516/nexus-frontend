@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 const mocks = vi.hoisted(() => ({
+  liveHandlers: new Set<() => void>(),
   showMessage: vi.fn(),
   getAll: vi.fn(),
   updateStatus: vi.fn(),
@@ -10,6 +11,12 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: mocks.showMessage }) }));
 vi.mock("@/components/shared/PlatformBreadcrumbs", () => ({ default: () => <nav>crumbs</nav> }));
+vi.mock("@/lib/inquirySocket", () => ({
+  subscribeInquiryCreated: (handler: () => void) => {
+    mocks.liveHandlers.add(handler);
+    return () => mocks.liveHandlers.delete(handler);
+  },
+}));
 vi.mock("@/services/contact.service", () => ({
   contactInquiriesService: { getAll: mocks.getAll, updateStatus: mocks.updateStatus, remove: mocks.remove },
 }));
@@ -28,6 +35,7 @@ const list = (items: unknown[]) => ok({ items, total: items.length, page: 1, lim
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.liveHandlers.clear();
   mocks.getAll.mockImplementation(() => list([inquiry({}), inquiry({ id: "i2", name: "Grace", email: "g@example.com", status: "READ" })]));
   mocks.updateStatus.mockImplementation(() => ok());
   mocks.remove.mockImplementation(() => ok());
@@ -41,6 +49,31 @@ describe("Inquiries page", () => {
     expect(screen.getByText("NEW")).toBeInTheDocument();
     expect(screen.getByText("READ")).toBeInTheDocument();
     expect(mocks.getAll).toHaveBeenCalledWith({ page: 1, limit: 10 });
+  });
+
+  it("reloads the list in place when a live inquiry arrives, keeping the current filter", async () => {
+    render(<InquiriesPage />);
+    await screen.findByText("Ada Lovelace");
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: "Status" }));
+    fireEvent.click(within(screen.getByRole("listbox")).getByText("New"));
+    await waitFor(() => expect(mocks.getAll).toHaveBeenLastCalledWith({ page: 1, limit: 10, status: "NEW" }));
+    const before = mocks.getAll.mock.calls.length;
+
+    mocks.getAll.mockImplementation(() => list([inquiry({ id: "i9", name: "Live Visitor" })]));
+    expect(mocks.liveHandlers.size).toBe(1);
+    mocks.liveHandlers.forEach((handler) => handler());
+
+    expect(await screen.findByText("Live Visitor")).toBeInTheDocument();
+    expect(mocks.getAll.mock.calls.length).toBe(before + 1);
+    expect(mocks.getAll).toHaveBeenLastCalledWith({ page: 1, limit: 10, status: "NEW" });
+  });
+
+  it("stops listening for live inquiries when the page unmounts", async () => {
+    const { unmount } = render(<InquiriesPage />);
+    await screen.findByText("Ada Lovelace");
+    expect(mocks.liveHandlers.size).toBe(1);
+    unmount();
+    expect(mocks.liveHandlers.size).toBe(0);
   });
 
   it("shows an empty state", async () => {
