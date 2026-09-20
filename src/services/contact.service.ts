@@ -6,8 +6,6 @@ export interface ContactInquiryPayload {
   organisation?: string;
   inquiryType: string;
   message: string;
-  /** Honeypot. Real users never fill this in. */
-  website?: string;
 }
 
 /** Public contact form submission (unauthenticated). */

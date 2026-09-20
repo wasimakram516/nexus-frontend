@@ -40,7 +40,6 @@ describe("ContactForm", () => {
       organisation: "Acme School",
       inquiryType: "Pricing Question",
       message: "Hello there",
-      website: "",
     });
     expect(screen.getByRole("button")).toBeDisabled();
     expect(mocks.showMessage).not.toHaveBeenCalled();
@@ -101,18 +100,14 @@ describe("ContactForm", () => {
     expect(screen.getByLabelText(/Full Name/)).toHaveValue("Ada");
   });
 
-  it("renders a hidden, unfocusable honeypot and forwards its value", async () => {
+  it("has no hidden fields that browsers could autofill and never sends a website value", async () => {
     mocks.submitInquiry.mockResolvedValue({});
-    render(<ContactForm />);
-    const honeypot = screen.getByTestId("contact-honeypot");
-    expect(honeypot).toHaveAttribute("tabindex", "-1");
-    expect(honeypot.closest("[aria-hidden='true']")).not.toBeNull();
+    const { container } = render(<ContactForm />);
+    expect(container.querySelector("[aria-hidden='true'] input")).toBeNull();
+    expect(container.querySelector("input[name='website']")).toBeNull();
     fill();
-    expect(honeypot).not.toHaveAttribute("name", "website");
-    fireEvent.change(honeypot, { target: { value: "http://spam" } });
     submit();
-    await waitFor(() =>
-      expect(mocks.submitInquiry).toHaveBeenCalledWith(expect.objectContaining({ website: "http://spam" })),
-    );
+    await waitFor(() => expect(mocks.submitInquiry).toHaveBeenCalledTimes(1));
+    expect(mocks.submitInquiry.mock.calls[0][0]).not.toHaveProperty("website");
   });
 });

@@ -47,7 +47,6 @@ export default function ContactForm() {
     institution: "",
     inquiryType: "",
     message: "",
-    website: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,10 +64,9 @@ export default function ContactForm() {
         organisation: form.institution || undefined,
         inquiryType: form.inquiryType,
         message: form.message,
-        website: form.website,
       });
       showMessage("Message sent! We'll get back to you within 24 hours.", "success");
-      setForm({ name: "", email: "", institution: "", inquiryType: "", message: "", website: "" });
+      setForm({ name: "", email: "", institution: "", inquiryType: "", message: "" });
     } catch (err) {
       showMessage(describeSubmitError(err), "error");
     } finally {
@@ -91,23 +89,6 @@ export default function ContactForm() {
       </Typography>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-        {/* Honeypot: visually hidden, skipped by keyboard and screen readers. Its HTML name is
-            deliberately meaningless: browsers autofill fields named like "website", which
-            silently dropped real visitors. The API payload key stays `website`. */}
-        <Box
-          aria-hidden="true"
-          sx={{ position: "absolute", left: "-10000px", width: 1, height: 1, overflow: "hidden" }}
-        >
-          <input
-            type="text"
-            name="cf_ref_x9"
-            data-testid="contact-honeypot"
-            tabIndex={-1}
-            autoComplete="off"
-            value={form.website}
-            onChange={(e) => setForm((prev) => ({ ...prev, website: e.target.value }))}
-          />
-        </Box>
         <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
           <TextField label="Full Name" name="name" value={form.name} onChange={handleChange} required fullWidth />
           <TextField label="Email Address" name="email" type="email" value={form.email} onChange={handleChange} required fullWidth />
