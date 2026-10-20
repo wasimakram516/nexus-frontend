@@ -1,21 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   Avatar,
   Box,
-  Fab,
   IconButton,
   Paper,
   TextField,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import Close from "@mui/icons-material/Close";
 import Send from "@mui/icons-material/Send";
-import SmartToy from "@mui/icons-material/SmartToy";
 import NexusLogo from "@/components/shared/NexusLogo";
+import NexAvatar from "@/components/guide/NexAvatar";
+import NexGuide from "@/components/guide/NexGuide";
+import { toGuideTips } from "@/components/guide/guide-tips";
 import { AI_POSITIONING } from "@/content/ai";
+import { publicTipsFor } from "@/content/guide";
+import { GUIDE_OFFSET, PANEL_ABOVE_GUIDE_BOTTOM } from "@/theme/layout";
 import { getResponse } from "@/lib/chatEngine";
 import env from "@/config/env";
 import { playClose, playOpen, playReceive, playSend } from "@/lib/chatSounds";
@@ -73,7 +76,7 @@ function MessageContent({ content, isUser }: { content: string; isUser: boolean 
 const WELCOME: Message = {
   role: "assistant",
   content:
-    "Hi! I'm Nexus AI. I provide AI-powered assistance for Nexus questions, from features and pricing to rollout direction, demos, and how the platform is evolving.",
+    "Hi! I'm Nex. I provide AI-powered assistance for Nexus questions, from features and pricing to rollout direction, demos, and how the platform is evolving.",
   suggestions: [
     "What is Nexus?",
     "Show me pricing",
@@ -88,6 +91,7 @@ export default function AiChatWidget() {
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname() ?? "/";
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -127,15 +131,16 @@ export default function AiChatWidget() {
           elevation={12}
           sx={{
             position: "fixed",
-            bottom: 90,
-            right: 24,
-            width: { xs: "calc(100vw - 48px)", sm: 380 },
+            bottom: PANEL_ABOVE_GUIDE_BOTTOM,
+            right: GUIDE_OFFSET,
+            width: { xs: "calc(100vw - 32px)", sm: 380 },
             height: 520,
             borderRadius: 4,
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            zIndex: 1050,
+            // Above the scroll-to-top button (1050) and Nex (1060), so the open panel always covers them.
+            zIndex: 1070,
             border: "1px solid",
             borderColor: "divider",
           }}
@@ -151,8 +156,8 @@ export default function AiChatWidget() {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <Avatar sx={{ width: 32, height: 32, backgroundColor: "rgba(255,255,255,0.2)" }}>
-                <SmartToy sx={{ fontSize: 18, color: "#fff" }} />
+              <Avatar sx={{ width: 36, height: 36, backgroundColor: (t) => alpha(t.palette.common.white, 0.18) }}>
+                <NexAvatar size={26} />
               </Avatar>
               <Box>
                 <Typography variant="body2" sx={{ color: "#fff", fontWeight: 700, lineHeight: 1.2 }}>
@@ -190,8 +195,8 @@ export default function AiChatWidget() {
                   }}
                 >
                   {msg.role === "assistant" && (
-                    <Avatar sx={{ width: 26, height: 26, backgroundColor: "primary.main", flexShrink: 0 }}>
-                      <SmartToy sx={{ fontSize: 14 }} />
+                    <Avatar sx={{ width: 28, height: 28, backgroundColor: (t) => alpha(t.palette.primary.main, 0.14), flexShrink: 0 }}>
+                      <NexAvatar size={22} />
                     </Avatar>
                   )}
                   <Box
@@ -242,8 +247,8 @@ export default function AiChatWidget() {
 
             {typing && (
               <Box sx={{ display: "flex", alignItems: "flex-end", gap: 1 }}>
-                <Avatar sx={{ width: 26, height: 26, backgroundColor: "primary.main", flexShrink: 0 }}>
-                  <SmartToy sx={{ fontSize: 14 }} />
+                <Avatar sx={{ width: 28, height: 28, backgroundColor: (t) => alpha(t.palette.primary.main, 0.14), flexShrink: 0 }}>
+                  <NexAvatar size={22} />
                 </Avatar>
                 <Box
                   sx={{
@@ -346,24 +351,15 @@ export default function AiChatWidget() {
         </Paper>
       )}
 
-      <Tooltip title={AI_POSITIONING.chatTooltip} placement="left">
-        <Fab
-          size="small"
-          onClick={() => toggleOpen(!open)}
-          sx={{
-            position: "fixed",
-            bottom: 24,
-            right: 24,
-            zIndex: 1050,
-            background: (t) => brandGradient(t, 135),
-            color: "#fff",
-            boxShadow: (t) => `0 4px 20px ${alpha(t.palette.primary.main, 0.4)}`,
-            "&:hover": { filter: "brightness(0.9)" },
-          }}
-        >
-          {open ? <Close /> : <SmartToy />}
-        </Fab>
-      </Tooltip>
+      {/* Nex is the chat launcher: it greets visitors with page-specific tips and hands off to the chat. */}
+      <NexGuide
+        tips={toGuideTips(publicTipsFor(pathname), () => toggleOpen(true))}
+        storageKey="nexus-guide-public"
+        oncePerSession={pathname}
+        onMascotClick={() => toggleOpen(!open)}
+        mascotLabel={open ? "Close chat with Nex" : "Chat with Nex"}
+        quiet={open}
+      />
     </>
   );
 }

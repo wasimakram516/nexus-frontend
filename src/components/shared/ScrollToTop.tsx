@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Fab, Tooltip, Zoom } from "@mui/material";
 import KeyboardArrowUp from "@mui/icons-material/KeyboardArrowUp";
+import { ABOVE_GUIDE } from "@/theme/layout";
 
 export default function ScrollToTop() {
   const [visible, setVisible] = useState(false);
@@ -21,15 +22,16 @@ export default function ScrollToTop() {
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           sx={{
             position: "fixed",
-            bottom: 80,
-            right: 24,
+            // Sits directly above Nex (the corner guide), centered over it, so the two never overlap.
+            bottom: ABOVE_GUIDE.bottom,
+            right: ABOVE_GUIDE.right,
             zIndex: 1050,
             backgroundColor: "background.paper",
             color: "text.secondary",
             border: "1px solid",
             borderColor: "divider",
             boxShadow: 2,
-            "&:hover": { backgroundColor: "primary.main", color: "#fff", borderColor: "primary.main" },
+            "&:hover": { backgroundColor: "primary.main", color: "primary.contrastText", borderColor: "primary.main" },
             transition: "all 0.2s",
           }}
         >

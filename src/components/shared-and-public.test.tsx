@@ -158,7 +158,7 @@ describe("AiChatWidget", () => {
     expect(screen.queryByPlaceholderText("Ask about Nexus...")).not.toBeInTheDocument();
     openChat();
     expect(mocks.sounds.playOpen).toHaveBeenCalled();
-    expect(screen.getByText(/Hi! I'm Nexus AI/)).toBeInTheDocument();
+    expect(screen.getByText(/Hi! I'm Nex/)).toBeInTheDocument();
     fireEvent.click(screen.getAllByTestId("CloseIcon")[0].closest("button")!);
     expect(screen.queryByPlaceholderText("Ask about Nexus...")).not.toBeInTheDocument();
     expect(mocks.sounds.playClose).toHaveBeenCalledTimes(1);
