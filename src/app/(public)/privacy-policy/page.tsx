@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
 import LegalPage from "@/components/public/LegalPage";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy — Nexus",
-  description: "Nexus privacy policy — how we collect, use, and protect your data.",
-};
+export const metadata = buildPageMetadata({
+  title: "Privacy Policy",
+  description:
+    "How Nexus collects, uses, and protects your data.",
+  path: "/privacy-policy",
+});
 
 const sections = [
   {

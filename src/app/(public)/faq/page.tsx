@@ -1,15 +1,17 @@
-import type { Metadata } from "next";
 import FaqAccordion from "@/components/public/FaqAccordion";
 import { Box, Card, CardContent, Container, Typography } from "@mui/material";
 import Email from "@mui/icons-material/Email";
 import Message from "@mui/icons-material/Message";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
+import { breadcrumbJsonLd, buildPageMetadata, faqJsonLd } from "@/lib/seo";
+import JsonLd from "@/components/seo/JsonLd";
 
-export const metadata: Metadata = {
-  title: "FAQ - Nexus Education ERP",
+export const metadata = buildPageMetadata({
+  title: "Frequently Asked Questions",
   description:
-    "Find answers to common questions about Nexus pricing, security, campuses, support, AI-powered assistance, trial access, API availability, and product flexibility for educational institutions.",
-};
+    "Answers about Nexus pricing, security, multi-campus support, AI assistance, the free trial, and flexibility for educational institutions.",
+  path: "/faq",
+});
 
 export const faqs = [
   {
@@ -83,6 +85,12 @@ const faqThemes = [
 export default function FaqPage() {
   return (
     <>
+      <JsonLd
+        data={[
+          faqJsonLd(faqs.map((f) => ({ question: f.q, answer: f.a }))),
+          breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "FAQ", path: "/faq" }]),
+        ]}
+      />
       <Box
         sx={{
           py: { xs: 8, md: 12 },
@@ -151,10 +159,7 @@ export default function FaqPage() {
             </Box>
 
             <Card
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: 4,
+              sx={{ borderRadius: 4,
                 backgroundColor: "background.paper",
               }}
             >

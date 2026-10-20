@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Box,
@@ -17,16 +16,19 @@ import Hub from "@mui/icons-material/Hub";
 import Insights from "@mui/icons-material/Insights";
 import RocketLaunch from "@mui/icons-material/RocketLaunch";
 import { AI_POSITIONING } from "@/content/ai";
+import TintedBand from "@/components/shared/TintedBand";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
 import { featureModuleMap, featureModules } from "@/content/features";
+import { buildPageMetadata } from "@/lib/seo";
 
 export const modules = featureModules;
 
-export const metadata: Metadata = {
-  title: "Nexus Features | Connected Education ERP for Academics, Attendance, Finance, and Multi-Campus Operations",
+export const metadata = buildPageMetadata({
+  title: "Features: One Connected Education ERP",
   description:
-    "Explore the full Nexus feature stack for educational institutions, including AI-powered assistance, connected operations, and AI-ready workflows across academics, attendance, finance, people, campuses, and reporting.",
-};
+    "Explore the Nexus feature stack: academics, attendance, finance, people, campuses, and reporting, connected with AI-powered assistance.",
+  path: "/features",
+});
 
 const connectedBenefits = [
   "Academic structure flows into attendance, finance, and reporting instead of being recreated in every module.",
@@ -67,15 +69,7 @@ function getModules(slugs: string[]) {
 export default function FeaturesPage() {
   return (
     <>
-      <Box
-        sx={{
-          py: { xs: 8, md: 12 },
-          background:
-            "linear-gradient(180deg, rgba(5,150,105,0.10) 0%, rgba(255,255,255,0) 100%)",
-          borderBottom: "1px solid",
-          borderColor: "divider",
-        }}
-      >
+      <TintedBand>
         <Container maxWidth="xl">
           <PageBreadcrumbs crumbs={[{ label: "Features" }]} />
           <Grid container spacing={6} sx={{ alignItems: "center" }}>
@@ -128,10 +122,7 @@ export default function FeaturesPage() {
             </Grid>
             <Grid size={{ xs: 12, md: 5 }}>
               <Card
-                sx={{
-                  border: "1px solid",
-                  borderColor: "divider",
-                  backgroundColor: "background.paper",
+                sx={{ backgroundColor: "background.paper",
                   boxShadow: "0 24px 60px rgba(2, 6, 23, 0.08)",
                 }}
               >
@@ -161,7 +152,7 @@ export default function FeaturesPage() {
             </Grid>
           </Grid>
         </Container>
-      </Box>
+      </TintedBand>
 
       <Box sx={{ py: { xs: 6, md: 9 }, backgroundColor: "background.paper" }}>
         <Container maxWidth="xl">
@@ -227,10 +218,7 @@ export default function FeaturesPage() {
                     {groupModules.map((mod, index) => (
                       <Card
                         key={mod.slug}
-                        sx={{
-                          border: "1px solid",
-                          borderColor: "divider",
-                          backgroundColor: "background.paper",
+                        sx={{ backgroundColor: "background.paper",
                           overflow: "hidden",
                         }}
                       >

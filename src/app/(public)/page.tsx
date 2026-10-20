@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import AutoAwesome from "@mui/icons-material/AutoAwesome";
 import CheckCircle from "@mui/icons-material/CheckCircle";
@@ -28,18 +27,16 @@ import { AI_POSITIONING } from "@/content/ai";
 import HeroSection from "@/components/public/HeroSection";
 import AnimatedSection from "@/components/shared/AnimatedSection";
 import CountUp from "@/components/shared/CountUp";
+import { buildPageMetadata, organizationJsonLd, softwareApplicationJsonLd, websiteJsonLd } from "@/lib/seo";
+import JsonLd from "@/components/seo/JsonLd";
+import IconBadge from "@/components/shared/IconBadge";
 
-export const metadata: Metadata = {
-  title: "Nexus - AI-Assisted Education ERP for Schools, Colleges & Universities",
+export const metadata = buildPageMetadata({
+  title: "AI-Assisted Education ERP for Schools & Colleges",
   description:
-    "Nexus is an AI-assisted ERP for educational institutions. Manage academics, attendance, finance, people, and campuses from one connected platform with AI-powered assistance and smarter institutional visibility.",
-  openGraph: {
-    title: "Nexus - AI-Assisted Education ERP for Schools, Colleges & Universities",
-    description:
-      "The all-in-one education ERP with AI-powered assistance for students, staff, finance, and multi-campus operations.",
-    type: "website",
-  },
-};
+    "Nexus is an AI-assisted ERP for schools and colleges. Manage academics, attendance, finance, people, and campuses from one connected platform.",
+  path: "/",
+});
 
 const features = [
   {
@@ -132,6 +129,7 @@ const trustStatements = [
 export default function LandingPage() {
   return (
     <>
+      <JsonLd data={[organizationJsonLd(), websiteJsonLd(), softwareApplicationJsonLd()]} />
       <HeroSection />
 
       <AnimatedSection>
@@ -202,21 +200,7 @@ export default function LandingPage() {
                         }}
                       >
                         <CardContent sx={{ p: 3 }}>
-                          <Box
-                            sx={{
-                              width: 42,
-                              height: 42,
-                              borderRadius: 3,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: "rgba(5,150,105,0.12)",
-                              color: "primary.main",
-                              mb: 2,
-                            }}
-                          >
-                            {step.icon}
-                          </Box>
+                          <IconBadge size={42}>{step.icon}</IconBadge>
                           <Typography
                             variant="caption"
                             sx={{
@@ -347,21 +331,7 @@ export default function LandingPage() {
                         }}
                       >
                         <CardContent sx={{ p: 3 }}>
-                          <Box
-                            sx={{
-                              width: 46,
-                              height: 46,
-                              borderRadius: 3,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: "rgba(5,150,105,0.12)",
-                              color: "primary.main",
-                              mb: 2,
-                            }}
-                          >
-                            {signal.icon}
-                          </Box>
+                          <IconBadge size={46}>{signal.icon}</IconBadge>
                           <Typography variant="h6" sx={{ fontWeight: 800, mb: 1.25 }}>
                             {signal.title}
                           </Typography>
@@ -403,7 +373,7 @@ export default function LandingPage() {
                   color: "primary.dark",
                   fontWeight: 700,
                   px: 5,
-                  "&:hover": { backgroundColor: "#F0FDF4" },
+                  "&:hover": { backgroundColor: "grey.100" },
                 }}
               >
                 Talk to the Nexus Team

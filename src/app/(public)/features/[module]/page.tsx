@@ -24,6 +24,8 @@ import { modules } from "../page";
 import { AI_POSITIONING } from "@/content/ai";
 import FeatureSectionNav from "@/components/public/FeatureSectionNav";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbJsonLd, buildPageMetadata } from "@/lib/seo";
 import { toSlug } from "@/lib/slugify";
 
 interface Props {
@@ -38,10 +40,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { module: slug } = await params;
   const mod = modules.find((m) => m.slug === slug);
   if (!mod) return {};
-  return {
-    title: `${mod.title} - Nexus Features`,
+  return buildPageMetadata({
+    title: `${mod.title} Module`,
     description: mod.summary,
-  };
+    path: `/features/${mod.slug}`,
+  });
 }
 
 export default async function ModuleFeaturePage({ params }: Props) {
@@ -57,6 +60,13 @@ export default async function ModuleFeaturePage({ params }: Props) {
 
   return (
     <>
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Features", path: "/features" },
+          { name: mod.title, path: `/features/${mod.slug}` },
+        ])}
+      />
       <Box
         sx={{
           py: { xs: 8, md: 10 },

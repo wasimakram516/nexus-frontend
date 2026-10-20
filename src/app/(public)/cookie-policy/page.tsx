@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
 import LegalPage from "@/components/public/LegalPage";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Cookie Policy — Nexus",
-  description: "Nexus cookie policy — what cookies we use and why.",
-};
+export const metadata = buildPageMetadata({
+  title: "Cookie Policy",
+  description:
+    "What cookies Nexus uses and why: only essential cookies, with no advertising or tracking.",
+  path: "/cookie-policy",
+});
 
 const sections = [
   {

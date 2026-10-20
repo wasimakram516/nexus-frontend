@@ -1,31 +1,25 @@
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
 import { featureModules } from "@/content/features";
+import { absoluteUrl } from "@/lib/seo";
 
-const BASE = "https://nexus.wisemensoft.com";
+/** Public, indexable pages and their relative importance. */
+const PUBLIC_PAGES: ReadonlyArray<{ path: string; priority: number }> = [
+  { path: "/", priority: 1 },
+  { path: "/features", priority: 0.9 },
+  { path: "/pricing", priority: 0.9 },
+  { path: "/contact", priority: 0.8 },
+  { path: "/about", priority: 0.7 },
+  { path: "/faq", priority: 0.7 },
+  { path: "/privacy-policy", priority: 0.3 },
+  { path: "/terms-of-service", priority: 0.3 },
+  { path: "/cookie-policy", priority: 0.3 },
+];
 
+/**
+ * Lists every public URL. `lastModified` is deliberately omitted: stamping every
+ * entry with the build time makes search engines stop trusting the field.
+ */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = [
-    { url: BASE, priority: 1.0 },
-    { url: `${BASE}/features`, priority: 0.9 },
-    { url: `${BASE}/pricing`, priority: 0.9 },
-    { url: `${BASE}/about`, priority: 0.7 },
-    { url: `${BASE}/contact`, priority: 0.8 },
-    { url: `${BASE}/faq`, priority: 0.7 },
-    { url: `${BASE}/privacy-policy`, priority: 0.4 },
-    { url: `${BASE}/terms-of-service`, priority: 0.4 },
-    { url: `${BASE}/cookie-policy`, priority: 0.4 },
-  ].map((r) => ({
-    ...r,
-    lastModified: new Date(),
-    changeFrequency: "monthly" as const,
-  }));
-
-  const moduleRoutes = featureModules.map((m) => ({
-    url: `${BASE}/features/${m.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly" as const,
-    priority: 0.8,
-  }));
-
-  return [...staticRoutes, ...moduleRoutes];
+  const modules = featureModules.map((m) => ({ path: `/features/${m.slug}`, priority: 0.8 }));
+  return [...PUBLIC_PAGES, ...modules].map(({ path, priority }) => ({ url: absoluteUrl(path), priority }));
 }

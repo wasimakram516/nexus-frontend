@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Image from "next/image";
 import {
   Box,
@@ -16,12 +15,14 @@ import School from "@mui/icons-material/School";
 import { AI_POSITIONING } from "@/content/ai";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
 import CountUp from "@/components/shared/CountUp";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "About - Nexus Education ERP by Wisemen Soft",
+export const metadata = buildPageMetadata({
+  title: "About Nexus",
   description:
-    "Learn why Nexus was built, how it evolved from a desktop education system into a modern AI-assisted web ERP, and what Wisemen Soft stands for in education technology.",
-};
+    "Why Nexus was built, how it grew from a desktop education system into an AI-assisted web ERP, and what Wisemen Soft stands for.",
+  path: "/about",
+});
 
 const values = [
   {
@@ -197,10 +198,7 @@ export default function AboutPage() {
             </Box>
 
             <Card
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: 4,
+              sx={{ borderRadius: 4,
                 backgroundColor: "background.paper",
               }}
             >

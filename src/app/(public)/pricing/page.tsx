@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
 import PricingClient from "@/components/public/PricingClient";
 import env from "@/config/env";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Pricing - Nexus Education ERP for Schools, Colleges & Campuses",
+export const metadata = buildPageMetadata({
+  title: "Pricing for Schools, Colleges & Campuses",
   description:
-    "Explore Nexus Education ERP pricing for schools, colleges, and multi-campus institutions. Compare plans, billing options, included modules, AI-powered assistance, and rollout paths with clearer pricing guidance.",
-};
+    "Compare Nexus Education ERP plans for schools, colleges, and multi-campus institutions: billing options, included modules, and AI assistance.",
+  path: "/pricing",
+});
 
 async function getPlans() {
   try {

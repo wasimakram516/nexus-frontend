@@ -1,16 +1,17 @@
-import type { Metadata } from "next";
 import ContactForm from "@/components/public/ContactForm";
 import { Box, Card, CardContent, Container, Grid, Typography } from "@mui/material";
 import Email from "@mui/icons-material/Email";
 import Language from "@mui/icons-material/Language";
 import { AI_POSITIONING } from "@/content/ai";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Contact - Nexus Education ERP",
+export const metadata = buildPageMetadata({
+  title: "Contact Us and Book a Demo",
   description:
-    "Contact the Nexus team to request a demo, ask about pricing, discuss AI-powered assistance, or plan the right ERP rollout for your institution.",
-};
+    "Contact the Nexus team to request a demo, ask about pricing, or plan the right ERP rollout for your institution.",
+  path: "/contact",
+});
 
 const contactInfo = [
   {
@@ -159,10 +160,7 @@ export default function ContactPage() {
               </Box>
 
               <Card
-                sx={{
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 3,
+                sx={{ borderRadius: 3,
                   backgroundColor: "background.paper",
                 }}
               >

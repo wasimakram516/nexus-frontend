@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
 import LegalPage from "@/components/public/LegalPage";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Terms of Service — Nexus",
-  description: "Nexus terms of service — your rights and responsibilities when using the platform.",
-};
+export const metadata = buildPageMetadata({
+  title: "Terms of Service",
+  description:
+    "Your rights and responsibilities when using the Nexus platform.",
+  path: "/terms-of-service",
+});
 
 const sections = [
   {
