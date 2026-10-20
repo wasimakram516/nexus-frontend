@@ -113,25 +113,30 @@ function buildTheme(mode: "light" | "dark", p: BrandPalette) {
     typography: baseTypography,
     components: {
       ...baseComponents,
+      // These read from the live theme (not the base palette) so an institution's
+      // branding overlay (surface, divider, text overrides) reaches them too.
       MuiAppBar: {
         styleOverrides: {
-          root: {
-            backgroundColor: p.background.paper,
-            borderBottom: `1px solid ${p.divider}`,
+          root: ({ theme }) => ({
+            backgroundColor: theme.palette.background.paper,
+            borderBottom: `1px solid ${theme.palette.divider}`,
             boxShadow: "none",
-            color: p.text.primary,
-          },
+            color: theme.palette.text.primary,
+          }),
         },
       },
       MuiDrawer: {
         styleOverrides: {
-          paper: { backgroundColor: p.background.paper, borderRight: `1px solid ${p.divider}` },
+          paper: ({ theme }) => ({
+            backgroundColor: theme.palette.background.paper,
+            borderRight: `1px solid ${theme.palette.divider}`,
+          }),
         },
       },
       MuiCssBaseline: {
-        styleOverrides: {
-          body: { backgroundColor: p.background.default },
-        },
+        styleOverrides: (theme) => ({
+          body: { backgroundColor: theme.palette.background.default },
+        }),
       },
     },
   });

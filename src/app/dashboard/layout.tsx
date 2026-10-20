@@ -19,7 +19,6 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import {
-  createTheme,
   ThemeProvider as BrandThemeProvider,
   useTheme,
 } from "@mui/material/styles";
@@ -56,11 +55,11 @@ import {
 } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { authService } from "@/services/auth.service";
+import { buildBrandedTheme } from "@/theme/branded-theme";
+import { HEX_COLOR_6, mergeLegacyBranding, sanitizeTokenOverrides } from "@/theme/branding-tokens";
 
 const DRAWER_EXPANDED = 240;
 const DRAWER_COLLAPSED = 64;
-
-const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 interface NavItem {
   label: string;
@@ -113,30 +112,23 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     setCollapsed(true);
   }
 
-  // Institution branding tints the dashboard: valid hex colors from the
-  // branding config override the default palette (light/dark base kept).
-  // Branding stores a separate color pair per theme mode, so which field
-  // applies follows whichever mode is currently active.
+  // Institution branding tints the dashboard. Which mode's colors apply follows whichever
+  // theme mode is active. Per-token overrides win over the legacy flat color columns, and
+  // anything the institution did not set keeps the Nexus default.
   const brandedTheme = useMemo(() => {
     const branding = config?.branding;
-    const isDark = outerTheme.palette.mode === "dark";
-    const primaryColor = isDark ? branding?.primaryColorDark : branding?.primaryColorLight;
-    const secondaryColor = isDark ? branding?.secondaryColorDark : branding?.secondaryColorLight;
-    const backgroundColor = isDark ? branding?.backgroundColorDark : branding?.backgroundColorLight;
-    const primary =
-      primaryColor && HEX_COLOR.test(primaryColor) ? primaryColor : undefined;
-    const secondary =
-      secondaryColor && HEX_COLOR.test(secondaryColor) ? secondaryColor : undefined;
-    const background =
-      backgroundColor && HEX_COLOR.test(backgroundColor) ? backgroundColor : undefined;
-    if (!primary && !secondary && !background) return outerTheme;
-    return createTheme(outerTheme, {
-      palette: {
-        ...(primary ? { primary: { main: primary } } : {}),
-        ...(secondary ? { secondary: { main: secondary } } : {}),
-        ...(background ? { background: { default: background } } : {}),
+    const mode = outerTheme.palette.mode;
+    const suffix = mode === "dark" ? "Dark" : "Light";
+    const valid = (c: string | null | undefined) => (c && HEX_COLOR_6.test(c) ? c : undefined);
+    const merged = mergeLegacyBranding(
+      {
+        primary: valid(branding?.[`primaryColor${suffix}`]),
+        secondary: valid(branding?.[`secondaryColor${suffix}`]),
+        background: valid(branding?.[`backgroundColor${suffix}`]),
       },
-    });
+      sanitizeTokenOverrides(branding?.colorOverrides?.[mode]),
+    );
+    return buildBrandedTheme(outerTheme, merged);
   }, [outerTheme, config?.branding]);
 
   const handleLogout = async () => {

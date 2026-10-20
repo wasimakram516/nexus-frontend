@@ -38,6 +38,7 @@ const WRITE_ACTIONS: PermissionAction[] = ["create", "update", "delete"];
 // own. Defined in theme/tokens.ts so they always match Nexus's base theme;
 // re-exported here for existing importers.
 export { DEFAULT_BRANDING_COLORS } from "@/theme/tokens";
+import type { ColorOverrides } from "@/theme/branding-tokens";
 
 export interface RuntimeConfig {
   institutionId: string;
@@ -53,6 +54,8 @@ export interface RuntimeConfig {
     accentColorDark: string | null;
     backgroundColorDark: string | null;
     theme: string | null;
+    /** Per-mode theme color overrides set by the institution's admin; null when none. */
+    colorOverrides: ColorOverrides | null;
   } | null;
   settings: Record<string, unknown>;
   modules: Record<string, { enabled: boolean; configuration: Record<string, unknown> }>;
