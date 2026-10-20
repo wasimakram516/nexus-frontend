@@ -22,6 +22,7 @@ import { apiHandler } from "@/lib/apiHandler";
 import { authService, SignupResponse } from "@/services/auth.service";
 import NexusLogo from "@/components/shared/NexusLogo";
 
+import { brandGradient } from "@/theme/gradients";
 const highlights = [
   "Free 14-day trial - no credit card required",
   "Your institution, campuses and admin account in one step",
@@ -75,7 +76,7 @@ export default function SignupPage() {
           flex: 1,
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "linear-gradient(160deg, #065f46 0%, #047857 40%, #059669 100%)",
+          background: (t) => brandGradient(t),
           p: 6,
           position: "relative",
           overflow: "hidden",

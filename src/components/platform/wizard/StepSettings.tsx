@@ -28,7 +28,7 @@ export default function StepSettings({ data, update }: Props) {
         Optional key-value settings stored per institution. Use these for custom configuration flags, feature toggles, or integration keys. Leave empty if not needed.
       </Typography>
 
-      <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+      <Card>
         <CardContent sx={{ p: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2.5 }}>
             <Box>

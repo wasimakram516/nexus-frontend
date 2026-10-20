@@ -380,7 +380,7 @@ export default function PeriodSlotsSection({
       </Grid>
 
       {!selectedSectionId ? (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary">
               Pick a class and section above to view its weekly schedule.
@@ -390,7 +390,7 @@ export default function PeriodSlotsSection({
       ) : loadingWeek ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
       ) : periodNumbers.length === 0 ? (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary" sx={{ mb: canManage ? 2 : 0 }}>
               No period slots yet for this section.

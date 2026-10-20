@@ -173,7 +173,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
   return (
     <Grid container spacing={3}>
       <Grid size={{ xs: 12, md: 6 }}>
-        <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+        <Card sx={{ mb: 3 }}>
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Institution Details</Typography>
@@ -199,7 +199,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
         </Card>
 
         {/* Administrators */}
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Administrators</Typography>
@@ -230,9 +230,8 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
                     />
                     <Chip
                       label={admin.status}
-                      size="small"
+                      size="tiny"
                       color={admin.status === "ACTIVE" ? "success" : "default"}
-                      sx={{ height: 20, fontSize: 10 }}
                     />
                   </ListItem>
                 ))}
@@ -243,7 +242,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
       </Grid>
 
       <Grid size={{ xs: 12, md: 6 }}>
-        <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+        <Card sx={{ mb: 3 }}>
           <CardContent sx={{ p: 3 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Deployment</Typography>
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
@@ -254,7 +253,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
         </Card>
 
         {subscription && (
-          <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+          <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Subscription</Typography>
               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
@@ -280,7 +279,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
         )}
 
         {!!institution.notes && (
-          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <Card>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>Notes</Typography>
               <Typography variant="body2" color="text.secondary">{String(institution.notes)}</Typography>

@@ -298,7 +298,7 @@ export default function NewInstitutionWizard() {
     return (
       <Box sx={{ flex: 1, overflow: "auto" }}>
         <Container maxWidth="sm" sx={{ py: 8 }}>
-          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <Card>
             <CardContent sx={{ p: 4, textAlign: "center" }}>
               <RocketLaunch sx={{ fontSize: 48, color: "primary.main", mb: 1 }} />
               <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
@@ -323,7 +323,7 @@ export default function NewInstitutionWizard() {
                       secondary={s.hint}
                       slotProps={{ primary: { variant: "body2", sx: { fontWeight: 600 } }, secondary: { variant: "caption" } }}
                     />
-                    {s.status === "skipped" && <Chip label="Skipped" size="small" sx={{ height: 20, fontSize: 10 }} />}
+                    {s.status === "skipped" && <Chip label="Skipped" size="tiny" />}
                   </ListItem>
                 ))}
               </List>

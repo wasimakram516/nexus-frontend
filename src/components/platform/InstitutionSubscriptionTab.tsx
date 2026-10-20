@@ -139,7 +139,7 @@ export default function InstitutionSubscriptionTab({ institutionId, runtimeConfi
   return (
     <Grid container spacing={3}>
       <Grid size={12}>
-        <Card sx={{ border: "1px solid", borderColor: "divider", maxWidth: 640 }}>
+        <Card sx={{ maxWidth: 640 }}>
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1.5, gap: 2 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Subscription</Typography>

@@ -120,7 +120,7 @@ export default function AuditLogDiffViewer({ log, onClose }: Props) {
                   <TableCell sx={{ fontFamily: "monospace", fontSize: 12 }}>
                     {row.key}
                     {row.changed && (
-                      <Chip label="changed" size="small" color="warning" sx={{ ml: 1, height: 16, fontSize: 9 }} />
+                      <Chip label="changed" size="tiny" color="warning" sx={{ ml: 1 }} />
                     )}
                   </TableCell>
                   <TableCell sx={{ fontFamily: "monospace", fontSize: 12, wordBreak: "break-all" }}>

@@ -95,7 +95,7 @@ export default function RecycleBinPage() {
         </Typography>
       </Box>
       <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Card sx={{ border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
+        <Card sx={{ overflow: "hidden" }}>
           {loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
               <CircularProgress />

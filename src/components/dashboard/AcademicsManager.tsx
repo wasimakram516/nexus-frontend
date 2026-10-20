@@ -287,10 +287,7 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
           {sectionDefs.map((section) => (
             <Grid key={section.key} size={{ xs: 12, sm: 6, md: 3 }}>
               <Card
-                sx={{
-                  border: "1px solid",
-                  borderColor: "divider",
-                  height: "100%",
+                sx={{ height: "100%",
                   transition: "box-shadow 0.15s, transform 0.15s",
                   "&:hover": { boxShadow: 4, transform: "translateY(-2px)" },
                 }}

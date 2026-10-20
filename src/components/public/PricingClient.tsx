@@ -27,6 +27,7 @@ import { AI_POSITIONING } from "@/content/ai";
 import FaqAccordion from "@/components/public/FaqAccordion";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
 
+import { useTheme } from "@mui/material/styles";
 const ANNUAL_DISCOUNT = 0.2;
 
 const MODULE_LABELS: Record<string, string> = {
@@ -112,6 +113,7 @@ const faqItems = [
 ];
 
 export default function PricingClient({ apiPlans }: { apiPlans: Plan[] }) {
+  const theme = useTheme();
   const [annual, setAnnual] = useState(false);
   const plans = apiPlans;
 
@@ -209,10 +211,7 @@ export default function PricingClient({ apiPlans }: { apiPlans: Plan[] }) {
             </Box>
 
             <Card
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                backgroundColor: "background.paper",
+              sx={{ backgroundColor: "background.paper",
                 borderRadius: 4,
               }}
             >
@@ -539,10 +538,7 @@ export default function PricingClient({ apiPlans }: { apiPlans: Plan[] }) {
             </Box>
 
             <Card
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: 4,
+              sx={{ borderRadius: 4,
                 backgroundColor: "background.paper",
               }}
             >
@@ -733,7 +729,7 @@ export default function PricingClient({ apiPlans }: { apiPlans: Plan[] }) {
               All plans include a 14-day free trial · No credit card required ·{" "}
               <Link
                 href="/contact"
-                style={{ color: "#059669", textDecoration: "none", fontWeight: 600 }}
+                style={{ color: theme.palette.primary.main, textDecoration: "none", fontWeight: 600 }}
               >
                 Talk to sales →
               </Link>

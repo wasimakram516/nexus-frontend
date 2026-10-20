@@ -30,7 +30,7 @@ export default function PermissionGate({ feature, action, children }: Permission
   if (!can(feature, action)) {
     return (
       <Box sx={{ p: 4 }}>
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 8, textAlign: "center" }}>
             <VisibilityOff sx={{ fontSize: 40, color: "text.disabled", mb: 1 }} />
             <Typography variant="h6" sx={{ fontWeight: 700 }}>No access</Typography>

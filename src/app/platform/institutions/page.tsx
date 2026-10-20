@@ -118,7 +118,7 @@ export default function InstitutionsPage() {
           </TextField>
         </Box>
 
-        <Card sx={{ border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
+        <Card sx={{ overflow: "hidden" }}>
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "background.default" }}>

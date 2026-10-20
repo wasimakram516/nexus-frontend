@@ -99,8 +99,7 @@ export default function InstitutionEntitlementsTab({ institutionId, runtimeConfi
                         <Chip
                           label={enabled ? "Enabled" : "Disabled"}
                           color={enabled ? "success" : "default"}
-                          size="small"
-                          sx={{ height: 18, fontSize: 10 }}
+                          size="tiny"
                         />
                       </Box>
                       <Typography variant="caption" color="text.secondary">{mod.description}</Typography>

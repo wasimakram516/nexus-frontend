@@ -134,7 +134,7 @@ export default function InstitutionSettingsTab({ institutionId, runtimeConfig, o
   return (
     <Grid container spacing={3}>
       <Grid size={12}>
-        <Card sx={{ border: "1px solid", borderColor: "divider", maxWidth: 600 }}>
+        <Card sx={{ maxWidth: 600 }}>
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1.5 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Recycle Bin, Payroll &amp; Attendance</Typography>
@@ -151,7 +151,7 @@ export default function InstitutionSettingsTab({ institutionId, runtimeConfig, o
 
       {otherEntries.length > 0 && (
         <Grid size={12}>
-          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <Card>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>Other Settings</Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>

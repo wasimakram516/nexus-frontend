@@ -25,6 +25,7 @@ import { apiHandler } from "@/lib/apiHandler";
 import { authService, LoginResponse } from "@/services/auth.service";
 import NexusLogo from "@/components/shared/NexusLogo";
 
+import { brandGradient } from "@/theme/gradients";
 const features = [
   { icon: <SchoolOutlined />, label: "Academic Management" },
   { icon: <Groups />, label: "People & Enrollment" },
@@ -76,7 +77,7 @@ export default function LoginPage() {
           flex: 1,
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "linear-gradient(160deg, #065f46 0%, #047857 40%, #059669 100%)",
+          background: (t) => brandGradient(t),
           p: 6,
           position: "relative",
           overflow: "hidden",

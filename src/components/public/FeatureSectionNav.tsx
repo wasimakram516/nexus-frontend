@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Chip, Typography } from "@mui/material";
 
+import { alpha } from "@mui/material/styles";
 type FeatureSectionNavItem = {
   id: string;
   label: string;
@@ -198,11 +199,11 @@ export default function FeatureSectionNav({ items, boundaryId }: Props) {
                   cursor: "pointer",
                   border: "1px solid",
                   borderColor: isActive ? "primary.main" : "divider",
-                  backgroundColor: isActive ? "rgba(5,150,105,0.08)" : "background.paper",
+                  backgroundColor: isActive ? (t) => alpha(t.palette.primary.main, 0.08) : "background.paper",
                   transition: "all 0.2s ease",
                   "&:hover": {
                     borderColor: "primary.main",
-                    backgroundColor: "rgba(5,150,105,0.08)",
+                    backgroundColor: (t) => alpha(t.palette.primary.main, 0.08),
                   },
                   "&:focus-visible": {
                     outline: "2px solid",

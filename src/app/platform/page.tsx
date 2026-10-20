@@ -92,7 +92,7 @@ export default function PlatformOverviewPage() {
         <Grid container spacing={3} sx={{ mb: 4 }}>
           {stats.map((stat) => (
             <Grid size={{ xs: 6, md: 3 }} key={stat.label}>
-              <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+              <Card>
                 <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Box sx={{ width: 44, height: 44, borderRadius: 2, backgroundColor: `${stat.color}20`, display: "flex", alignItems: "center", justifyContent: "center", color: stat.color, flexShrink: 0 }}>
                     {stat.icon}
@@ -117,7 +117,7 @@ export default function PlatformOverviewPage() {
           </Button>
         </Box>
 
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           {loading ? (
             <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2 }}>
               {[1, 2, 3].map((i) => <Skeleton key={i} height={60} />)}

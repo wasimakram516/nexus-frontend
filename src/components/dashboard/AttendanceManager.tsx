@@ -845,7 +845,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
         {recordsLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
         ) : myRecords.length === 0 ? (
-          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <Card>
             <CardContent sx={{ py: 6, textAlign: "center" }}>
               <Typography color="text.secondary">No attendance record for this date.</Typography>
             </CardContent>
@@ -918,10 +918,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
           {hubCards.map((card) => (
             <Grid key={card.key} size={{ xs: 12, sm: 6 }}>
               <Card
-                sx={{
-                  border: "1px solid",
-                  borderColor: "divider",
-                  height: "100%",
+                sx={{ height: "100%",
                   transition: "box-shadow 0.15s, transform 0.15s",
                   "&:hover": { boxShadow: 4, transform: "translateY(-2px)" },
                 }}
@@ -1027,7 +1024,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
         {recordsLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
         ) : punchRecords.length === 0 ? (
-          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <Card>
             <CardContent sx={{ py: 6, textAlign: "center" }}>
               <Typography color="text.secondary" sx={{ mb: 2 }}>
                 No punches recorded for {formatDate(date)}.
@@ -1299,7 +1296,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
       {staticLoading || (isPeriodStudentMode ? periodSlotsLoading || periodRosterLoading : recordsLoading) ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
       ) : isPeriodStudentMode && !periodId ? (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary">
               {!sectionFilter
@@ -1309,7 +1306,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
           </CardContent>
         </Card>
       ) : filteredRoster.length === 0 ? (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary">
               {effectiveRegisterRoster.length === 0

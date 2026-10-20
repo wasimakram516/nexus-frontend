@@ -124,7 +124,7 @@ export default function RolesManager({ institutionId }: RolesManagerProps) {
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
       ) : roles.length === 0 ? (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary" sx={{ mb: 2 }}>No roles yet.</Typography>
             <Button variant="contained" startIcon={<Add />} onClick={openCreate}>Create First Role</Button>
@@ -133,7 +133,7 @@ export default function RolesManager({ institutionId }: RolesManagerProps) {
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           {roles.map((role) => (
-            <Card key={role.id} sx={{ border: "1px solid", borderColor: "divider" }}>
+            <Card key={role.id}>
               <CardContent sx={{ px: 3, py: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Box>
                   <Typography variant="body2" sx={{ fontWeight: 700 }}>{role.name}</Typography>

@@ -32,7 +32,7 @@ export default function StepAdmin({ data, update }: Props) {
         Create the first admin account so someone can sign in and run this institution from day one.
       </Typography>
 
-      <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+      <Card>
         <CardContent sx={{ p: 3 }}>
           <FormControlLabel
             control={

@@ -15,7 +15,7 @@ export default function StepCampus({ data, update }: Props) {
         Optionally create the institution&apos;s first campus now. You can always add campuses later.
       </Typography>
 
-      <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+      <Card sx={{ mb: 3 }}>
         <CardContent sx={{ p: 3 }}>
           <FormControlLabel
             control={<Switch checked={data.skipCampus} onChange={(e) => update({ skipCampus: e.target.checked })} color="primary" />}
@@ -30,7 +30,7 @@ export default function StepCampus({ data, update }: Props) {
       </Card>
 
       {!data.skipCampus && (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ p: 3 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5 }}>Campus Details</Typography>
             <Grid container spacing={2.5}>

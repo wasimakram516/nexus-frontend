@@ -114,7 +114,7 @@ export default function InstitutionBrandingTab({ institutionId, runtimeConfig, o
   return (
     <Grid container spacing={3}>
       <Grid size={{ xs: 12, md: 6 }}>
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Branding</Typography>
@@ -135,7 +135,7 @@ export default function InstitutionBrandingTab({ institutionId, runtimeConfig, o
       </Grid>
 
       <Grid size={{ xs: 12, md: 6 }}>
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Preview</Typography>

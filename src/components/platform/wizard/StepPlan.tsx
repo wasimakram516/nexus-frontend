@@ -91,7 +91,7 @@ export default function StepPlan({ data, update }: Props) {
 
           {selectedPlan && (
             <Grid size={{ xs: 12 }}>
-              <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+              <Card>
                 <CardContent sx={{ p: 3 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5 }}>Override Pricing (optional)</Typography>
                   <Grid container spacing={2.5}>

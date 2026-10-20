@@ -422,7 +422,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
                       <TableRow key={row.id} hover>
                         <TableCell sx={{ fontWeight: 600 }}>
                           {row.name}
-                          {row.id === currentUser?.id && <Chip label="You" size="small" sx={{ ml: 1, height: 18, fontSize: 10 }} />}
+                          {row.id === currentUser?.id && <Chip label="You" size="tiny" sx={{ ml: 1 }} />}
                         </TableCell>
                         <TableCell>{row.email}</TableCell>
                         <TableCell>
@@ -433,16 +433,14 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
                             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
                               <Chip
                                 label={row.assignedRole?.name ?? "No role (no access)"}
-                                size="small"
+                                size="tiny"
                                 variant="outlined"
-                                sx={{ height: 20, fontSize: 10 }}
                               />
                               {rowOverrideCount > 0 && (
                                 <Chip
                                   label={`${rowOverrideCount} override${rowOverrideCount !== 1 ? "s" : ""}`}
-                                  size="small"
+                                  size="tiny"
                                   color="secondary"
-                                  sx={{ height: 20, fontSize: 10 }}
                                 />
                               )}
                             </Box>

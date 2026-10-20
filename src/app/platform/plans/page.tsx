@@ -116,7 +116,7 @@ export default function PlansPage() {
           <Grid container spacing={3}>
             {plans.map((plan) => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={plan.id}>
-                <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
+                <Card sx={{ height: "100%" }}>
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 2 }}>
                       <Box>

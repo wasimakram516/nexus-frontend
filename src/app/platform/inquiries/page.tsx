@@ -163,7 +163,7 @@ export default function InquiriesPage() {
           </TextField>
         </Box>
 
-        <Card sx={{ border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
+        <Card sx={{ overflow: "hidden" }}>
           {loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
               <CircularProgress />

@@ -42,7 +42,7 @@ export default function StepBasicInfo({ data, update }: Props) {
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12 }}>
-          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <Card>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5 }}>Identity</Typography>
               <Grid container spacing={2.5}>
@@ -100,7 +100,7 @@ export default function StepBasicInfo({ data, update }: Props) {
         </Grid>
 
         <Grid size={{ xs: 12 }}>
-          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <Card>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5 }}>Contact & Domain</Typography>
               <Grid container spacing={2.5}>
@@ -137,7 +137,7 @@ export default function StepBasicInfo({ data, update }: Props) {
         </Grid>
 
         <Grid size={{ xs: 12 }}>
-          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <Card>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Internal Notes</Typography>
               <TextField

@@ -20,6 +20,8 @@ import { getResponse } from "@/lib/chatEngine";
 import env from "@/config/env";
 import { playClose, playOpen, playReceive, playSend } from "@/lib/chatSounds";
 
+import { brandGradient } from "@/theme/gradients";
+import { alpha } from "@mui/material/styles";
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -140,7 +142,7 @@ export default function AiChatWidget() {
         >
           <Box
             sx={{
-              background: "linear-gradient(135deg, #059669, #047857)",
+              background: (t) => brandGradient(t, 135),
               px: 2.5,
               py: 2,
               display: "flex",
@@ -353,10 +355,10 @@ export default function AiChatWidget() {
             bottom: 24,
             right: 24,
             zIndex: 1050,
-            background: "linear-gradient(135deg, #059669, #047857)",
+            background: (t) => brandGradient(t, 135),
             color: "#fff",
-            boxShadow: "0 4px 20px rgba(5, 150, 105, 0.4)",
-            "&:hover": { background: "linear-gradient(135deg, #047857, #065f46)" },
+            boxShadow: (t) => `0 4px 20px ${alpha(t.palette.primary.main, 0.4)}`,
+            "&:hover": { filter: "brightness(0.9)" },
           }}
         >
           {open ? <Close /> : <SmartToy />}

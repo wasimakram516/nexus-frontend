@@ -60,7 +60,7 @@ export default function StepReview({ data, onSubmit, onCancel, onBack, submittin
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+          <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Basic Information</Typography>
               <ReviewRow label="Name" value={data.name} />
@@ -73,7 +73,7 @@ export default function StepReview({ data, onSubmit, onCancel, onBack, submittin
             </CardContent>
           </Card>
 
-          <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+          <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Subscription</Typography>
               <ReviewRow label="Plan" value={data.planName || "None selected"} />
@@ -85,7 +85,7 @@ export default function StepReview({ data, onSubmit, onCancel, onBack, submittin
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+          <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Branding</Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>Light mode</Typography>
@@ -111,7 +111,7 @@ export default function StepReview({ data, onSubmit, onCancel, onBack, submittin
             </CardContent>
           </Card>
 
-          <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+          <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
                 Modules ({enabledModules.length} enabled)
@@ -128,7 +128,7 @@ export default function StepReview({ data, onSubmit, onCancel, onBack, submittin
           </Card>
 
           {!hideCampus && !data.skipCampus && data.campusName && (
-            <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+            <Card sx={{ mb: 3 }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>First Campus</Typography>
                 <ReviewRow label="Name" value={data.campusName} />
@@ -140,7 +140,7 @@ export default function StepReview({ data, onSubmit, onCancel, onBack, submittin
           )}
 
           {hideCampus && (data.settings ?? []).length > 0 && (
-            <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+            <Card sx={{ mb: 3 }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
                   Settings ({(data.settings ?? []).filter(s => s.key.trim()).length} entries)
@@ -153,7 +153,7 @@ export default function StepReview({ data, onSubmit, onCancel, onBack, submittin
           )}
 
           {hideCampus && (
-            <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+            <Card>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>Permissions</Typography>
                 <Typography variant="caption" color="text.secondary">

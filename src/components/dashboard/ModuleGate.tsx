@@ -28,7 +28,7 @@ export default function ModuleGate({ module, children }: ModuleGateProps) {
   if (!isModuleEnabled(module)) {
     return (
       <Box sx={{ p: 4 }}>
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 8, textAlign: "center" }}>
             <LockOutlined sx={{ fontSize: 40, color: "text.disabled", mb: 1 }} />
             <Typography variant="h6" sx={{ fontWeight: 700 }}>Module not enabled</Typography>
@@ -45,7 +45,7 @@ export default function ModuleGate({ module, children }: ModuleGateProps) {
   if (!canViewModule(module)) {
     return (
       <Box sx={{ p: 4 }}>
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 8, textAlign: "center" }}>
             <VisibilityOff sx={{ fontSize: 40, color: "text.disabled", mb: 1 }} />
             <Typography variant="h6" sx={{ fontWeight: 700 }}>No access</Typography>

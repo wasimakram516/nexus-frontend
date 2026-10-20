@@ -273,7 +273,7 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
       ) : campuses.length === 0 ? (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary" sx={{ mb: 2 }}>No campuses yet.</Typography>
             <Button variant="contained" startIcon={<Add />} onClick={openCreate}>Add First Campus</Button>
@@ -282,7 +282,7 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           {campuses.map((campus) => (
-            <Card key={campus.id} sx={{ border: "1px solid", borderColor: "divider" }}>
+            <Card key={campus.id}>
               <CardContent sx={{ px: 3, py: 2, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Box sx={{ width: 36, height: 36, borderRadius: 2, backgroundColor: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

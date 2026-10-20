@@ -27,6 +27,7 @@ import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
 import { campusesService } from "@/services/campuses.service";
 
+import { MODULE_ACCENTS } from "@/theme/tokens";
 interface ModuleDef {
   key: string | null;
   label: string;
@@ -37,18 +38,18 @@ interface ModuleDef {
 }
 
 const MODULE_DEFS: ModuleDef[] = [
-  { key: null,           label: "Campuses",    description: "Manage campuses, hours, and thresholds.",     icon: <AccountTree />,       accent: "#10b981", route: "campuses" },
-  { key: "PEOPLE",       label: "People",      description: "Students, teachers, and guardians.",           icon: <Group />,             accent: "#3b82f6", route: "people" },
-  { key: "ACADEMICS",    label: "Academics",   description: "Levels, classes, sections, and subjects.",     icon: <School />,            accent: "#8b5cf6", route: "academics" },
-  { key: "ATTENDANCE",   label: "Attendance",  description: "Daily attendance records and summaries.",      icon: <AssignmentTurnedIn />, accent: "#f59e0b", route: "attendance" },
-  { key: "FINANCE",      label: "Finance",     description: "Fees, vouchers, salaries, and payments.",      icon: <AccountBalance />,    accent: "#ef4444", route: "finance" },
-  { key: null,           label: "Users",       description: "Staff accounts and role assignments.",         icon: <ManageAccounts />,    accent: "#06b6d4", route: "users" },
-  { key: null,           label: "Custom Fields", description: "Institution-specific fields on records.",    icon: <Tune />,              accent: "#a855f7", route: "custom-fields" },
-  { key: "REPORTING",    label: "Reports",     description: "Analytics, trends, and data exports.",         icon: <QueryStats />,        accent: "#64748b", route: "reports" },
-  { key: "EXAMINATIONS", label: "Examinations",description: "Exams, results, and grade sheets.",            icon: <AutoStories />,       accent: "#d946ef", route: "examinations" },
-  { key: "DOCUMENTS",    label: "Documents",   description: "Institution documents and templates.",         icon: <Description />,       accent: "#0ea5e9", route: "documents" },
-  { key: "REALTIME",     label: "Real-time",   description: "Live notifications and socket events.",        icon: <Forum />,             accent: "#22c55e", route: "realtime" },
-  { key: "NOTICES",      label: "Notices",     description: "Announcements with audience targeting.",       icon: <Campaign />,          accent: "#f97316", route: "notices" },
+  { key: null,           label: "Campuses",    description: "Manage campuses, hours, and thresholds.",     icon: <AccountTree />,       accent: MODULE_ACCENTS.campuses, route: "campuses" },
+  { key: "PEOPLE",       label: "People",      description: "Students, teachers, and guardians.",           icon: <Group />,             accent: MODULE_ACCENTS.people, route: "people" },
+  { key: "ACADEMICS",    label: "Academics",   description: "Levels, classes, sections, and subjects.",     icon: <School />,            accent: MODULE_ACCENTS.academics, route: "academics" },
+  { key: "ATTENDANCE",   label: "Attendance",  description: "Daily attendance records and summaries.",      icon: <AssignmentTurnedIn />, accent: MODULE_ACCENTS.attendance, route: "attendance" },
+  { key: "FINANCE",      label: "Finance",     description: "Fees, vouchers, salaries, and payments.",      icon: <AccountBalance />,    accent: MODULE_ACCENTS.finance, route: "finance" },
+  { key: null,           label: "Users",       description: "Staff accounts and role assignments.",         icon: <ManageAccounts />,    accent: MODULE_ACCENTS.users, route: "users" },
+  { key: null,           label: "Custom Fields", description: "Institution-specific fields on records.",    icon: <Tune />,              accent: MODULE_ACCENTS.customFields, route: "custom-fields" },
+  { key: "REPORTING",    label: "Reports",     description: "Analytics, trends, and data exports.",         icon: <QueryStats />,        accent: MODULE_ACCENTS.reports, route: "reports" },
+  { key: "EXAMINATIONS", label: "Examinations",description: "Exams, results, and grade sheets.",            icon: <AutoStories />,       accent: MODULE_ACCENTS.examinations, route: "examinations" },
+  { key: "DOCUMENTS",    label: "Documents",   description: "Institution documents and templates.",         icon: <Description />,       accent: MODULE_ACCENTS.documents, route: "documents" },
+  { key: "REALTIME",     label: "Real-time",   description: "Live notifications and socket events.",        icon: <Forum />,             accent: MODULE_ACCENTS.realtime, route: "realtime" },
+  { key: "NOTICES",      label: "Notices",     description: "Announcements with audience targeting.",       icon: <Campaign />,          accent: MODULE_ACCENTS.notices, route: "notices" },
 ];
 
 const STATUS_COLOR: Record<string, "success" | "warning" | "error" | "default"> = {
@@ -123,7 +124,7 @@ export default function InstitutionManagePage() {
         ]} />
 
         {/* Institution banner */}
-        <Card sx={{ border: "1px solid", borderColor: "divider", mb: { xs: 2, sm: 3 } }}>
+        <Card sx={{ mb: { xs: 2, sm: 3 } }}>
           <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
             <Box sx={{ display: "flex", alignItems: { xs: "flex-start", sm: "center" }, gap: 2, flexWrap: "wrap" }}>
               <Box sx={{

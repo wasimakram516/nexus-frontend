@@ -267,7 +267,7 @@ export default function ResourceSection<T extends { id: string }>({
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
       ) : rows.length === 0 ? (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary" sx={{ mb: onCreate ? 2 : 0 }}>
               {emptyMessage ?? `No ${title.toLowerCase()} yet.`}

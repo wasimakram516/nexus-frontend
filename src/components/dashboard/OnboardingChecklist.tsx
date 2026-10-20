@@ -115,7 +115,7 @@ export default function OnboardingChecklist({ steps }: OnboardingChecklistProps)
                       {step.label}
                     </Typography>
                     {step.required && !step.done && (
-                      <Chip label="Start here" size="small" color="primary" sx={{ height: 18, fontSize: 10 }} />
+                      <Chip label="Start here" size="tiny" color="primary" />
                     )}
                   </Box>
                 }

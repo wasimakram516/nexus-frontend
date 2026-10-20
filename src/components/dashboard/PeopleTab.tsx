@@ -1488,7 +1488,7 @@ export default function PeopleTab({
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
       ) : rows.length === 0 ? (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary" sx={{ mb: canManage ? 2 : 0 }}>No {kind} yet.</Typography>
             {canManage && (
@@ -1497,7 +1497,7 @@ export default function PeopleTab({
           </CardContent>
         </Card>
       ) : filteredRows.length === 0 ? (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
               No {kind} match your search or filters.

@@ -263,7 +263,7 @@ export default function DashboardOverviewPage() {
         {isPersonal && (
           <Grid container spacing={2.5} sx={{ mb: 4 }}>
             <Grid size={{ xs: 12, md: 4 }}>
-              <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
+              <Card sx={{ height: "100%" }}>
                 <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Avatar sx={{ width: 52, height: 52, backgroundColor: "primary.main", fontWeight: 800, fontSize: 20 }}>
                     {user?.name?.charAt(0) ?? "U"}
@@ -271,7 +271,7 @@ export default function DashboardOverviewPage() {
                   <Box>
                     <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{user?.name}</Typography>
                     <Typography variant="body2" color="text.secondary">{user?.email}</Typography>
-                    <Chip label={user?.role} size="small" sx={{ mt: 0.5, height: 20, fontSize: 10 }} />
+                    <Chip label={user?.role} size="tiny" sx={{ mt: 0.5 }} />
                   </Box>
                 </CardContent>
               </Card>
@@ -279,7 +279,7 @@ export default function DashboardOverviewPage() {
 
             {isModuleEnabled("ATTENDANCE") && (
               <Grid size={{ xs: 12, md: 8 }}>
-                <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
+                <Card sx={{ height: "100%" }}>
                   <CardContent>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>
                       My Attendance — {new Date().toLocaleString("en", { month: "long" })}
@@ -339,7 +339,7 @@ export default function DashboardOverviewPage() {
           <Grid container spacing={2.5} sx={{ mb: 4 }}>
             {statCards.map((card) => (
               <Grid key={card.label} size={{ xs: 12, sm: 6, md: 3 }}>
-                <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+                <Card>
                   <CardActionArea onClick={() => router.push(card.href)}>
                     <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                       <Box sx={{ width: 44, height: 44, borderRadius: 2, backgroundColor: "primary.main", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -366,7 +366,7 @@ export default function DashboardOverviewPage() {
             <Grid container spacing={2.5}>
               {attendanceCards.map((card) => (
                 <Grid key={card.label} size={{ xs: 6, sm: 6, md: 3 }}>
-                  <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+                  <Card>
                     <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                       <Box sx={{ color: card.color, display: "flex" }}>{card.icon}</Box>
                       <Box>
@@ -388,7 +388,7 @@ export default function DashboardOverviewPage() {
             <Grid container spacing={2.5}>
               {quickLinks.map((link) => (
                 <Grid key={link.label} size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
+                  <Card sx={{ height: "100%" }}>
                     <CardActionArea onClick={() => router.push(link.href)} sx={{ height: "100%" }}>
                       <CardContent>
                         <Box sx={{ width: 40, height: 40, borderRadius: 2, backgroundColor: "action.hover", display: "flex", alignItems: "center", justifyContent: "center", color: "primary.main", mb: 1.5 }}>

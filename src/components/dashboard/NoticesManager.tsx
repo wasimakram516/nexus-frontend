@@ -532,7 +532,7 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
             <CircularProgress />
           </Box>
         ) : myNotices.length === 0 ? (
-          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <Card>
             <CardContent sx={{ py: 6, textAlign: "center" }}>
               <Typography color="text.secondary">No notices yet.</Typography>
             </CardContent>
@@ -540,7 +540,7 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {myNotices.map((notice) => (
-              <Card key={notice.id} sx={{ border: "1px solid", borderColor: "divider" }}>
+              <Card key={notice.id}>
                 <CardContent>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, mb: 1 }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{notice.title}</Typography>
@@ -605,7 +605,7 @@ export default function NoticesManager({ institutionId }: { institutionId?: stri
           <CircularProgress />
         </Box>
       ) : notices.length === 0 ? (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary" sx={{ mb: canManage ? 2 : 0 }}>No notices yet.</Typography>
             {canManage && (

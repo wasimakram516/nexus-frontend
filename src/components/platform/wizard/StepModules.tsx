@@ -63,7 +63,7 @@ export default function StepModules({ data, update }: Props) {
                     <Box sx={{ flex: 1, pr: 1 }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{mod.label}</Typography>
-                        {enabled && <Chip label="ON" color="success" size="small" sx={{ height: 16, fontSize: 10 }} />}
+                        {enabled && <Chip label="ON" color="success" size="tiny" />}
                       </Box>
                       <Typography variant="caption" color="text.secondary">{mod.description}</Typography>
                     </Box>

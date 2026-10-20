@@ -30,19 +30,20 @@ import NoticesManager from "@/components/dashboard/NoticesManager";
 import PeopleManager from "@/components/dashboard/PeopleManager";
 import UsersManager from "@/components/dashboard/UsersManager";
 
+import { MODULE_ACCENTS, DEFAULT_MODULE_ACCENT } from "@/theme/tokens";
 const MODULE_META: Record<string, { label: string; description: string; icon: React.JSX.Element; accent: string }> = {
-  campuses:        { label: "Campuses",      description: "Manage campuses, operating hours, and attendance thresholds.", icon: <AccountTree sx={{ fontSize: 40 }} />,       accent: "#10b981" },
-  people:          { label: "People",        description: "Manage students, teachers, and guardians.",                    icon: <Group sx={{ fontSize: 40 }} />,             accent: "#3b82f6" },
-  academics:       { label: "Academics",     description: "Levels, classes, sections, subjects, and teacher assignments.",icon: <School sx={{ fontSize: 40 }} />,            accent: "#8b5cf6" },
-  attendance:      { label: "Attendance",    description: "Daily attendance records, leave management, and reports.",    icon: <AssignmentTurnedIn sx={{ fontSize: 40 }} />, accent: "#f59e0b" },
-  finance:         { label: "Finance",       description: "Fees, vouchers, salaries, payroll, and payments.",            icon: <AccountBalance sx={{ fontSize: 40 }} />,    accent: "#ef4444" },
-  users:           { label: "Users",         description: "Staff user accounts, roles, and campus assignments.",         icon: <ManageAccounts sx={{ fontSize: 40 }} />,    accent: "#06b6d4" },
-  "custom-fields": { label: "Custom Fields", description: "Institution-specific fields on built-in records.",            icon: <Tune sx={{ fontSize: 40 }} />,              accent: "#a855f7" },
-  reports:         { label: "Reports",       description: "Analytics, insights, trends, and data exports.",              icon: <QueryStats sx={{ fontSize: 40 }} />,        accent: "#64748b" },
-  examinations:    { label: "Examinations",  description: "Exam scheduling, grading, and result sheets.",               icon: <AutoStories sx={{ fontSize: 40 }} />,       accent: "#d946ef" },
-  documents:       { label: "Documents",     description: "Institution documents, templates, and file management.",      icon: <Description sx={{ fontSize: 40 }} />,       accent: "#0ea5e9" },
-  realtime:        { label: "Real-time",     description: "Live notifications, socket events, and activity feeds.",      icon: <Forum sx={{ fontSize: 40 }} />,             accent: "#22c55e" },
-  notices:         { label: "Notices",       description: "Announcements with audience targeting, publish windows, and attachments.", icon: <Campaign sx={{ fontSize: 40 }} />, accent: "#f97316" },
+  campuses:        { label: "Campuses",      description: "Manage campuses, operating hours, and attendance thresholds.", icon: <AccountTree sx={{ fontSize: 40 }} />,       accent: MODULE_ACCENTS.campuses },
+  people:          { label: "People",        description: "Manage students, teachers, and guardians.",                    icon: <Group sx={{ fontSize: 40 }} />,             accent: MODULE_ACCENTS.people },
+  academics:       { label: "Academics",     description: "Levels, classes, sections, subjects, and teacher assignments.",icon: <School sx={{ fontSize: 40 }} />,            accent: MODULE_ACCENTS.academics },
+  attendance:      { label: "Attendance",    description: "Daily attendance records, leave management, and reports.",    icon: <AssignmentTurnedIn sx={{ fontSize: 40 }} />, accent: MODULE_ACCENTS.attendance },
+  finance:         { label: "Finance",       description: "Fees, vouchers, salaries, payroll, and payments.",            icon: <AccountBalance sx={{ fontSize: 40 }} />,    accent: MODULE_ACCENTS.finance },
+  users:           { label: "Users",         description: "Staff user accounts, roles, and campus assignments.",         icon: <ManageAccounts sx={{ fontSize: 40 }} />,    accent: MODULE_ACCENTS.users },
+  "custom-fields": { label: "Custom Fields", description: "Institution-specific fields on built-in records.",            icon: <Tune sx={{ fontSize: 40 }} />,              accent: MODULE_ACCENTS.customFields },
+  reports:         { label: "Reports",       description: "Analytics, insights, trends, and data exports.",              icon: <QueryStats sx={{ fontSize: 40 }} />,        accent: DEFAULT_MODULE_ACCENT },
+  examinations:    { label: "Examinations",  description: "Exam scheduling, grading, and result sheets.",               icon: <AutoStories sx={{ fontSize: 40 }} />,       accent: MODULE_ACCENTS.examinations },
+  documents:       { label: "Documents",     description: "Institution documents, templates, and file management.",      icon: <Description sx={{ fontSize: 40 }} />,       accent: MODULE_ACCENTS.documents },
+  realtime:        { label: "Real-time",     description: "Live notifications, socket events, and activity feeds.",      icon: <Forum sx={{ fontSize: 40 }} />,             accent: MODULE_ACCENTS.realtime },
+  notices:         { label: "Notices",       description: "Announcements with audience targeting, publish windows, and attachments.", icon: <Campaign sx={{ fontSize: 40 }} />, accent: MODULE_ACCENTS.notices },
 };
 
 const IMPLEMENTED = new Set(["campuses", "people", "academics", "attendance", "finance", "users", "custom-fields", "notices"]);
@@ -54,7 +55,7 @@ export default function ModulePage() {
   const [institutionId, setInstitutionId] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
-  const meta = MODULE_META[module] ?? { label: module, description: "", icon: null, accent: "#64748b" };
+  const meta = MODULE_META[module] ?? { label: module, description: "", icon: null, accent: DEFAULT_MODULE_ACCENT };
   const slug = (institution?.slug as string) || slugOrId;
 
   useEffect(() => {
@@ -116,7 +117,7 @@ export default function ModulePage() {
             {renderModule()}
           </>
         ) : (
-          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <Card>
             <CardContent sx={{ py: 8, textAlign: "center" }}>
               <Box sx={{
                 width: 72, height: 72, borderRadius: 3, mx: "auto", mb: 3,

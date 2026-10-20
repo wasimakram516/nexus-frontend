@@ -203,7 +203,7 @@ export default function TeachingAssignmentsSection({
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
       ) : assignments.length === 0 ? (
-        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Card>
           <CardContent sx={{ py: 6, textAlign: "center" }}>
             <Typography color="text.secondary" sx={{ mb: canManage ? 2 : 0 }}>
               No teaching assignments yet.
@@ -238,7 +238,7 @@ export default function TeachingAssignmentsSection({
                   <TableCell>
                     {assignment.sectionId
                       ? sectionName[assignment.sectionId] ?? "—"
-                      : <Chip label="All sections (legacy)" size="small" variant="outlined" sx={{ height: 20, fontSize: 10 }} />}
+                      : <Chip label="All sections (legacy)" size="tiny" variant="outlined" />}
                   </TableCell>
                   <TableCell>{campusName[assignment.campusId] ?? "—"}</TableCell>
                   <TableCell>{formatDate(assignment.createdAt)}</TableCell>

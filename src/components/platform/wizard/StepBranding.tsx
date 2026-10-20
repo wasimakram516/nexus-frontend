@@ -13,6 +13,7 @@ import { uploadFile } from "@/lib/upload";
 import { useMessage } from "@/contexts/MessageContext";
 import { DEFAULT_BRANDING_COLORS } from "@/contexts/RuntimeConfigContext";
 
+import { BRAND_PALETTE } from "@/theme/tokens";
 interface Props { data: WizardData; update: (p: Partial<WizardData>) => void; }
 
 const DEFAULTS = {
@@ -75,7 +76,7 @@ export default function StepBranding({ data, update }: Props) {
   const previewSecondary = previewMode === "light" ? data.secondaryColorLight : data.secondaryColorDark;
   const previewAccent = previewMode === "light" ? data.accentColorLight : data.accentColorDark;
   const previewBg = previewMode === "light" ? data.backgroundColorLight : data.backgroundColorDark;
-  const previewText = previewMode === "light" ? "#666" : "#AEB6A8";
+  const previewText = BRAND_PALETTE[previewMode].text.secondary;
 
   return (
     <Box>
@@ -89,7 +90,7 @@ export default function StepBranding({ data, update }: Props) {
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>
           {/* Logo */}
-          <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+          <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Institution Logo</Typography>
 
@@ -151,7 +152,7 @@ export default function StepBranding({ data, update }: Props) {
           </Card>
 
           {/* Display settings */}
-          <Card sx={{ border: "1px solid", borderColor: "divider", mb: 3 }}>
+          <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5 }}>Display Settings</Typography>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
@@ -174,7 +175,7 @@ export default function StepBranding({ data, update }: Props) {
           </Card>
 
           {/* Colors */}
-          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <Card>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Color Palette</Typography>
@@ -238,7 +239,7 @@ export default function StepBranding({ data, update }: Props) {
 
         {/* Live preview */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ border: "1px solid", borderColor: "divider", position: "sticky", top: 100 }}>
+          <Card sx={{ position: "sticky", top: 100 }}>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Live Preview</Typography>
@@ -289,8 +290,8 @@ export default function StepBranding({ data, update }: Props) {
                     ))}
                   </Box>
                   <Box sx={{ height: 8, borderRadius: 1, backgroundColor: previewPrimary, mb: 1, width: "60%", opacity: 0.9 }} />
-                  <Box sx={{ height: 6, borderRadius: 1, backgroundColor: previewMode === "light" ? "#e5e7eb" : "#2C3A32", mb: 1, width: "80%" }} />
-                  <Box sx={{ height: 6, borderRadius: 1, backgroundColor: previewMode === "light" ? "#e5e7eb" : "#2C3A32", mb: 2.5, width: "50%" }} />
+                  <Box sx={{ height: 6, borderRadius: 1, backgroundColor: BRAND_PALETTE[previewMode].divider, mb: 1, width: "80%" }} />
+                  <Box sx={{ height: 6, borderRadius: 1, backgroundColor: BRAND_PALETTE[previewMode].divider, mb: 2.5, width: "50%" }} />
                   <Box sx={{ display: "flex", gap: 1 }}>
                     <Box sx={{ px: 2, py: 0.75, borderRadius: 1, backgroundColor: previewPrimary }}>
                       <Typography variant="caption" sx={{ color: "#fff", fontWeight: 600 }}>Primary Action</Typography>
