@@ -7,8 +7,9 @@ export const financeFeature: FeatureModule = {
   icon: <AccountBalance sx={{ fontSize: 40 }} />,
   summary:
     "Manage fee collection, payroll, discounts, fines, vouchers, and campus bank records from one connected finance module.",
+  seoTitle: "School Fee and Payroll Management Software",
   seoDescription:
-    "Nexus Finance helps educational institutions manage fee structures, monthly vouchers, payments, payroll, salary deductions, discounts, fines, and campus bank accounts with attendance-connected logic.",
+    "Run school fee vouchers, payroll, discounts, fines and campus bank accounts in one module, with attendance-connected deductions and fines.",
   heroIntro: [
     "Finance in education is never just accounting. It is deeply tied to class structures, campus operations, attendance behavior, discount policy, and staff payroll. Nexus is built to reflect that reality rather than treat school finance like a generic bookkeeping add-on.",
     "The result is a finance module that covers both sides of institutional operations: student billing and staff payroll. Because it connects to academics, attendance, and people data, administrators spend less time reconciling records and more time acting on them.",

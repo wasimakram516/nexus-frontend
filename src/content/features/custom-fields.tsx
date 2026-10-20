@@ -7,8 +7,9 @@ export const customFieldsFeature: FeatureModule = {
   icon: <Tune sx={{ fontSize: 40 }} />,
   summary:
     "Adapt Nexus to the way your institution works without waiting for a developer to hard-code every extra field.",
+  seoTitle: "Custom Fields for Student and Staff Records",
   seoDescription:
-    "Nexus Custom Fields let institutions extend students, teachers, guardians, contacts, and other entities with configurable fields, input types, and private institution-scoped data without code changes.",
+    "Add configurable fields to students, teachers, guardians and other records, with private institution-scoped data and no code changes needed.",
   heroIntro: [
     "No two institutions collect exactly the same data. One school wants transport points, another wants scholarship references, another wants boarding details, hostel grouping, or local compliance attributes. Hard-coded software struggles here. Nexus handles this with a proper custom-field system.",
     "The goal is simple: let institutions extend their records without turning every small requirement into a developer task. That keeps the platform more adaptable while preserving a cleaner product core.",

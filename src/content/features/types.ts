@@ -27,6 +27,8 @@ export type FeatureModule = {
   title: string;
   icon: ReactNode;
   summary: string;
+  /** Search-result title; benefit-led and distinct from the short on-page `title`. */
+  seoTitle: string;
   seoDescription: string;
   heroIntro: string[];
   highlights: string[];

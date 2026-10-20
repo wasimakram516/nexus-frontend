@@ -7,8 +7,9 @@ export const campusesFeature: FeatureModule = {
   icon: <Verified sx={{ fontSize: 40 }} />,
   summary:
     "Run multiple campuses from one platform without sacrificing local control, security, or reporting clarity.",
+  seoTitle: "Multi-Campus School Management Software",
   seoDescription:
-    "Nexus Multi-Campus support helps institutions manage multiple campuses with scoped access, independent timing rules, campus-level configuration, data isolation, and central oversight from one ERP.",
+    "Manage multiple school campuses with scoped access, independent timing rules, data isolation and central oversight from one education ERP.",
   heroIntro: [
     "Many education systems say they support multiple campuses, but what they really offer is one big shared workspace with weak separation. Nexus is designed differently. Multi-campus support is a core operational model, not a late add-on.",
     "That means campus users can work inside the boundaries they should have, while institution-level administrators still get central oversight. This balance is critical for school systems, college groups, and expanding education brands.",

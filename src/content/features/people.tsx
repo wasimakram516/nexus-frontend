@@ -7,8 +7,9 @@ export const peopleFeature: FeatureModule = {
   icon: <Groups sx={{ fontSize: 40 }} />,
   summary:
     "Manage students, teachers, guardians, and contact relationships in one connected profile system.",
+  seoTitle: "Student, Teacher and Guardian Management Software",
   seoDescription:
-    "Nexus People centralises student, teacher, and guardian management with linked profiles, contact records, guardian relationships, admissions context, and cross-module reuse across academics, attendance, and finance.",
+    "Keep student, teacher and guardian profiles linked in one place and reuse them across academics, attendance and finance in your school or college.",
   heroIntro: [
     "The People module keeps your institution's most important records connected: students, teachers, guardians, and the contact relationships around them. Instead of spreading core identity data across forms, fee registers, attendance sheets, and side spreadsheets, Nexus keeps it central and usable everywhere.",
     "That connection matters because real institutions do not manage people in isolation. A student profile needs academic placement, fee history, attendance history, and guardian relationships. A teacher profile needs subject assignments, salary records, and campus context. Nexus is designed around that reality.",

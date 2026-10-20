@@ -7,8 +7,9 @@ export const academicsFeature: FeatureModule = {
   icon: <SchoolOutlined sx={{ fontSize: 40 }} />,
   summary:
     "Structure your institution once and let every other Nexus module work from the same academic reality.",
+  seoTitle: "School and College Academic Management Software",
   seoDescription:
-    "Nexus Academics helps schools, colleges, and universities manage levels, classes, sections, subjects, teacher assignments, and student promotion history from one connected academic structure.",
+    "Manage levels, classes, sections, subjects, teacher assignments and promotion history for schools and colleges in one connected academic structure.",
   heroIntro: [
     "The Academics module is the structural backbone of Nexus. It gives your institution a single source of truth for levels, classes, sections, subjects, and the teacher assignments that power day-to-day operations.",
     "Instead of rebuilding the same academic hierarchy in separate attendance sheets, fee registers, result files, and report templates, Nexus lets you define it once and reuse it everywhere. That means cleaner data, fewer manual mistakes, and much faster administrative work.",

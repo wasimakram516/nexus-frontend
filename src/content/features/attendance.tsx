@@ -7,8 +7,9 @@ export const attendanceFeature: FeatureModule = {
   icon: <Today sx={{ fontSize: 40 }} />,
   summary:
     "Track real attendance behavior, not just a daily tick mark, with timestamps, leave handling, thresholds, and downstream financial impact.",
+  seoTitle: "Student and Staff Attendance Management Software",
   seoDescription:
-    "Nexus Attendance handles student and staff attendance with check-in and check-out times, late thresholds, leave management, auto-absent marking, summaries, and integration with payroll deductions and student fine calculations.",
+    "Track student and staff attendance with check-in times, late thresholds, leave and auto-absent marking, linked to payroll deductions and student fines.",
   heroIntro: [
     "Attendance is one of the most operationally sensitive parts of an education ERP. If it is too simple, it becomes unreliable. If it is too disconnected, it creates friction for payroll, parent communication, and intervention workflows. Nexus is designed to make attendance both usable and meaningful.",
     "Instead of storing attendance as a flat status only, Nexus tracks the context around it: check-in time, check-out time, leave states, late thresholds, and campus-specific rules. That gives administrators a better view of discipline, punctuality, and operational consistency.",

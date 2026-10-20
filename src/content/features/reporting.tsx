@@ -7,8 +7,9 @@ export const reportingFeature: FeatureModule = {
   icon: <BarChart sx={{ fontSize: 40 }} />,
   summary:
     "Turn attendance, academics, finance, and operational data into reports leaders can actually act on.",
+  seoTitle: "School Reporting and Analytics Software",
   seoDescription:
-    "Nexus Reporting brings together attendance, finance, academic, and institutional data into filterable, exportable reports for education leaders, administrators, and campus operations teams.",
+    "Filterable, exportable reports across attendance, finance and academics for school leaders, administrators and campus teams, from one platform.",
   heroIntro: [
     "Reporting matters most when it saves leadership from hunting across multiple systems. Nexus is designed so institutions can move from raw operational records to filtered, exportable reports without rebuilding the same datasets again and again.",
     "Because the wider platform already connects campuses, people, academics, attendance, and finance, the Reporting module can focus on interpretation. That makes it more useful for school heads, administrators, and owners who need visibility without technical friction.",

@@ -7,8 +7,9 @@ export const examinationsFeature: FeatureModule = {
   icon: <AssignmentTurnedIn sx={{ fontSize: 40 }} />,
   summary:
     "Plan exams, capture results, and turn academic performance into something institutions can actually use.",
+  seoTitle: "Exam and Result Management Software for Schools",
   seoDescription:
-    "Nexus Examinations helps institutions schedule exams, enter marks, manage grading logic, calculate performance outcomes, and produce result-ready academic views for students, sections, and classes.",
+    "Schedule exams, enter marks, apply grading rules and produce result-ready views for students, sections and classes in your school or college.",
   heroIntro: [
     "Examinations are where academic structure, student records, and reporting all come together. A strong examinations experience should help institutions organise schedules, record results accurately, and understand academic outcomes without building separate manual spreadsheets every term.",
     "Nexus is positioned to handle that workflow in a connected way. Because exam-related work sits close to academics, people, and reporting, institutions get cleaner data flow from subject setup to result communication.",
