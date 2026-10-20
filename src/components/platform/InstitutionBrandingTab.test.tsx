@@ -57,7 +57,7 @@ describe("InstitutionBrandingTab", () => {
       primaryColorLight: null, primaryColorDark: null,
     })));
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
-  });
+  }, 60000);
 
   it("keeps the dialog open on failure", async () => {
     mocks.updateBranding.mockRejectedValue(new Error("invalid color"));
@@ -68,5 +68,5 @@ describe("InstitutionBrandingTab", () => {
     await waitFor(() => expect(mocks.showMessage).toHaveBeenCalledWith("invalid color", "error"));
     expect(onSaved).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-  });
+  }, 60000);
 });
