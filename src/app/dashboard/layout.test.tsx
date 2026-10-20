@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const state = vi.hoisted(() => ({
@@ -37,7 +37,6 @@ vi.mock("@/services/auth.service", () => ({ authService: { logout: state.logout 
 vi.mock("@/components/shared/NexusLogo", () => ({ default: () => <span>nexus-logo</span> }));
 vi.mock("@/components/shared/ThemeToggle", () => ({ default: () => <span>theme-toggle</span> }));
 vi.mock("@/components/shared/ProfileDialog", () => ({ default: ({ open }: { open: boolean }) => (open ? <div>profile-open</div> : null) }));
-vi.mock("@/components/dashboard/AcademicYearSelector", () => ({ default: () => <span>year-selector</span> }));
 vi.mock("@/components/dashboard/NoticeBell", () => ({ default: () => <span>notice-bell</span> }));
 vi.mock("@/components/dashboard/TrialBanner", () => ({ default: () => <span>trial-banner</span> }));
 
@@ -134,12 +133,50 @@ describe("DashboardLayout navigation gating", () => {
 
   it("collapses and expands the sidebar", () => {
     render(<DashboardLayout><div /></DashboardLayout>);
-    expect(screen.getByText("year-selector")).toBeInTheDocument();
+    expect(screen.getByText("Back to Site")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ChevronLeftIcon").closest("button")!);
-    expect(screen.queryByText("year-selector")).not.toBeInTheDocument();
     expect(screen.queryByText("Back to Site")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ChevronRightIcon").closest("button")!);
-    expect(screen.getByText("year-selector")).toBeInTheDocument();
+    expect(screen.getByText("Back to Site")).toBeInTheDocument();
+  });
+});
+
+describe("DashboardLayout on a phone", () => {
+  function setPhone(on: boolean): void {
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: (query: string) => ({
+        matches: on && query.includes("max-width"), media: query, onchange: null,
+        addListener: () => {}, removeListener: () => {}, addEventListener: () => {}, removeEventListener: () => {}, dispatchEvent: () => false,
+      }),
+    });
+  }
+  afterEach(() => setPhone(false));
+
+  it("hides the sidebar under a hamburger and opens it as a drawer", () => {
+    setPhone(true);
+    render(<DashboardLayout><div>page</div></DashboardLayout>);
+    expect(screen.getByText("page")).toBeInTheDocument();
+    expect(screen.queryByText("Back to Site")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open navigation menu" }));
+    expect(screen.getByText("Back to Site")).toBeInTheDocument();
+    expect(screen.getByText("People")).toBeInTheDocument();
+  });
+
+  it("closes the drawer after the user picks a page", async () => {
+    setPhone(true);
+    render(<DashboardLayout><div /></DashboardLayout>);
+    fireEvent.click(screen.getByRole("button", { name: "Open navigation menu" }));
+    fireEvent.click(screen.getByText("People"));
+    expect(state.push).toHaveBeenCalledWith("/dashboard/people");
+    await waitFor(() => expect(screen.queryByText("Back to Site")).not.toBeInTheDocument());
+  });
+
+  it("shows no hamburger on desktop", () => {
+    setPhone(false);
+    render(<DashboardLayout><div /></DashboardLayout>);
+    expect(screen.queryByRole("button", { name: "Open navigation menu" })).not.toBeInTheDocument();
+    expect(screen.getByText("Back to Site")).toBeInTheDocument();
   });
 });
 

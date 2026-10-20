@@ -8,7 +8,6 @@ import {
   Box,
   Chip,
   Divider,
-  Drawer,
   IconButton,
   List,
   ListItemButton,
@@ -16,7 +15,6 @@ import {
   ListItemText,
   Tooltip,
   Typography,
-  useMediaQuery,
 } from "@mui/material";
 import {
   ThemeProvider as BrandThemeProvider,
@@ -39,9 +37,11 @@ import Shield from "@mui/icons-material/Shield";
 import Today from "@mui/icons-material/Today";
 import Tune from "@mui/icons-material/Tune";
 import NexusLogo from "@/components/shared/NexusLogo";
+import ResponsiveSidebar, { useIsMobileLayout } from "@/components/shared/ResponsiveSidebar";
+import MobileTopBar from "@/components/shared/MobileTopBar";
+import Close from "@mui/icons-material/Close";
 import ProfileDialog from "@/components/shared/ProfileDialog";
 import ThemeToggle from "@/components/shared/ThemeToggle";
-import AcademicYearSelector from "@/components/dashboard/AcademicYearSelector";
 import NoticeBell from "@/components/dashboard/NoticeBell";
 import TrialBanner from "@/components/dashboard/TrialBanner";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
@@ -98,19 +98,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const { showMessage } = useMessage();
   const { config, isModuleEnabled, canViewModule, can } = useRuntimeConfig();
   const drawerWidth = collapsed ? DRAWER_COLLAPSED : DRAWER_EXPANDED;
+  const isMobile = useIsMobileLayout();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const outerTheme = useTheme();
-
-  // Default the sidebar to collapsed on mobile so it doesn't eat most of a
-  // small screen on first load — applied once, the first time a mobile
-  // viewport is detected, so it never fights a later manual expand/collapse.
-  // Adjusting state during render (React's own pattern for "reset on a
-  // condition becoming true") instead of a useEffect avoids an extra render.
-  const isMobileViewport = useMediaQuery(outerTheme.breakpoints.down("sm"));
-  const [mobileDefaultApplied, setMobileDefaultApplied] = useState(false);
-  if (isMobileViewport && !mobileDefaultApplied) {
-    setMobileDefaultApplied(true);
-    setCollapsed(true);
-  }
 
   // Institution branding tints the dashboard. Which mode's colors apply follows whichever
   // theme mode is active. Per-token overrides win over the legacy flat color columns, and
@@ -161,23 +151,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <BrandThemeProvider theme={brandedTheme}>
     <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "background.default" }}>
-      {/* Sidebar */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          "& .MuiDrawer-paper": {
-            width: drawerWidth,
-            transition: "width 0.2s ease",
-            overflowX: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          },
-        }}
-      >
+      {/* Sidebar: a permanent drawer on desktop, a hamburger-opened drawer on phones. */}
+      <ResponsiveSidebar collapsed={collapsed} desktopWidth={drawerWidth} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)}>
+        {({ compact, isMobile, closeMobile }) => (
+          <>
         {/* Logo + collapse toggle */}
-        {collapsed ? (
+        {compact ? (
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 1.5, gap: 1 }}>
             {logoUrl ? (
               <Box
@@ -209,15 +188,21 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             ) : (
               <NexusLogo size={28} variant="full" />
             )}
-            <Tooltip title="Collapse sidebar" placement="right">
-              <IconButton size="small" onClick={() => setCollapsed(true)}>
-                <ChevronLeft fontSize="small" />
+            {isMobile ? (
+              <IconButton size="small" aria-label="Close navigation menu" onClick={closeMobile}>
+                <Close fontSize="small" />
               </IconButton>
-            </Tooltip>
+            ) : (
+              <Tooltip title="Collapse sidebar" placement="right">
+                <IconButton size="small" onClick={() => setCollapsed(true)}>
+                  <ChevronLeft fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
         )}
 
-        {!collapsed && (
+        {!compact && (
           <Box sx={{ px: 2.5, pb: 2 }}>
             <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }} noWrap>
               {institutionName}
@@ -238,27 +223,30 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <Divider />
 
         {/* Nav items */}
-        <List sx={{ px: collapsed ? 1 : 1.5, py: 1, flex: 1 }}>
+        <List sx={{ px: compact ? 1 : 1.5, py: 1, flex: 1, minHeight: 0, overflowY: "auto" }}>
           {visibleItems.map((item) => {
             const active = isActive(item.href);
             return (
-              <Tooltip key={item.href} title={collapsed ? item.label : ""} placement="right">
+              <Tooltip key={item.href} title={compact ? item.label : ""} placement="right">
                 <ListItemButton
-                  onClick={() => router.push(item.href)}
+                  onClick={() => {
+                    router.push(item.href);
+                    closeMobile();
+                  }}
                   sx={{
                     borderRadius: 2,
                     mb: 0.5,
                     minHeight: 44,
-                    px: collapsed ? 1.5 : 2,
-                    justifyContent: collapsed ? "center" : "flex-start",
+                    px: compact ? 1.5 : 2,
+                    justifyContent: compact ? "center" : "flex-start",
                     backgroundColor: active ? "primary.main" : "transparent",
                     "&:hover": { backgroundColor: active ? "primary.dark" : "action.hover" },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: active ? "#fff" : "text.secondary" }}>
+                  <ListItemIcon sx={{ minWidth: compact ? 0 : 36, color: active ? "#fff" : "text.secondary" }}>
                     {item.icon}
                   </ListItemIcon>
-                  {!collapsed && (
+                  {!compact && (
                     <ListItemText
                       primary={item.label}
                       slotProps={{ primary: { variant: "body2", sx: { fontWeight: active ? 700 : 400, color: active ? "#fff" : "text.primary" } } }}
@@ -273,17 +261,18 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <Divider />
 
         {/* Back to site */}
-        <List sx={{ px: collapsed ? 1 : 1.5, py: 0.5 }}>
-          <Tooltip title={collapsed ? "Back to Site" : ""} placement="right">
+        <List sx={{ px: compact ? 1 : 1.5, py: 0.5, flexShrink: 0 }}>
+          <Tooltip title={compact ? "Back to Site" : ""} placement="right">
             <ListItemButton
               component={Link}
               href="/"
-              sx={{ borderRadius: 2, minHeight: 40, px: collapsed ? 1.5 : 2, justifyContent: collapsed ? "center" : "flex-start" }}
+              onClick={closeMobile}
+              sx={{ borderRadius: 2, minHeight: 40, px: compact ? 1.5 : 2, justifyContent: compact ? "center" : "flex-start" }}
             >
-              <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: "text.secondary" }}>
+              <ListItemIcon sx={{ minWidth: compact ? 0 : 36, color: "text.secondary" }}>
                 <Language fontSize="small" />
               </ListItemIcon>
-              {!collapsed && (
+              {!compact && (
                 <ListItemText
                   primary="Back to Site"
                   slotProps={{ primary: { variant: "body2", sx: { color: "text.secondary" } } }}
@@ -296,8 +285,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <Divider />
 
         {/* Bottom — user + actions */}
-        <Box sx={{ p: collapsed ? 1 : 1.5 }}>
-          {!collapsed && (
+        <Box sx={{ p: compact ? 1 : 1.5, flexShrink: 0 }}>
+          {!compact && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, borderRadius: 2, backgroundColor: "background.default", mb: 1 }}>
               <Avatar sx={{ width: 32, height: 32, backgroundColor: "primary.main", fontSize: 13, fontWeight: 700 }}>
                 {user?.name?.charAt(0) ?? "U"}
@@ -309,8 +298,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </Box>
           )}
 
-          <Box sx={{ display: "flex", gap: 0.5, justifyContent: collapsed ? "center" : "flex-start", flexDirection: collapsed ? "column" : "row", alignItems: "center", flexWrap: "wrap" }}>
-            {!collapsed && <AcademicYearSelector />}
+          <Box sx={{ display: "flex", gap: 0.5, justifyContent: compact ? "center" : "flex-start", flexDirection: compact ? "column" : "row", alignItems: "center", flexWrap: "wrap" }}>
             <NoticeBell />
             <ThemeToggle />
             <Tooltip title="Profile" placement="right">
@@ -325,12 +313,21 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </Tooltip>
           </Box>
         </Box>
-      </Drawer>
+          </>
+        )}
+      </ResponsiveSidebar>
 
       <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
 
       {/* Main content */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, transition: "all 0.2s ease" }}>
+        {isMobile && <MobileTopBar onMenu={() => setMobileOpen(true)}>
+          {logoUrl ? (
+            <Box component="img" src={logoUrl} alt={institutionName} sx={{ height: 28, maxWidth: 160, objectFit: "contain", borderRadius: 1 }} />
+          ) : (
+            <NexusLogo size={26} variant="full" />
+          )}
+        </MobileTopBar>}
         <TrialBanner />
         {children}
       </Box>

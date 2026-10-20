@@ -8,7 +8,6 @@ import {
   Badge,
   Box,
   Divider,
-  Drawer,
   IconButton,
   List,
   ListItemButton,
@@ -29,6 +28,9 @@ import Language from "@mui/icons-material/Language";
 import Logout from "@mui/icons-material/Logout";
 import Person from "@mui/icons-material/Person";
 import NexusLogo from "@/components/shared/NexusLogo";
+import ResponsiveSidebar, { useIsMobileLayout } from "@/components/shared/ResponsiveSidebar";
+import MobileTopBar from "@/components/shared/MobileTopBar";
+import Close from "@mui/icons-material/Close";
 import ProfileDialog from "@/components/shared/ProfileDialog";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
@@ -60,6 +62,8 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   const { showMessage } = useMessage();
   const newInquiries = useNewInquiryCount(pathname, { announce: true });
   const drawerWidth = collapsed ? DRAWER_COLLAPSED : DRAWER_EXPANDED;
+  const isMobile = useIsMobileLayout();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
     const ok = await confirm({
@@ -80,23 +84,12 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "background.default" }}>
-      {/* Sidebar */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          "& .MuiDrawer-paper": {
-            width: drawerWidth,
-            transition: "width 0.2s ease",
-            overflowX: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          },
-        }}
-      >
+      {/* Sidebar: a permanent drawer on desktop, a hamburger-opened drawer on phones. */}
+      <ResponsiveSidebar collapsed={collapsed} desktopWidth={drawerWidth} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)}>
+        {({ compact, isMobile, closeMobile }) => (
+          <>
         {/* Logo + collapse toggle */}
-        {collapsed ? (
+        {compact ? (
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 1.5, gap: 1 }}>
             <NexusLogo size={28} variant="icon" />
             <Tooltip title="Expand sidebar" placement="right">
@@ -108,15 +101,21 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         ) : (
           <Box sx={{ px: 2.5, py: 2, display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 64 }}>
             <NexusLogo size={28} variant="full" />
-            <Tooltip title="Collapse sidebar" placement="right">
-              <IconButton size="small" onClick={() => setCollapsed(true)}>
-                <ChevronLeft fontSize="small" />
+            {isMobile ? (
+              <IconButton size="small" aria-label="Close navigation menu" onClick={closeMobile}>
+                <Close fontSize="small" />
               </IconButton>
-            </Tooltip>
+            ) : (
+              <Tooltip title="Collapse sidebar" placement="right">
+                <IconButton size="small" onClick={() => setCollapsed(true)}>
+                  <ChevronLeft fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
         )}
 
-        {!collapsed && (
+        {!compact && (
           <Box sx={{ px: 2.5, pb: 2 }}>
             <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
               Platform Console
@@ -127,24 +126,27 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         <Divider />
 
         {/* Nav items */}
-        <List sx={{ px: collapsed ? 1 : 1.5, py: 1, flex: 1 }}>
+        <List sx={{ px: compact ? 1 : 1.5, py: 1, flex: 1, minHeight: 0, overflowY: "auto" }}>
           {navItems.map((item) => {
             const active = isActive(item.href);
             return (
-              <Tooltip key={item.href} title={collapsed ? item.label : ""} placement="right">
+              <Tooltip key={item.href} title={compact ? item.label : ""} placement="right">
                 <ListItemButton
-                  onClick={() => router.push(item.href)}
+                  onClick={() => {
+                    router.push(item.href);
+                    closeMobile();
+                  }}
                   sx={{
                     borderRadius: 2,
                     mb: 0.5,
                     minHeight: 44,
-                    px: collapsed ? 1.5 : 2,
-                    justifyContent: collapsed ? "center" : "flex-start",
+                    px: compact ? 1.5 : 2,
+                    justifyContent: compact ? "center" : "flex-start",
                     backgroundColor: active ? "primary.main" : "transparent",
                     "&:hover": { backgroundColor: active ? "primary.dark" : "action.hover" },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: active ? "#fff" : "text.secondary" }}>
+                  <ListItemIcon sx={{ minWidth: compact ? 0 : 36, color: active ? "#fff" : "text.secondary" }}>
                     {item.href === "/platform/inquiries" && newInquiries > 0 ? (
                       <Badge badgeContent={newInquiries} color="error" max={99} aria-label={`${newInquiries} new inquiries`}>
                         {item.icon}
@@ -153,7 +155,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
                       item.icon
                     )}
                   </ListItemIcon>
-                  {!collapsed && (
+                  {!compact && (
                     <ListItemText
                       primary={item.label}
                       slotProps={{ primary: { variant: "body2", sx: { fontWeight: active ? 700 : 400, color: active ? "#fff" : "text.primary" } } }}
@@ -168,17 +170,18 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         <Divider />
 
         {/* Back to site */}
-        <List sx={{ px: collapsed ? 1 : 1.5, py: 0.5 }}>
-          <Tooltip title={collapsed ? "Back to Site" : ""} placement="right">
+        <List sx={{ px: compact ? 1 : 1.5, py: 0.5, flexShrink: 0 }}>
+          <Tooltip title={compact ? "Back to Site" : ""} placement="right">
             <ListItemButton
               component={Link}
               href="/"
-              sx={{ borderRadius: 2, minHeight: 40, px: collapsed ? 1.5 : 2, justifyContent: collapsed ? "center" : "flex-start" }}
+              onClick={closeMobile}
+              sx={{ borderRadius: 2, minHeight: 40, px: compact ? 1.5 : 2, justifyContent: compact ? "center" : "flex-start" }}
             >
-              <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: "text.secondary" }}>
+              <ListItemIcon sx={{ minWidth: compact ? 0 : 36, color: "text.secondary" }}>
                 <Language fontSize="small" />
               </ListItemIcon>
-              {!collapsed && (
+              {!compact && (
                 <ListItemText
                   primary="Back to Site"
                   slotProps={{ primary: { variant: "body2", sx: { color: "text.secondary" } } }}
@@ -191,8 +194,8 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         <Divider />
 
         {/* Bottom — user + actions */}
-        <Box sx={{ p: collapsed ? 1 : 1.5 }}>
-          {!collapsed && (
+        <Box sx={{ p: compact ? 1 : 1.5, flexShrink: 0 }}>
+          {!compact && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, borderRadius: 2, backgroundColor: "background.default", mb: 1 }}>
               <Avatar sx={{ width: 32, height: 32, backgroundColor: "primary.main", fontSize: 13, fontWeight: 700 }}>
                 {user?.name?.charAt(0) ?? "S"}
@@ -204,7 +207,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
             </Box>
           )}
 
-          <Box sx={{ display: "flex", gap: 0.5, justifyContent: collapsed ? "center" : "flex-start", flexDirection: collapsed ? "column" : "row", alignItems: "center" }}>
+          <Box sx={{ display: "flex", gap: 0.5, justifyContent: compact ? "center" : "flex-start", flexDirection: compact ? "column" : "row", alignItems: "center" }}>
             <ThemeToggle />
             <Tooltip title="Profile" placement="right">
               <IconButton size="small" onClick={() => setProfileOpen(true)}>
@@ -218,12 +221,17 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
             </Tooltip>
           </Box>
         </Box>
-      </Drawer>
+          </>
+        )}
+      </ResponsiveSidebar>
 
       <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
 
       {/* Main content */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, transition: "all 0.2s ease" }}>
+        {isMobile && <MobileTopBar onMenu={() => setMobileOpen(true)}>
+          <NexusLogo size={26} variant="full" />
+        </MobileTopBar>}
         {children}
       </Box>
     </Box>
