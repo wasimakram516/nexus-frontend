@@ -21,6 +21,9 @@ import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { authService, SignupResponse } from "@/services/auth.service";
 import NexusLogo from "@/components/shared/NexusLogo";
+import NexGuide from "@/components/guide/NexGuide";
+import { toGuideTips } from "@/components/guide/guide-tips";
+import { SIGNUP_TIPS } from "@/content/guide";
 
 import { brandGradient } from "@/theme/gradients";
 const highlights = [
@@ -226,6 +229,9 @@ export default function SignupPage() {
           </Typography>
         </Box>
       </Box>
+
+      {/* Nex welcomes new registrations before they sign up. */}
+      <NexGuide tips={toGuideTips(SIGNUP_TIPS)} storageKey="nexus-guide-signup" />
     </Box>
   );
 }

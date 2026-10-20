@@ -2,6 +2,7 @@
 
 import { Box, Container, Typography } from "@mui/material";
 import CampusesManager from "@/components/dashboard/CampusesManager";
+import ScreenGuide from "@/components/guide/ScreenGuide";
 
 export default function CampusesPage() {
   return (
@@ -16,6 +17,7 @@ export default function CampusesPage() {
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <CampusesManager />
       </Container>
+      <ScreenGuide screen="campuses" />
     </Box>
   );
 }

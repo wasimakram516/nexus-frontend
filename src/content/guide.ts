@@ -87,6 +87,30 @@ export function publicTipsFor(pathname: string): GuideScript[] {
   return prefix ? PUBLIC_TIPS[prefix] : [...DEFAULT_PUBLIC_TIPS];
 }
 
+/** The self-serve signup form, for someone registering a new institution. */
+export const SIGNUP_TIPS: readonly GuideScript[] = [
+  { pose: "wave", text: "Welcome to Nexus! I'm Nex. Once you're in, I'll help you get your institution set up." },
+  { pose: "point", text: "Use your institution's name and an email you check often. You'll sign in with it." },
+];
+
+/** First-setup screens an admin visits right after signing up, shown once per screen per session. */
+export const SCREEN_TIPS = {
+  campuses: [
+    { pose: "point", text: "Everything starts with a campus. Students, staff, classes and finance all belong to one, so add your main campus first." },
+    { pose: "think", text: "Set the operating hours and attendance thresholds here. They decide what counts as late." },
+  ],
+  academics: [
+    { pose: "point", text: "Build the structure from the top: levels first, then classes, sections and subjects." },
+    { pose: "think", text: "Once the structure is in place, you can assign teachers to the subjects they teach." },
+  ],
+  people: [
+    { pose: "point", text: "Add your students, teachers and guardians here, and link guardians to their children as you go." },
+    { pose: "think", text: "It helps to set up campuses and academics first, so people can be placed in classes and sections." },
+  ],
+} as const satisfies Record<string, readonly GuideScript[]>;
+
+export type ScreenTipKey = keyof typeof SCREEN_TIPS;
+
 /** Dashboard onboarding: Nex reacts to how many setup steps are done. */
 export function onboardingTips(completed: number, total: number, nextStepLabel?: string): GuideScript[] {
   if (completed >= total) {
