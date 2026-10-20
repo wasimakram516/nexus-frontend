@@ -56,7 +56,7 @@ vi.mock("@/components/dashboard/PermissionMatrixEditor", () => ({
 
 import RolesManager from "./RolesManager";
 import PeopleManager from "./PeopleManager";
-import OnboardingChecklist from "./OnboardingChecklist";
+import OnboardingChecklist, { ONBOARDING_GUIDE_KEY } from "./OnboardingChecklist";
 import CampusRequiredNotice from "./CampusRequiredNotice";
 
 const ok = (data: unknown = {}) => Promise.resolve({ data: { data, message: "ok" } });
@@ -244,6 +244,20 @@ describe("OnboardingChecklist", () => {
     render(<OnboardingChecklist steps={steps} />);
     expect(screen.getByText("Set up your institution")).toBeInTheDocument();
     expect(localStorage.getItem("nexus-onboarding-dismissed")).toBeNull();
+    window.history.pushState({}, "", "/");
+  });
+
+  it("shows Nex on the dashboard and welcomes a new admin with the next step", () => {
+    render(<OnboardingChecklist steps={steps} />);
+    expect(screen.getByRole("button", { name: "Hide guide" })).toBeInTheDocument();
+  });
+
+  it("reopens Nex on a fresh signup even if it was hidden earlier on this browser", () => {
+    localStorage.setItem(ONBOARDING_GUIDE_KEY, "1");
+    window.history.pushState({}, "", "/dashboard?welcome=1");
+    render(<OnboardingChecklist steps={steps} />);
+    expect(localStorage.getItem(ONBOARDING_GUIDE_KEY)).toBeNull();
+    expect(screen.getByRole("button", { name: "Hide guide" })).toBeInTheDocument();
     window.history.pushState({}, "", "/");
   });
 });

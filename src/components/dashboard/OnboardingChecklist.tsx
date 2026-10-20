@@ -39,6 +39,8 @@ interface OnboardingChecklistProps {
 }
 
 const DISMISS_KEY = "nexus-onboarding-dismissed";
+/** Where Nex remembers being hidden on the dashboard; a fresh signup clears it too. */
+export const ONBOARDING_GUIDE_KEY = "nexus-guide-onboarding";
 
 /**
  * Setup guide for new institution admins, driven by real data counts.
@@ -54,6 +56,7 @@ export default function OnboardingChecklist({ steps }: OnboardingChecklistProps)
     const forcedWelcome = window.location.search.includes("welcome=1");
     if (forcedWelcome) {
       localStorage.removeItem(DISMISS_KEY);
+      localStorage.removeItem(ONBOARDING_GUIDE_KEY);
       return false;
     }
     return localStorage.getItem(DISMISS_KEY) === "1";
@@ -143,7 +146,7 @@ export default function OnboardingChecklist({ steps }: OnboardingChecklistProps)
     {/* Nex reacts to progress: a welcome at zero, a celebration for each finished step. */}
     <NexGuide
       tips={toGuideTips(onboardingTips(completed, steps.length, nextStepLabel))}
-      storageKey="nexus-guide-onboarding"
+      storageKey={ONBOARDING_GUIDE_KEY}
     />
     </>
   );
