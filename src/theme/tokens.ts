@@ -77,6 +77,11 @@ export const OG_COLORS = {
   glowBorder: "rgba(255,138,112,0.4)",
 };
 
+/** Mascot-only colors that have no theme palette equivalent: the glowing visor face and AI spark. */
+export const MASCOT_COLORS = {
+  glow: { light: "#A9C7FF", dark: "#CFE0FF" },
+};
+
 /** Identity colors for the institution-management module tiles (data colors, not brand). */
 export const MODULE_ACCENTS = {
   campuses: "#10B981",
