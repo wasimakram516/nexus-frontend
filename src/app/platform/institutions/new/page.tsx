@@ -28,6 +28,9 @@ import StepBranding from "@/components/platform/wizard/StepBranding";
 import StepModules from "@/components/platform/wizard/StepModules";
 import StepCampus from "@/components/platform/wizard/StepCampus";
 import StepReview from "@/components/platform/wizard/StepReview";
+import NexGuide from "@/components/guide/NexGuide";
+import { toGuideTips } from "@/components/guide/guide-tips";
+import { SETUP_TIPS } from "@/content/guide";
 
 const STEPS = [
   "Basic Info",
@@ -357,7 +360,7 @@ export default function NewInstitutionWizard() {
       </Box>
 
       {/* Step content */}
-      <Container maxWidth="xl" sx={{ py: 5 }}>
+      <Container maxWidth="xl" sx={{ pt: 5, pb: 16 }}>
         {step === 0 && <StepBasicInfo {...stepProps} />}
         {step === 1 && <StepAdmin {...stepProps} />}
         {step === 2 && <StepPlan {...stepProps} />}
@@ -391,6 +394,9 @@ export default function NewInstitutionWizard() {
           </Box>
         )}
       </Container>
+
+      {/* Nex walks the admin through each setup step. */}
+      <NexGuide tips={toGuideTips(SETUP_TIPS[STEPS[step]] ?? [])} storageKey="nexus-guide-setup" />
     </Box>
   );
 }

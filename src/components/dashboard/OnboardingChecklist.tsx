@@ -21,6 +21,9 @@ import ArrowForwardIos from "@mui/icons-material/ArrowForwardIos";
 import CheckCircle from "@mui/icons-material/CheckCircle";
 import Close from "@mui/icons-material/Close";
 import RadioButtonUnchecked from "@mui/icons-material/RadioButtonUnchecked";
+import NexGuide from "@/components/guide/NexGuide";
+import { toGuideTips } from "@/components/guide/guide-tips";
+import { onboardingTips } from "@/content/guide";
 
 export interface OnboardingStep {
   key: string;
@@ -66,7 +69,10 @@ export default function OnboardingChecklist({ steps }: OnboardingChecklistProps)
     setDismissed(true);
   };
 
+  const nextStepLabel = steps.find((s) => !s.done)?.label;
+
   return (
+    <>
     <Card sx={{ border: "1px solid", borderColor: "primary.main", mb: 4 }}>
       <CardContent sx={{ p: 3 }}>
         <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1 }}>
@@ -134,5 +140,11 @@ export default function OnboardingChecklist({ steps }: OnboardingChecklistProps)
         </Box>
       </CardContent>
     </Card>
+    {/* Nex reacts to progress: a welcome at zero, a celebration for each finished step. */}
+    <NexGuide
+      tips={toGuideTips(onboardingTips(completed, steps.length, nextStepLabel))}
+      storageKey="nexus-guide-onboarding"
+    />
+    </>
   );
 }

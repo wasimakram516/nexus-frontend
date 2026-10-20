@@ -21,6 +21,9 @@ import StepModules from "@/components/platform/wizard/StepModules";
 import StepSettings from "@/components/platform/wizard/StepSettings";
 import StepPermissions from "@/components/platform/wizard/StepPermissions";
 import StepReview from "@/components/platform/wizard/StepReview";
+import NexGuide from "@/components/guide/NexGuide";
+import { toGuideTips } from "@/components/guide/guide-tips";
+import { SETUP_TIPS } from "@/content/guide";
 
 const STEPS = ["Basic Info", "Plan & Subscription", "Branding", "Modules", "Settings", "Permissions", "Review & Save"];
 const REVIEW_STEP = 6;
@@ -257,7 +260,7 @@ export default function EditInstitutionWizard() {
       </Box>
 
       {/* Step content */}
-      <Container maxWidth="xl" sx={{ py: { xs: 3, sm: 5 }, px: { xs: 2, sm: 3 } }}>
+      <Container maxWidth="xl" sx={{ pt: { xs: 3, sm: 5 }, pb: 16, px: { xs: 2, sm: 3 } }}>
         {step === 0 && <StepBasicInfo {...stepProps} />}
         {step === 1 && <StepPlan {...stepProps} />}
         {step === 2 && <StepBranding {...stepProps} />}
@@ -292,6 +295,9 @@ export default function EditInstitutionWizard() {
           </Box>
         )}
       </Container>
+
+      {/* Nex walks the admin through each setup step. */}
+      <NexGuide tips={toGuideTips(SETUP_TIPS[STEPS[step]] ?? [])} storageKey="nexus-guide-setup" />
     </Box>
   );
 }
