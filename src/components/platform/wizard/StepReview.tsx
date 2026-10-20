@@ -88,24 +88,29 @@ export default function StepReview({ data, onSubmit, onCancel, onBack, submittin
           <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Branding</Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>Light mode</Typography>
-              <Box sx={{ display: "flex", gap: 1.5, mb: 1.5 }}>
-                {[data.primaryColorLight, data.secondaryColorLight, data.accentColorLight, data.backgroundColorLight].map((c, i) => (
-                  <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                    <Box sx={{ width: 20, height: 20, borderRadius: 1, backgroundColor: c, border: "1px solid", borderColor: "divider" }} />
-                    <Typography variant="caption" sx={{ fontFamily: "monospace" }}>{c}</Typography>
+              {(["light", "dark"] as const).map((mode) => {
+                const colors = Object.entries(data.colorOverrides[mode] ?? {});
+                return (
+                  <Box key={mode} sx={{ mb: 1.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                      {mode === "light" ? "Light mode" : "Dark mode"}
+                    </Typography>
+                    {colors.length === 0 ? (
+                      <Typography variant="body2">Nexus default</Typography>
+                    ) : (
+                      <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                        {colors.map(([token, c]) => (
+                          <Box key={token} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                            <Box sx={{ width: 20, height: 20, borderRadius: 999, backgroundColor: c, border: "1px solid", borderColor: "divider" }} />
+                            <Typography variant="caption" sx={{ fontFamily: "monospace" }}>{c}</Typography>
+                            <Typography variant="caption" color="text.secondary">{token}</Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
                   </Box>
-                ))}
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>Dark mode</Typography>
-              <Box sx={{ display: "flex", gap: 1.5, mb: 2 }}>
-                {[data.primaryColorDark, data.secondaryColorDark, data.accentColorDark, data.backgroundColorDark].map((c, i) => (
-                  <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                    <Box sx={{ width: 20, height: 20, borderRadius: 1, backgroundColor: c, border: "1px solid", borderColor: "divider" }} />
-                    <Typography variant="caption" sx={{ fontFamily: "monospace" }}>{c}</Typography>
-                  </Box>
-                ))}
-              </Box>
+                );
+              })}
               <ReviewRow label="Display Name" value={data.displayName} />
               <ReviewRow label="Theme" value={data.theme} />
             </CardContent>

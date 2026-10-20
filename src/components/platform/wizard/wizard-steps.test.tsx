@@ -37,8 +37,7 @@ const base: WizardData = {
   adminName: "", adminEmail: "", adminPassword: "", skipAdmin: false,
   planId: "p", planName: "Starter", billingCycle: "MONTHLY", agreedPrice: "5000", currency: "PKR", setupFee: "",
   displayName: "Green", logoUrl: "",
-  primaryColorLight: "#111111", secondaryColorLight: "#222222", accentColorLight: "#333333", backgroundColorLight: "#444444",
-  primaryColorDark: "#aaaaaa", secondaryColorDark: "#bbbbbb", accentColorDark: "#cccccc", backgroundColorDark: "#dddddd",
+  colorOverrides: { light: { "primary.main": "#111111" }, dark: { "background.default": "#DDDDDD" } },
   theme: "default", modules: { ACADEMICS: true, FINANCE: false },
   campusName: "Main", campusAddress: "Lahore", campusStudentStart: "08:00", campusStudentEnd: "14:00",
   campusStaffStart: "07:30", campusStaffEnd: "15:00", campusLateThreshold: "15", campusEarlyLeave: "15",
@@ -134,7 +133,7 @@ describe("StepBranding", () => {
     await waitFor(() => expect(mocks.showMessage).toHaveBeenCalledWith("Storage down", "error"));
   });
 
-  it("edits display fields, removes the logo and resets colors to defaults", () => {
+  it("edits display fields, removes the logo and resets every custom color to the Nexus default", () => {
     let latest: WizardData = { ...base, logoUrl: "https://cdn/x.png" };
     render(<Harness initial={latest} onData={(d) => (latest = d)}>{(p) => <StepBranding {...p} />}</Harness>);
     fireEvent.change(screen.getByLabelText("Display Name"), { target: { value: "Shown" } });
@@ -142,10 +141,35 @@ describe("StepBranding", () => {
     expect(latest).toMatchObject({ displayName: "Shown", theme: "ocean" });
     fireEvent.click(screen.getByTestId("DeleteIcon").closest("button")!);
     expect(latest.logoUrl).toBe("");
-    fireEvent.click(screen.getByRole("button", { name: /Reset/i }));
-    expect(latest.primaryColorLight).toBe("#1E3A8A");
-    expect(latest.backgroundColorDark).toBe("#0A1226");
-    expect(latest.theme).toBe("default");
+    fireEvent.click(screen.getByRole("button", { name: /Reset all colors/i }));
+    expect(latest.colorOverrides).toEqual({});
+    // Only colors reset; other branding fields are untouched.
+    expect(latest.theme).toBe("ocean");
+  });
+
+  it("stores only changed colors: a custom value is kept, setting the Nexus default clears it", () => {
+    let latest: WizardData = { ...base, colorOverrides: {} };
+    render(<Harness initial={latest} onData={(d) => (latest = d)}>{(p) => <StepBranding {...p} />}</Harness>);
+    const main = screen.getAllByLabelText("Main hex value")[0];
+    fireEvent.change(main, { target: { value: "#abcdef" } });
+    expect(latest.colorOverrides).toEqual({ light: { "primary.main": "#ABCDEF" } });
+    fireEvent.change(main, { target: { value: "#1E3A8A" } });
+    expect(latest.colorOverrides).toEqual({});
+  });
+
+  it("ignores partial or invalid hex while typing", () => {
+    let latest: WizardData = { ...base, colorOverrides: {} };
+    render(<Harness initial={latest} onData={(d) => (latest = d)}>{(p) => <StepBranding {...p} />}</Harness>);
+    fireEvent.change(screen.getAllByLabelText("Main hex value")[0], { target: { value: "#12" } });
+    expect(latest.colorOverrides).toEqual({});
+  });
+
+  it("edits dark mode colors separately from light mode", () => {
+    let latest: WizardData = { ...base, colorOverrides: {} };
+    render(<Harness initial={latest} onData={(d) => (latest = d)}>{(p) => <StepBranding {...p} />}</Harness>);
+    fireEvent.click(screen.getByRole("button", { name: "Dark mode" }));
+    fireEvent.change(screen.getAllByLabelText("Main hex value")[0], { target: { value: "#fedcba" } });
+    expect(latest.colorOverrides).toEqual({ dark: { "primary.main": "#FEDCBA" } });
   });
 });
 

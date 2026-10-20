@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Box, Button, Card, CardContent, Dialog, DialogActions, DialogContent,
   DialogTitle, Grid, TextField, ToggleButton, ToggleButtonGroup, Typography,
 } from "@mui/material";
 import Edit from "@mui/icons-material/Edit";
+import BrandingColorEditor from "@/components/platform/BrandingColorEditor";
+import BrandingPreview from "@/components/platform/BrandingPreview";
 import { platformService } from "@/services/platform.service";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
-import { DEFAULT_BRANDING_COLORS } from "@/contexts/RuntimeConfigContext";
+import { buildBrandingColorPayload, loadColorOverrides } from "@/lib/branding";
+import { countOverrides, type ColorMode, type ColorOverrides } from "@/theme/branding-tokens";
 
 interface Props {
   institutionId: string;
@@ -21,22 +24,10 @@ interface BrandingForm {
   displayName: string;
   logoUrl: string;
   theme: string;
-  primaryColorLight: string;
-  secondaryColorLight: string;
-  accentColorLight: string;
-  backgroundColorLight: string;
-  primaryColorDark: string;
-  secondaryColorDark: string;
-  accentColorDark: string;
-  backgroundColorDark: string;
+  colorOverrides: ColorOverrides;
 }
 
-const COLOR_FIELDS = [
-  { key: "primary" as const, label: "Primary" },
-  { key: "secondary" as const, label: "Secondary" },
-  { key: "accent" as const, label: "Accent" },
-  { key: "background" as const, label: "Background" },
-];
+type SavedBranding = Record<string, string | null | undefined> & { colorOverrides?: unknown };
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -47,47 +38,47 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ColorSwatchRow({ label, colors }: { label: string; colors: string[] }) {
+/** Lists the colors an institution customized for one mode, or says it follows the Nexus theme. */
+function CustomColorsRow({ label, colors }: { label: string; colors: Record<string, string> | undefined }) {
+  const entries = Object.entries(colors ?? {});
   return (
     <Box sx={{ mb: 1.5 }}>
       <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>{label}</Typography>
-      <Box sx={{ display: "flex", gap: 1.5 }}>
-        {colors.map((color, i) => (
-          <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-            <Box sx={{ width: 20, height: 20, borderRadius: 1, backgroundColor: color, border: "1px solid", borderColor: "divider" }} />
-            <Typography variant="caption" sx={{ fontFamily: "monospace" }}>{color}</Typography>
-          </Box>
-        ))}
-      </Box>
+      {entries.length === 0 ? (
+        <Typography variant="body2">Nexus default</Typography>
+      ) : (
+        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+          {entries.map(([token, color]) => (
+            <Box key={token} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box sx={{ width: 20, height: 20, borderRadius: 999, backgroundColor: color, border: "1px solid", borderColor: "divider" }} />
+              <Typography variant="caption" sx={{ fontFamily: "monospace" }}>{color}</Typography>
+              <Typography variant="caption" color="text.secondary">{token}</Typography>
+            </Box>
+          ))}
+        </Box>
+      )}
     </Box>
   );
 }
 
-function readForm(branding: Record<string, string | null> | null): BrandingForm {
+function readForm(branding: SavedBranding | null): BrandingForm {
   return {
     displayName: branding?.displayName ?? "",
     logoUrl: branding?.logoUrl ?? "",
     theme: branding?.theme ?? "default",
-    primaryColorLight: branding?.primaryColorLight ?? DEFAULT_BRANDING_COLORS.light.primaryColor,
-    secondaryColorLight: branding?.secondaryColorLight ?? DEFAULT_BRANDING_COLORS.light.secondaryColor,
-    accentColorLight: branding?.accentColorLight ?? DEFAULT_BRANDING_COLORS.light.accentColor,
-    backgroundColorLight: branding?.backgroundColorLight ?? DEFAULT_BRANDING_COLORS.light.backgroundColor,
-    primaryColorDark: branding?.primaryColorDark ?? DEFAULT_BRANDING_COLORS.dark.primaryColor,
-    secondaryColorDark: branding?.secondaryColorDark ?? DEFAULT_BRANDING_COLORS.dark.secondaryColor,
-    accentColorDark: branding?.accentColorDark ?? DEFAULT_BRANDING_COLORS.dark.accentColor,
-    backgroundColorDark: branding?.backgroundColorDark ?? DEFAULT_BRANDING_COLORS.dark.backgroundColor,
+    colorOverrides: loadColorOverrides(branding),
   };
 }
 
 export default function InstitutionBrandingTab({ institutionId, runtimeConfig, onSaved }: Props) {
   const { showMessage } = useMessage();
-  const branding = runtimeConfig?.branding as Record<string, string | null> | null;
-  const current = readForm(branding);
+  const branding = runtimeConfig?.branding as SavedBranding | null;
+  const current = useMemo(() => readForm(branding), [branding]);
 
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState<BrandingForm>(current);
   const [saving, setSaving] = useState(false);
-  const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
+  const [previewMode, setPreviewMode] = useState<ColorMode>("light");
 
   const openEdit = () => {
     setForm(readForm(branding));
@@ -97,7 +88,12 @@ export default function InstitutionBrandingTab({ institutionId, runtimeConfig, o
   const handleSave = async () => {
     setSaving(true);
     const { success } = await apiHandler(
-      () => platformService.updateBranding(institutionId, { ...form }),
+      () => platformService.updateBranding(institutionId, {
+        displayName: form.displayName,
+        logoUrl: form.logoUrl || null,
+        theme: form.theme,
+        ...buildBrandingColorPayload(form.colorOverrides),
+      }),
       { showMessage, successMessage: "Branding updated successfully" },
     );
     setSaving(false);
@@ -107,9 +103,12 @@ export default function InstitutionBrandingTab({ institutionId, runtimeConfig, o
     }
   };
 
-  const previewPrimary = previewMode === "light" ? current.primaryColorLight : current.primaryColorDark;
-  const previewAccent = previewMode === "light" ? current.accentColorLight : current.accentColorDark;
-  const previewBg = previewMode === "light" ? current.backgroundColorLight : current.backgroundColorDark;
+  const modeToggle = (
+    <ToggleButtonGroup size="small" value={previewMode} exclusive onChange={(_, value) => value && setPreviewMode(value)}>
+      <ToggleButton value="light">Light</ToggleButton>
+      <ToggleButton value="dark">Dark</ToggleButton>
+    </ToggleButtonGroup>
+  );
 
   return (
     <Grid container spacing={3}>
@@ -125,10 +124,11 @@ export default function InstitutionBrandingTab({ institutionId, runtimeConfig, o
             <InfoRow label="Display Name" value={current.displayName} />
             <InfoRow label="Theme" value={current.theme} />
             <InfoRow label="Logo URL" value={current.logoUrl ? "Configured" : "Not set"} />
+            <InfoRow label="Custom colors" value={`${countOverrides(current.colorOverrides)} set`} />
 
             <Box sx={{ mt: 2 }}>
-              <ColorSwatchRow label="Light mode" colors={[current.primaryColorLight, current.secondaryColorLight, current.accentColorLight, current.backgroundColorLight]} />
-              <ColorSwatchRow label="Dark mode" colors={[current.primaryColorDark, current.secondaryColorDark, current.accentColorDark, current.backgroundColorDark]} />
+              <CustomColorsRow label="Light mode" colors={current.colorOverrides.light} />
+              <CustomColorsRow label="Dark mode" colors={current.colorOverrides.dark} />
             </Box>
           </CardContent>
         </Card>
@@ -139,118 +139,57 @@ export default function InstitutionBrandingTab({ institutionId, runtimeConfig, o
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Preview</Typography>
-              <ToggleButtonGroup
-                size="small"
-                value={previewMode}
-                exclusive
-                onChange={(_, value) => value && setPreviewMode(value)}
-              >
-                <ToggleButton value="light">Light</ToggleButton>
-                <ToggleButton value="dark">Dark</ToggleButton>
-              </ToggleButtonGroup>
+              {modeToggle}
             </Box>
-            <Box sx={{ borderRadius: 2, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
-              <Box sx={{ backgroundColor: previewPrimary, px: 3, py: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
-                {current.logoUrl ? (
-                  <Box component="img" src={current.logoUrl} sx={{ height: 28, borderRadius: 1 }} />
-                ) : (
-                  <Box sx={{ width: 28, height: 28, borderRadius: 1, backgroundColor: "rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Typography sx={{ color: "#fff", fontWeight: 800, fontSize: 12 }}>N</Typography>
-                  </Box>
-                )}
-                <Typography sx={{ color: "#fff", fontWeight: 700 }}>{current.displayName || "Institution Name"}</Typography>
-              </Box>
-              <Box sx={{ p: 3, backgroundColor: previewBg }}>
-                <Box sx={{ width: 80, height: 8, borderRadius: 1, backgroundColor: previewPrimary, mb: 1, opacity: 0.8 }} />
-                <Box sx={{ width: 140, height: 6, borderRadius: 1, backgroundColor: "divider", mb: 2 }} />
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <Box sx={{ px: 2, py: 0.75, borderRadius: 1, backgroundColor: previewPrimary }}>
-                    <Typography variant="caption" sx={{ color: "#fff", fontWeight: 600 }}>Primary</Typography>
-                  </Box>
-                  <Box sx={{ px: 2, py: 0.75, borderRadius: 1, backgroundColor: previewAccent }}>
-                    <Typography variant="caption" sx={{ color: "#fff", fontWeight: 600 }}>Accent</Typography>
-                  </Box>
-                </Box>
-              </Box>
-            </Box>
+            <BrandingPreview mode={previewMode} value={current.colorOverrides} displayName={current.displayName} logoUrl={current.logoUrl} />
           </CardContent>
         </Card>
       </Grid>
 
-      <Dialog open={editOpen} onClose={() => (saving ? undefined : setEditOpen(false))} maxWidth="sm" fullWidth>
+      <Dialog open={editOpen} onClose={() => (saving ? undefined : setEditOpen(false))} maxWidth="lg" fullWidth>
         <DialogTitle sx={{ fontWeight: 700 }}>Edit Branding</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}>
-            <TextField
-              label="Display Name"
-              size="small"
-              fullWidth
-              value={form.displayName}
-              onChange={(e) => setForm((prev) => ({ ...prev, displayName: e.target.value }))}
-            />
-            <TextField
-              label="Logo URL"
-              size="small"
-              fullWidth
-              value={form.logoUrl}
-              onChange={(e) => setForm((prev) => ({ ...prev, logoUrl: e.target.value }))}
-              placeholder="https://..."
-            />
-            <TextField
-              label="Theme"
-              size="small"
-              fullWidth
-              value={form.theme}
-              onChange={(e) => setForm((prev) => ({ ...prev, theme: e.target.value }))}
-              helperText="Leave as 'default' unless a custom theme is configured."
-            />
-
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 1 }}>Colors</Typography>
-            <Typography variant="caption" color="text.disabled">
-              Each color has a light-mode and dark-mode value — set both so the brand looks intentional in either.
-            </Typography>
-            {COLOR_FIELDS.map(({ key, label }) => {
-              const lightKey = `${key}ColorLight` as keyof BrandingForm;
-              const darkKey = `${key}ColorDark` as keyof BrandingForm;
-              return (
-                <Box key={key}>
-                  <Typography variant="caption" sx={{ fontWeight: 600 }}>{label}</Typography>
-                  <Box sx={{ display: "flex", gap: 1.5, mt: 0.5 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1 }}>
-                      <input
-                        type="color"
-                        value={form[lightKey]}
-                        onChange={(e) => setForm((prev) => ({ ...prev, [lightKey]: e.target.value }))}
-                        style={{ width: 40, height: 40, border: "none", borderRadius: 8, cursor: "pointer", padding: 2, flexShrink: 0 }}
-                      />
-                      <TextField
-                        label="Light"
-                        size="small"
-                        fullWidth
-                        value={form[lightKey]}
-                        onChange={(e) => setForm((prev) => ({ ...prev, [lightKey]: e.target.value }))}
-                      />
-                    </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1 }}>
-                      <input
-                        type="color"
-                        value={form[darkKey]}
-                        onChange={(e) => setForm((prev) => ({ ...prev, [darkKey]: e.target.value }))}
-                        style={{ width: 40, height: 40, border: "none", borderRadius: 8, cursor: "pointer", padding: 2, flexShrink: 0 }}
-                      />
-                      <TextField
-                        label="Dark"
-                        size="small"
-                        fullWidth
-                        value={form[darkKey]}
-                        onChange={(e) => setForm((prev) => ({ ...prev, [darkKey]: e.target.value }))}
-                      />
-                    </Box>
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
+          <Grid container spacing={4} sx={{ pt: 1 }}>
+            <Grid size={{ xs: 12, md: 7 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                <TextField
+                  label="Display Name"
+                  size="small"
+                  fullWidth
+                  value={form.displayName}
+                  onChange={(e) => setForm((prev) => ({ ...prev, displayName: e.target.value }))}
+                />
+                <TextField
+                  label="Logo URL"
+                  size="small"
+                  fullWidth
+                  value={form.logoUrl}
+                  onChange={(e) => setForm((prev) => ({ ...prev, logoUrl: e.target.value }))}
+                  placeholder="https://..."
+                />
+                <TextField
+                  label="Theme"
+                  size="small"
+                  fullWidth
+                  value={form.theme}
+                  onChange={(e) => setForm((prev) => ({ ...prev, theme: e.target.value }))}
+                  helperText="Leave as 'default' unless a custom theme is configured."
+                />
+                {modeToggle}
+                <BrandingColorEditor
+                  mode={previewMode}
+                  value={form.colorOverrides}
+                  onChange={(colorOverrides) => setForm((prev) => ({ ...prev, colorOverrides }))}
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, md: 5 }}>
+              <Box sx={{ position: "sticky", top: 0 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Live preview ({previewMode} mode)</Typography>
+                <BrandingPreview mode={previewMode} value={form.colorOverrides} displayName={form.displayName} logoUrl={form.logoUrl} />
+              </Box>
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setEditOpen(false)} disabled={saving}>Cancel</Button>

@@ -39,7 +39,7 @@ vi.mock("@/components/platform/wizard/StepBasicInfo", () => ({
   ),
 }));
 vi.mock("@/components/platform/wizard/StepPlan", () => ({ default: () => <div>plan-step</div> }));
-vi.mock("@/components/platform/wizard/StepBranding", () => ({ default: ({ data }: { data: { displayName: string; primaryColorLight: string; theme: string } }) => <div>branding {data.displayName}|{data.primaryColorLight}|{data.theme}</div> }));
+vi.mock("@/components/platform/wizard/StepBranding", () => ({ default: ({ data }: { data: { displayName: string; colorOverrides: { light?: Record<string, string> }; theme: string } }) => <div>branding {data.displayName}|{data.colorOverrides.light?.["primary.main"] ?? "none"}|{data.theme}</div> }));
 vi.mock("@/components/platform/wizard/StepModules", () => ({ default: ({ data }: { data: { modules: Record<string, boolean> } }) => <div>modules {JSON.stringify(data.modules)}</div> }));
 vi.mock("@/components/platform/wizard/StepSettings", () => ({ default: ({ data }: { data: { settings: unknown[] } }) => <div>settings {JSON.stringify(data.settings)}</div> }));
 vi.mock("@/components/platform/wizard/StepPermissions", () => ({ default: ({ institutionId }: { institutionId: string }) => <div>permissions {institutionId}</div> }));
@@ -186,7 +186,7 @@ describe("EditInstitutionWizard", () => {
       contactEmail: null, contactPhone: "0300", primaryDomain: null, notes: "n",
     });
     expect(mocks.updateSubscription).toHaveBeenCalledWith("uuid-1", { planId: "plan-1", billingCycle: "MONTHLY", currency: "PKR" });
-    expect(mocks.updateBranding).toHaveBeenCalledWith("uuid-1", expect.objectContaining({ displayName: "Green", logoUrl: null, primaryColorLight: "#123456", theme: "ocean" }));
+    expect(mocks.updateBranding).toHaveBeenCalledWith("uuid-1", expect.objectContaining({ displayName: "Green", logoUrl: null, theme: "ocean", colorOverrides: { light: { "primary.main": "#123456" } }, primaryColorLight: null, accentColorDark: null }));
     expect(mocks.updateEntitlements).toHaveBeenCalledWith("uuid-1", {
       entitlements: [
         { moduleKey: "PEOPLE", isEnabled: true },
@@ -210,7 +210,7 @@ describe("EditInstitutionWizard", () => {
     expect(mocks.updateSubscription).not.toHaveBeenCalled();
     expect(mocks.updateEntitlements).not.toHaveBeenCalled();
     expect(mocks.updateSettings).not.toHaveBeenCalled();
-    expect(mocks.updateBranding).toHaveBeenCalledWith("uuid-1", expect.objectContaining({ primaryColorLight: "#1E3A8A", theme: "default" }));
+    expect(mocks.updateBranding).toHaveBeenCalledWith("uuid-1", expect.objectContaining({ colorOverrides: null, primaryColorLight: null, theme: "default" }));
   });
 
   it("navigates back, cancels to the institution, and steps through the wizard", async () => {

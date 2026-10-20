@@ -17,13 +17,14 @@ beforeEach(() => {
 });
 
 describe("InstitutionBrandingTab", () => {
-  it("shows configured branding and falls back to defaults for unset colors", () => {
+  it("shows configured branding and lists the customized colors", () => {
     render(<InstitutionBrandingTab institutionId="i1" runtimeConfig={runtime} />);
     expect(screen.getAllByText("Green School").length).toBeGreaterThan(0);
     expect(screen.getByText("ocean")).toBeInTheDocument();
     expect(screen.getByText("Configured")).toBeInTheDocument();
     expect(screen.getByText("#111111")).toBeInTheDocument();
-    expect(screen.getAllByText("#D9482B").length).toBeGreaterThan(0);
+    expect(screen.getByText("#999999")).toBeInTheDocument();
+    expect(screen.getByText("2 set")).toBeInTheDocument();
   });
 
   it("uses placeholders when nothing is configured", () => {
@@ -47,10 +48,13 @@ describe("InstitutionBrandingTab", () => {
     fireEvent.click(screen.getByRole("button", { name: /Edit/ }));
     const dialog = await screen.findByRole("dialog");
     fireEvent.change(within(dialog).getByLabelText("Display Name"), { target: { value: "Renamed" } });
-    fireEvent.change(within(dialog).getAllByLabelText("Light")[0], { target: { value: "#abcdef" } });
+    fireEvent.change(within(dialog).getAllByLabelText("Main hex value")[0], { target: { value: "#abcdef" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(mocks.updateBranding).toHaveBeenCalledWith("i1", expect.objectContaining({
-      displayName: "Renamed", logoUrl: "https://cdn/logo.png", theme: "ocean", primaryColorLight: "#abcdef", primaryColorDark: "#999999",
+      displayName: "Renamed", logoUrl: "https://cdn/logo.png", theme: "ocean",
+      colorOverrides: { light: { "primary.main": "#ABCDEF" }, dark: { "primary.main": "#999999" } },
+      // Legacy flat columns are cleared: overrides now carry those colors.
+      primaryColorLight: null, primaryColorDark: null,
     })));
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
   });

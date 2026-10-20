@@ -14,7 +14,8 @@ import ManageAccounts from "@mui/icons-material/ManageAccounts";
 import RemoveCircleOutlined from "@mui/icons-material/RemoveCircleOutlined";
 import RocketLaunch from "@mui/icons-material/RocketLaunch";
 import { useMessage } from "@/contexts/MessageContext";
-import { DEFAULT_BRANDING_COLORS } from "@/contexts/RuntimeConfigContext";
+import { buildBrandingColorPayload } from "@/lib/branding";
+import type { ColorOverrides } from "@/theme/branding-tokens";
 import { apiHandler } from "@/lib/apiHandler";
 import { authService } from "@/services/auth.service";
 import { platformService } from "@/services/platform.service";
@@ -63,14 +64,8 @@ export interface WizardData {
   // Step 4
   displayName: string;
   logoUrl: string;
-  primaryColorLight: string;
-  secondaryColorLight: string;
-  accentColorLight: string;
-  backgroundColorLight: string;
-  primaryColorDark: string;
-  secondaryColorDark: string;
-  accentColorDark: string;
-  backgroundColorDark: string;
+  /** Only colors an admin changed; unset colors follow the Nexus theme. */
+  colorOverrides: ColorOverrides;
   theme: string;
   // Step 5
   modules: Record<string, boolean>;
@@ -94,14 +89,7 @@ const defaultData: WizardData = {
   adminName: "", adminEmail: "", adminPassword: "", skipAdmin: false,
   planId: "", planName: "", billingCycle: "MONTHLY", agreedPrice: "", currency: "PKR", setupFee: "",
   displayName: "", logoUrl: "",
-  primaryColorLight: DEFAULT_BRANDING_COLORS.light.primaryColor,
-  secondaryColorLight: DEFAULT_BRANDING_COLORS.light.secondaryColor,
-  accentColorLight: DEFAULT_BRANDING_COLORS.light.accentColor,
-  backgroundColorLight: DEFAULT_BRANDING_COLORS.light.backgroundColor,
-  primaryColorDark: DEFAULT_BRANDING_COLORS.dark.primaryColor,
-  secondaryColorDark: DEFAULT_BRANDING_COLORS.dark.secondaryColor,
-  accentColorDark: DEFAULT_BRANDING_COLORS.dark.accentColor,
-  backgroundColorDark: DEFAULT_BRANDING_COLORS.dark.backgroundColor,
+  colorOverrides: {},
   theme: "default",
   modules: {},
   campusName: "", campusAddress: "",
@@ -211,14 +199,7 @@ export default function NewInstitutionWizard() {
     const brandPayload = {
       displayName: data.displayName || data.name,
       logoUrl: data.logoUrl || null,
-      primaryColorLight: data.primaryColorLight,
-      secondaryColorLight: data.secondaryColorLight,
-      accentColorLight: data.accentColorLight,
-      backgroundColorLight: data.backgroundColorLight,
-      primaryColorDark: data.primaryColorDark,
-      secondaryColorDark: data.secondaryColorDark,
-      accentColorDark: data.accentColorDark,
-      backgroundColorDark: data.backgroundColorDark,
+      ...buildBrandingColorPayload(data.colorOverrides),
       theme: data.theme,
     };
     {
