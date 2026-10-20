@@ -24,6 +24,7 @@ import Message from "@mui/icons-material/Message";
 import RocketLaunch from "@mui/icons-material/RocketLaunch";
 import Support from "@mui/icons-material/Support";
 import { AI_POSITIONING } from "@/content/ai";
+import { pricingFaqs as faqItems } from "@/content/pricing-faqs";
 import FaqAccordion from "@/components/public/FaqAccordion";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
 
@@ -91,25 +92,6 @@ const includedEverywhere = [
   "Core product onboarding support from the Nexus team",
   "Access to the same education-focused ERP foundation across modules and AI-ready workflows",
   "A pricing path that can grow with additional campuses and operational maturity",
-];
-
-const faqItems = [
-  {
-    q: "How should schools or colleges choose between plans?",
-    a: "Start with the plan that matches your current campus footprint and the modules you need right now. If your institution expects to expand in campuses, rollout complexity, or procurement requirements, choose the plan that gives you enough growth room without overbuying on day one.",
-  },
-  {
-    q: "Can Nexus pricing support multi-campus growth over time?",
-    a: "Yes. The pricing model is meant to support institutions that begin with a smaller operational footprint and grow into broader campus or module needs over time.",
-  },
-  {
-    q: "What if our institution has procurement, deployment, or support requirements that do not fit a standard plan?",
-    a: "That is exactly where the custom sales path helps. If you need special hosting, rollout planning, or enterprise-style commercial handling, the team can shape a plan around that reality.",
-  },
-  {
-    q: "Does Nexus pricing include AI-powered assistance?",
-    a: "Yes. Nexus is positioned as an AI-assisted education ERP, and that includes access to the broader product direction around Nexus AI, AI-powered assistance, and AI-ready workflows. We do not present AI as a separate hype-driven tier. We present it as part of the platform's evolving value.",
-  },
 ];
 
 export default function PricingClient({ apiPlans }: { apiPlans: Plan[] }) {

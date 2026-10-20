@@ -85,8 +85,9 @@ describe("Pricing page (server)", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   const load = async () => {
-    const element = (await PricingPage()) as { props: { apiPlans: unknown[] } };
-    return element.props.apiPlans;
+    // The page renders the FAQ structured data first, then the pricing client.
+    const element = (await PricingPage()) as { props: { children: [unknown, { props: { apiPlans: unknown[] } }] } };
+    return element.props.children[1].props.apiPlans;
   };
 
   it("loads plans from the versioned platform endpoint without caching", async () => {

@@ -1,6 +1,8 @@
 import PricingClient from "@/components/public/PricingClient";
 import env from "@/config/env";
-import { buildPageMetadata } from "@/lib/seo";
+import JsonLd from "@/components/seo/JsonLd";
+import { pricingFaqs } from "@/content/pricing-faqs";
+import { buildPageMetadata, faqJsonLd } from "@/lib/seo";
 
 export const metadata = buildPageMetadata({
   title: "Pricing for Schools, Colleges & Campuses",
@@ -24,5 +26,10 @@ async function getPlans() {
 
 export default async function PricingPage() {
   const apiPlans = await getPlans();
-  return <PricingClient apiPlans={apiPlans} />;
+  return (
+    <>
+      <JsonLd data={faqJsonLd(pricingFaqs.map((f) => ({ question: f.q, answer: f.a })))} />
+      <PricingClient apiPlans={apiPlans} />
+    </>
+  );
 }
