@@ -210,7 +210,7 @@ describe("EditInstitutionWizard", () => {
     expect(mocks.updateSubscription).not.toHaveBeenCalled();
     expect(mocks.updateEntitlements).not.toHaveBeenCalled();
     expect(mocks.updateSettings).not.toHaveBeenCalled();
-    expect(mocks.updateBranding).toHaveBeenCalledWith("uuid-1", expect.objectContaining({ primaryColorLight: "#2C6B48", theme: "default" }));
+    expect(mocks.updateBranding).toHaveBeenCalledWith("uuid-1", expect.objectContaining({ primaryColorLight: "#1E3A8A", theme: "default" }));
   });
 
   it("navigates back, cancels to the institution, and steps through the wizard", async () => {

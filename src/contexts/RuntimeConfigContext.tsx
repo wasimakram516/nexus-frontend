@@ -34,19 +34,10 @@ export type FeaturePermissionMap = Record<string, Partial<Record<PermissionActio
 
 const WRITE_ACTIONS: PermissionAction[] = ["create", "update", "delete"];
 
-/**
- * Fallback institution-branding colors for an institution that hasn't set
- * its own. Primary/secondary/accent follow the Wisemen Soft "Forest & Bone"
- * palette (see the parent site's styles/tokens.js); background intentionally
- * departs from it (wisemensoft's warm "bone" tone reads as beige/earthy in
- * a data-dense app) in favor of a neutral gray/white pair — matches Nexus's
- * own base theme in theme/theme.ts either way, and institutions can further
- * override any of the four roles.
- */
-export const DEFAULT_BRANDING_COLORS = {
-  light: { primaryColor: "#2C6B48", secondaryColor: "#6366F1", accentColor: "#4C8F68", backgroundColor: "#F7F8FA" },
-  dark: { primaryColor: "#54A87A", secondaryColor: "#6366F1", accentColor: "#7CC79E", backgroundColor: "#141D18" },
-};
+// Fallback institution-branding colors for an institution that hasn't set its
+// own. Defined in theme/tokens.ts so they always match Nexus's base theme;
+// re-exported here for existing importers.
+export { DEFAULT_BRANDING_COLORS } from "@/theme/tokens";
 
 export interface RuntimeConfig {
   institutionId: string;

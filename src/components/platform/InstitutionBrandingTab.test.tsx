@@ -23,7 +23,7 @@ describe("InstitutionBrandingTab", () => {
     expect(screen.getByText("ocean")).toBeInTheDocument();
     expect(screen.getByText("Configured")).toBeInTheDocument();
     expect(screen.getByText("#111111")).toBeInTheDocument();
-    expect(screen.getAllByText("#6366F1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("#D9482B").length).toBeGreaterThan(0);
   });
 
   it("uses placeholders when nothing is configured", () => {

@@ -1,6 +1,13 @@
 "use client";
 
-import { createTheme, ThemeOptions } from "@mui/material/styles";
+import { alpha, createTheme, ThemeOptions } from "@mui/material/styles";
+import { BRAND_PALETTE, type BrandPalette } from "./tokens";
+
+declare module "@mui/material/Chip" {
+  interface ChipPropsSizeOverrides {
+    tiny: true;
+  }
+}
 
 const displayFont = "var(--font-display), Georgia, serif";
 
@@ -39,93 +46,96 @@ const baseComponents: ThemeOptions["components"] = {
       },
     },
   },
-  // Card is content surfaces (data tables, tiles) — flat, border-only, no MUI elevation shadow.
+  // Card is the content surface (data tables, tiles): large radius, a hairline
+  // border for definition (shadows vanish on dark backgrounds), and a soft layered
+  // elevation shadow. Pages should not restyle this; use <Card> as-is.
   MuiCard: {
-    styleOverrides: { root: { borderRadius: 16, backgroundImage: "none", boxShadow: "none" } },
+    styleOverrides: {
+      root: ({ theme }) => {
+        const shadow = alpha(theme.palette.common.black, theme.palette.mode === "dark" ? 0.45 : 0.07);
+        return {
+          borderRadius: 24,
+          backgroundImage: "none",
+          border: `1px solid ${theme.palette.divider}`,
+          boxShadow: `0 1px 2px ${shadow}, 0 8px 24px ${shadow}`,
+        };
+      },
+    },
   },
   // Paper backs floating elements (Menu, Dialog, Drawer, Popover) — keeps elevation shadow so those still read as elevated.
   MuiPaper: {
     styleOverrides: { root: { borderRadius: 16 } },
   },
+  // Inputs are pill-shaped to match buttons and chips; multiline fields get a
+  // softer radius because a full pill distorts a textarea. Horizontal padding is
+  // widened so text clears the curve, and tightened next to adornments.
+  MuiOutlinedInput: {
+    styleOverrides: {
+      root: ({ ownerState }) => ({
+        borderRadius: ownerState.multiline ? 20 : 999,
+        ...(ownerState.startAdornment ? { paddingLeft: 16 } : {}),
+        ...(ownerState.endAdornment ? { paddingRight: 16 } : {}),
+      }),
+      input: ({ ownerState }) => ({
+        paddingLeft: ownerState.startAdornment ? 8 : 20,
+        paddingRight: ownerState.endAdornment ? 8 : 20,
+      }),
+    },
+  },
   MuiChip: {
-    styleOverrides: { root: { borderRadius: 6 } },
+    styleOverrides: { root: { borderRadius: 999 } },
+    // size="tiny": compact status/count badges (replaces ad-hoc height/fontSize sx overrides).
+    variants: [
+      { props: { size: "tiny" }, style: { height: 18, fontSize: 10, "& .MuiChip-label": { paddingLeft: 6, paddingRight: 6 } } },
+    ],
   },
 };
 
-// Base palette matches the parent Wisemen Soft site's "Forest & Bone" design
-// tokens (styles/tokens.js there) — a single forest-green accent on warm
-// bone/charcoal surfaces, both modes first-class. See DEFAULT_BRANDING_COLORS
-// in RuntimeConfigContext.tsx for the same palette applied as the fallback
-// institution-branding colors.
-export const darkTheme = createTheme({
-  palette: {
-    mode: "dark",
-    primary: { main: "#54A87A", light: "#7CC79E", dark: "#3D8862" },
-    secondary: { main: "#6366F1", light: "#818CF8", dark: "#4F46E5" },
-    background: { default: "#141D18", paper: "#1C2822" },
-    text: { primary: "#F0F2EA", secondary: "#AEB6A8" },
-    divider: "rgba(94,168,124,0.2)",
-    error: { main: "#EF4444" },
-    warning: { main: "#F59E0B" },
-    success: { main: "#10B981" },
-    info: { main: "#6FA8C4" },
-  },
-  typography: baseTypography,
-  components: {
-    ...baseComponents,
-    MuiAppBar: {
-      styleOverrides: {
-        root: { backgroundColor: "#1C2822", borderBottom: "1px solid rgba(94,168,124,0.2)", boxShadow: "none" },
+// Palette values live in ./tokens.ts (the single source of truth); this file only
+// maps them onto MUI. Light mode uses a neutral cool gray/white surface pair (a
+// warm "bone" tone reads as beige in a data-dense app). Both modes are
+// customizable per institution via InstitutionBranding, which the dashboard
+// layout overlays on top of these base themes.
+function buildTheme(mode: "light" | "dark", p: BrandPalette) {
+  return createTheme({
+    palette: {
+      mode,
+      primary: p.primary,
+      secondary: p.secondary,
+      background: p.background,
+      text: p.text,
+      divider: p.divider,
+      error: { main: p.status.error },
+      warning: { main: p.status.warning },
+      success: { main: p.status.success },
+      info: { main: p.status.info },
+    },
+    typography: baseTypography,
+    components: {
+      ...baseComponents,
+      MuiAppBar: {
+        styleOverrides: {
+          root: {
+            backgroundColor: p.background.paper,
+            borderBottom: `1px solid ${p.divider}`,
+            boxShadow: "none",
+            color: p.text.primary,
+          },
+        },
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: { backgroundColor: p.background.paper, borderRight: `1px solid ${p.divider}` },
+        },
+      },
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: { backgroundColor: p.background.default },
+        },
       },
     },
-    MuiDrawer: {
-      styleOverrides: {
-        paper: { backgroundColor: "#1C2822", borderRight: "1px solid rgba(94,168,124,0.2)" },
-      },
-    },
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: { backgroundColor: "#141D18" },
-      },
-    },
-  },
-});
+  });
+}
 
-// Light mode intentionally departs from wisemensoft's warm "bone" surface
-// (#F4F3EC/#ECE9DE reads as beige/earthy in a data-dense app) — kept the
-// same forest-green accent and text tones, swapped the background for a
-// neutral cool gray/white pair instead. Both are customizable per
-// institution via InstitutionBranding — see DEFAULT_BRANDING_COLORS.
-export const lightTheme = createTheme({
-  palette: {
-    mode: "light",
-    primary: { main: "#2C6B48", light: "#4C8F68", dark: "#1F4E33" },
-    secondary: { main: "#6366F1", light: "#818CF8", dark: "#4F46E5" },
-    background: { default: "#F7F8FA", paper: "#FFFFFF" },
-    text: { primary: "#151810", secondary: "#585F52" },
-    divider: "rgba(21,24,16,0.09)",
-    error: { main: "#DC2626" },
-    warning: { main: "#D97706" },
-    success: { main: "#059669" },
-    info: { main: "#2F6E86" },
-  },
-  typography: baseTypography,
-  components: {
-    ...baseComponents,
-    MuiAppBar: {
-      styleOverrides: {
-        root: { backgroundColor: "#FFFFFF", borderBottom: "1px solid rgba(21,24,16,0.09)", boxShadow: "none", color: "#151810" },
-      },
-    },
-    MuiDrawer: {
-      styleOverrides: {
-        paper: { backgroundColor: "#FFFFFF", borderRight: "1px solid rgba(21,24,16,0.09)" },
-      },
-    },
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: { backgroundColor: "#F7F8FA" },
-      },
-    },
-  },
-});
+export const darkTheme = buildTheme("dark", BRAND_PALETTE.dark);
+export const lightTheme = buildTheme("light", BRAND_PALETTE.light);

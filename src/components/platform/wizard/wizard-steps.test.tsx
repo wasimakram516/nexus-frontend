@@ -143,8 +143,8 @@ describe("StepBranding", () => {
     fireEvent.click(screen.getByTestId("DeleteIcon").closest("button")!);
     expect(latest.logoUrl).toBe("");
     fireEvent.click(screen.getByRole("button", { name: /Reset/i }));
-    expect(latest.primaryColorLight).toBe("#2C6B48");
-    expect(latest.backgroundColorDark).toBe("#141D18");
+    expect(latest.primaryColorLight).toBe("#1E3A8A");
+    expect(latest.backgroundColorDark).toBe("#0A1226");
     expect(latest.theme).toBe("default");
   });
 });
