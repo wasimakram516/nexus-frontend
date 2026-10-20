@@ -14,14 +14,11 @@ import {
   Typography,
 } from "@mui/material";
 import CheckCircle from "@mui/icons-material/CheckCircle";
-import ExpandMore from "@mui/icons-material/ExpandMore";
 import RocketLaunch from "@mui/icons-material/RocketLaunch";
 import ViewModule from "@mui/icons-material/ViewModule";
-import Accordion from "@mui/material/Accordion";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import AccordionSummary from "@mui/material/AccordionSummary";
 import { modules } from "../page";
 import { AI_POSITIONING } from "@/content/ai";
+import FaqAccordion from "@/components/public/FaqAccordion";
 import FeatureSectionNav from "@/components/public/FeatureSectionNav";
 import PageBreadcrumbs from "@/components/shared/PageBreadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
@@ -305,30 +302,7 @@ export default async function ModuleFeaturePage({ params }: Props) {
                   questions
                 </Box>
               </Typography>
-              <Stack spacing={2}>
-                {mod.faqs.map((faq) => (
-                  <Accordion
-                    key={faq.question}
-                    disableGutters
-                    sx={{
-                      backgroundColor: "background.paper",
-                      border: "1px solid",
-                      borderColor: "divider",
-                      borderRadius: "12px !important",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <AccordionSummary expandIcon={<ExpandMore />}>
-                      <Typography sx={{ fontWeight: 700 }}>{faq.question}</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.85 }}>
-                        {faq.answer}
-                      </Typography>
-                    </AccordionDetails>
-                  </Accordion>
-                ))}
-              </Stack>
+              <FaqAccordion faqs={mod.faqs.map((faq) => ({ q: faq.question, a: faq.answer }))} />
             </Box>
           ) : null}
 
