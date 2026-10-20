@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
   getGuardians: vi.fn(),
   getCampuses: vi.fn(),
   getClasses: vi.fn(),
+  getCurrentAcademicYear: vi.fn(),
   getSummary: vi.fn(),
   getAll: vi.fn(),
 }));
@@ -33,7 +34,7 @@ vi.mock("@/services/people.service", () => ({
   peopleService: { getStudents: state.getStudents, getStaffProfiles: state.getStaff, getGuardians: state.getGuardians },
 }));
 vi.mock("@/services/campuses.service", () => ({ campusesService: { getAll: state.getCampuses } }));
-vi.mock("@/services/academics.service", () => ({ academicsService: { getClasses: state.getClasses } }));
+vi.mock("@/services/academics.service", () => ({ academicsService: { getClasses: state.getClasses, getCurrentAcademicYear: state.getCurrentAcademicYear } }));
 vi.mock("@/services/attendance.service", () => ({ attendanceService: { getSummary: state.getSummary, getAll: state.getAll } }));
 vi.mock("@/components/dashboard/OnboardingChecklist", () => ({
   default: ({ steps }: { steps: Array<{ key: string; done: boolean }> }) => (
@@ -58,6 +59,7 @@ beforeEach(() => {
   state.getGuardians.mockImplementation(() => ok([]));
   state.getCampuses.mockImplementation(() => ok({ items: [{}], total: 4 }));
   state.getClasses.mockImplementation(() => ok([{}, {}]));
+  state.getCurrentAcademicYear.mockImplementation(() => ok({ academicYear: { name: "2026-27" } }));
   state.getSummary.mockImplementation(() => ok({ totalRecords: 9, presentCount: 5, absentCount: 2, lateCount: 1, leaveCount: 1, halfDayCount: 0 }));
   state.getAll.mockImplementation(() => ok([]));
 });
@@ -84,7 +86,7 @@ describe("Dashboard overview: admin", () => {
     expect(screen.getByText("Today's Attendance")).toBeInTheDocument();
     expect(card("Present")).toHaveTextContent("5");
     expect(card("On Leave")).toHaveTextContent("1");
-    expect(screen.getByText("onboarding campus:true,academics:true,people:true,attendance:true")).toBeInTheDocument();
+    expect(screen.getByText("onboarding campus:true,academic-year:true,academics:true,people:true,attendance:true")).toBeInTheDocument();
   });
 
   it("requests today's summary and uses only permitted module quick links", async () => {
@@ -100,6 +102,13 @@ describe("Dashboard overview: admin", () => {
     expect(state.push).toHaveBeenCalledWith("/dashboard/attendance");
   });
 
+  it("lists the academic year as a setup step and keeps it pending until a current year exists", async () => {
+    state.getCurrentAcademicYear.mockImplementation(() => ok(null));
+    render(<DashboardOverviewPage />);
+    expect(await screen.findByText(/academic-year:false/)).toBeInTheDocument();
+    expect(state.getCurrentAcademicYear).toHaveBeenCalled();
+  });
+
   it("skips data for disabled modules and shows a not-started onboarding state", async () => {
     state.enabled = new Set();
     state.getCampuses.mockImplementation(() => ok({ items: [] }));
@@ -107,6 +116,7 @@ describe("Dashboard overview: admin", () => {
     expect(await screen.findByText("onboarding campus:false")).toBeInTheDocument();
     expect(state.getStudents).not.toHaveBeenCalled();
     expect(state.getClasses).not.toHaveBeenCalled();
+    expect(state.getCurrentAcademicYear).not.toHaveBeenCalled();
     expect(state.getSummary).not.toHaveBeenCalled();
     expect(screen.queryByText("Students")).not.toBeInTheDocument();
     expect(screen.queryByText("Modules")).not.toBeInTheDocument();

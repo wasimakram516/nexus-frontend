@@ -64,6 +64,8 @@ interface Stats {
   guardians: number | null;
   campuses: number | null;
   classes: number | null;
+  /** Whether a current academic year exists (null until loaded). */
+  academicYear: boolean | null;
 }
 
 const STATUS_COLORS: Record<string, "success" | "error" | "warning" | "info" | "default"> = {
@@ -82,7 +84,7 @@ export default function DashboardOverviewPage() {
   const { showMessage } = useMessage();
   const router = useRouter();
 
-  const [stats, setStats] = useState<Stats>({ students: null, staff: null, guardians: null, campuses: null, classes: null });
+  const [stats, setStats] = useState<Stats>({ students: null, staff: null, guardians: null, campuses: null, classes: null, academicYear: null });
   const [summary, setSummary] = useState<AttendanceSummary | null>(null);
   const [myAttendance, setMyAttendance] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,6 +136,16 @@ export default function DashboardOverviewPage() {
               setStats((prev) => ({ ...prev, classes: data?.length ?? 0 }));
             })()
           );
+          // A fresh institution has no current year yet (the lookup 404s), which is expected, not an error.
+          tasks.push(
+            (async () => {
+              const { data } = await apiHandler<unknown>(
+                () => academicsService.getCurrentAcademicYear(),
+                { showMessage, silent: true }
+              );
+              setStats((prev) => ({ ...prev, academicYear: Boolean(data) }));
+            })()
+          );
         }
         if (isModuleEnabled("ATTENDANCE")) {
           tasks.push(
@@ -182,6 +194,13 @@ export default function DashboardOverviewPage() {
           done: (stats.campuses ?? 0) > 0,
           href: "/dashboard/campuses",
           required: true,
+        },
+        isModuleEnabled("ACADEMICS") && {
+          key: "academic-year",
+          label: "Set up the academic year",
+          description: "Set the current academic year, the period your institution runs on.",
+          done: stats.academicYear === true,
+          href: "/dashboard/academics",
         },
         isModuleEnabled("ACADEMICS") && {
           key: "academics",
