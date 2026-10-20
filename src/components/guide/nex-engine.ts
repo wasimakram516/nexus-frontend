@@ -125,6 +125,11 @@ export class NexEngine {
     }, this.opts.reduceMotion ? 0 : 900 + Math.random() * 500);
   }
 
+  /** A small hop, used as feedback when the tip changes so Nex visibly reacts even if the pose looks alike. */
+  hop(): void {
+    this.hopUntil = performance.now() + 480;
+  }
+
   giggle(): void {
     this.giggleUntil = performance.now() + 650;
     this.burst(CENTER, 40, 6, 60, 20);

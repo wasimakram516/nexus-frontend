@@ -14,6 +14,8 @@ export interface NexMascotProps {
   pose?: GuidePose;
   /** Moves the mouth, so text typing out in a bubble feels spoken. */
   talking?: boolean;
+  /** Any value that changes when Nex should react (for example a new tip): it hops once per change. */
+  cue?: string | number;
   /** Starts as the Nexus logo, then wakes up. */
   intro?: boolean;
   /** CSS size of the square character. */
@@ -27,7 +29,7 @@ export interface NexMascotProps {
  * Nex, the Nexus guide. A thin React wrapper: the look lives in NexSkin, the motion in NexEngine,
  * the poses in guide-poses. Use NexGuide for the speech bubble and dismiss behavior.
  */
-export default function NexMascot({ pose = "idle", talking = false, intro = false, size = 96, decorative = false, sx }: NexMascotProps) {
+export default function NexMascot({ pose = "idle", talking = false, intro = false, cue, size = 96, decorative = false, sx }: NexMascotProps) {
   const colors = useNexColors();
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const uid = useId().replace(/:/g, "");
@@ -65,6 +67,12 @@ export default function NexMascot({ pose = "idle", talking = false, intro = fals
   // With intro, the idle default must not cut the logo wake-up short; any other pose still applies.
   useEffect(() => { if (!(intro && pose === "idle")) engineRef.current?.setPose(pose); }, [pose, intro]);
   useEffect(() => { engineRef.current?.setTalking(talking); }, [talking]);
+  // Hop when the cue changes (not on first mount).
+  const firstCue = useRef(true);
+  useEffect(() => {
+    if (firstCue.current) { firstCue.current = false; return; }
+    engineRef.current?.hop();
+  }, [cue]);
 
   return (
     <Box sx={[{ width: size, height: size, flexShrink: 0, lineHeight: 0 }, ...(Array.isArray(sx) ? sx : [sx])]}>

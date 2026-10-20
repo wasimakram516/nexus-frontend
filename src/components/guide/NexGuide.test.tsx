@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import NexGuide, { type GuideTip } from "@/components/guide/NexGuide";
 
 const TIPS: GuideTip[] = [
@@ -35,6 +35,14 @@ describe("NexGuide", () => {
     expect(screen.getAllByText("Second tip.").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Got it" }));
     expect(screen.queryByRole("button", { name: "Got it" })).not.toBeInTheDocument();
+  });
+
+  it("changes Nex's drawn pose when the tip changes", () => {
+    const rightHandX = (): number => Number(document.querySelector('[data-limb="rh"]')?.getAttribute("x2"));
+    render(<NexGuide tips={TIPS} />);
+    const before = rightHandX(); // "wave" raises the right hand high
+    fireEvent.click(screen.getByRole("button", { name: "Next tip" }));
+    return waitFor(() => expect(rightHandX()).not.toBe(before)); // "point" stretches it out
   });
 
   it("runs a tip's action, such as handing over to Nexus AI", () => {

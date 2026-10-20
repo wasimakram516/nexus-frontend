@@ -130,7 +130,7 @@ export default function NexGuide({
   const talking = open && !quiet && !typingDone;
   const showBubble = open && !quiet;
   const mascot = (
-    <NexMascot pose={showBubble ? tip.pose : "idle"} talking={talking} size={mascotSize} decorative />
+    <NexMascot pose={showBubble ? tip.pose : "idle"} talking={talking} cue={tipId} size={mascotSize} decorative />
   );
 
   return (
