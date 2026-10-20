@@ -4,9 +4,10 @@ import Link from "next/link";
 import ArrowForward from "@mui/icons-material/ArrowForward";
 import RocketLaunch from "@mui/icons-material/RocketLaunch";
 import { Box, Button, Chip, Container, Stack, Typography } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { alpha, useTheme } from "@mui/material/styles";
 import { motion } from "framer-motion";
 import { AI_POSITIONING } from "@/content/ai";
+import { NAVBAR_HEIGHT } from "@/theme/layout";
 
 const heroTags = [
   "Academics",
@@ -24,15 +25,19 @@ export default function HeroSection() {
   return (
     <Box
       sx={{
-        background: isDark
-          ? "linear-gradient(180deg, #09140F 0%, #0B1B14 100%)"
-          : "linear-gradient(180deg, #F5FFF9 0%, #ECFBF3 100%)",
-        py: { xs: 10, md: 15 },
+        background: (t) =>
+          `linear-gradient(180deg, ${alpha(t.palette.primary.main, isDark ? 0.14 : 0.08)} 0%, ${t.palette.background.default} 100%)`,
+        // Fill the first screen below the sticky navbar and center the content in it.
+        // svh keeps this right on mobile browsers whose address bar changes the viewport.
+        minHeight: `calc(100svh - ${NAVBAR_HEIGHT}px)`,
+        display: "flex",
+        alignItems: "center",
+        py: { xs: 8, md: 10 },
         borderBottom: "1px solid",
         borderColor: "divider",
       }}
     >
-      <Container maxWidth="md">
+      <Container maxWidth="md" sx={{ width: "100%" }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

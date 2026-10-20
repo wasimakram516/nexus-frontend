@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { alpha } from "@mui/material/styles";
+import type { SxProps, Theme } from "@mui/material/styles";
 import {
   AppBar,
   Box,
@@ -31,6 +34,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
 import Tune from "@mui/icons-material/Tune";
 import Verified from "@mui/icons-material/Verified";
+import { NAVBAR_HEIGHT } from "@/theme/layout";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import NexusLogo from "@/components/shared/NexusLogo";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,16 +57,36 @@ const simpleLinks = [
   { label: "FAQ", href: "/faq" },
 ];
 
+/** A link is active on its own page and on any page nested beneath it (e.g. /features/finance under /features). */
+function isActivePath(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/** Shared style for desktop nav buttons: muted by default, tinted pill + primary text when on the current page. */
+function navLinkSx(active: boolean): SxProps<Theme> {
+  return {
+    color: active ? "primary.main" : "text.secondary",
+    fontWeight: active ? 700 : 500,
+    backgroundColor: active ? (t: Theme) => alpha(t.palette.primary.main, 0.12) : "transparent",
+    "&:hover": {
+      color: active ? "primary.main" : "text.primary",
+      backgroundColor: (t: Theme) => alpha(t.palette.primary.main, active ? 0.18 : 0.06),
+    },
+  };
+}
+
 export default function PublicNavbar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [featuresAnchor, setFeaturesAnchor] = useState<null | HTMLElement>(null);
   const { user } = useAuth();
+  const pathname = usePathname() ?? "";
+  const featuresActive = isActivePath(pathname, "/features");
   const dashboardHref = user?.role === "SUPERADMIN" ? "/platform" : "/dashboard";
 
   return (
     <AppBar position="sticky" elevation={0}>
       <Container maxWidth="xl">
-        <Toolbar disableGutters sx={{ py: 1 }}>
+        <Toolbar disableGutters sx={{ py: 1, minHeight: NAVBAR_HEIGHT - 1 }}>
           <Box
             component={Link}
             href="/"
@@ -85,7 +109,8 @@ export default function PublicNavbar() {
               size="small"
               endIcon={<ExpandMore sx={{ fontSize: "16px !important", transition: "transform 0.2s", transform: featuresAnchor ? "rotate(180deg)" : "none" }} />}
               onClick={(e) => setFeaturesAnchor(e.currentTarget)}
-              sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
+              sx={navLinkSx(featuresActive)}
+              aria-current={featuresActive ? "page" : undefined}
             >
               Features
             </Button>
@@ -95,12 +120,12 @@ export default function PublicNavbar() {
               onClose={() => setFeaturesAnchor(null)}
               slotProps={{ paper: { sx: { mt: 1, minWidth: 220, border: "1px solid", borderColor: "divider" } } }}
             >
-              <MenuItem component={Link} href="/features" onClick={() => setFeaturesAnchor(null)} sx={{ fontWeight: 600, color: "primary.main" }}>
+              <MenuItem component={Link} href="/features" selected={pathname === "/features"} onClick={() => setFeaturesAnchor(null)} sx={{ fontWeight: 600, color: "primary.main" }}>
                 All Features <KeyboardArrowRight fontSize="small" sx={{ ml: "auto" }} />
               </MenuItem>
               <Divider />
               {featureItems.map((item) => (
-                <MenuItem key={item.href} component={Link} href={item.href} onClick={() => setFeaturesAnchor(null)}>
+                <MenuItem key={item.href} component={Link} href={item.href} selected={pathname === item.href} onClick={() => setFeaturesAnchor(null)}>
                   <ListItemIcon sx={{ minWidth: 32 }}>{item.icon}</ListItemIcon>
                   {item.label}
                 </MenuItem>
@@ -114,7 +139,8 @@ export default function PublicNavbar() {
                 href={link.href}
                 color="inherit"
                 size="small"
-                sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
+                sx={navLinkSx(isActivePath(pathname, link.href))}
+                aria-current={isActivePath(pathname, link.href) ? "page" : undefined}
               >
                 {link.label}
               </Button>
@@ -153,18 +179,18 @@ export default function PublicNavbar() {
           </Box>
           <Divider />
           <List dense sx={{ flex: 1, overflowY: "auto" }}>
-            <ListItemButton component={Link} href="/features" onClick={() => setDrawerOpen(false)}>
+            <ListItemButton component={Link} href="/features" selected={pathname === "/features"} onClick={() => setDrawerOpen(false)}>
               <ListItemText primary="Features" slotProps={{ primary: { sx: { fontWeight: 600 } } }} />
             </ListItemButton>
             {featureItems.map((item) => (
-              <ListItemButton key={item.href} component={Link} href={item.href} onClick={() => setDrawerOpen(false)} sx={{ pl: 4 }}>
+              <ListItemButton key={item.href} component={Link} href={item.href} selected={pathname === item.href} onClick={() => setDrawerOpen(false)} sx={{ pl: 4 }}>
                 <ListItemIcon sx={{ minWidth: 32 }}>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 14 } } }} />
               </ListItemButton>
             ))}
             <Divider sx={{ my: 1 }} />
             {simpleLinks.map((link) => (
-              <ListItemButton key={link.href} component={Link} href={link.href} onClick={() => setDrawerOpen(false)}>
+              <ListItemButton key={link.href} component={Link} href={link.href} selected={isActivePath(pathname, link.href)} onClick={() => setDrawerOpen(false)}>
                 <ListItemText primary={link.label} />
               </ListItemButton>
             ))}
