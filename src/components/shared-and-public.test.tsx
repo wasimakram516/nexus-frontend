@@ -151,7 +151,8 @@ describe("AiChatWidget", () => {
     vi.useRealTimers();
   });
 
-  const openChat = () => fireEvent.click(screen.getByTestId("SmartToyIcon").closest("button")!);
+  // Nex is the launcher button; it is named for what it does, not the old robot icon.
+  const openChat = () => fireEvent.click(screen.getByRole("button", { name: "Chat with Nex" }));
 
   it("toggles the panel and plays the matching sounds", () => {
     render(<AiChatWidget />);
