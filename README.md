@@ -48,6 +48,12 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to see the a
 
 The page will auto-reload when you make changes to files in `src/app/`.
 
+## Colors and Brand Assets
+
+All brand colors live in `src/theme/tokens.ts`. Pages and components must use theme palette references (`primary.main`, `alpha(theme.palette.primary.main, 0.1)`), never hard-coded hex values.
+
+**Run `npm run brand:assets` after any future color change.** The favicon, logo SVGs and PNG icons are static files that cannot read the theme at runtime, so this command regenerates them from the tokens (templates are in `scripts/brand-assets/`).
+
 ## Building for Production
 
 Build the application:

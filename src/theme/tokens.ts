@@ -8,6 +8,10 @@
  * Brand: "Navy & Coral", deliberately distinct from the forest green used
  * across the other Wisemen Soft products. Green is reserved for the success
  * status color.
+ *
+ * AFTER ANY COLOR CHANGE IN THIS FILE, RUN `npm run brand:assets`.
+ * It regenerates the favicon, logo SVGs and PNG icons, which are static files
+ * and cannot read these tokens at runtime.
  */
 
 interface PaletteTriplet {
