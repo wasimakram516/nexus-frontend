@@ -1,6 +1,8 @@
 "use client";
 
 import { useId } from "react";
+import { useTheme } from "@mui/material/styles";
+import { BRAND_PALETTE } from "@/theme/tokens";
 
 type NexusLogoVariant = "icon" | "full";
 type NexusLogoTheme = "color" | "white";
@@ -31,21 +33,27 @@ export default function NexusLogo({
   theme = "color",
   className,
   title = "Nexus",
-  // Matches wisemensoft's own logo convention: the accent mark stays the
-  // dark-mode forest green (its own icon.svg/opengraph mark use the same
-  // value) regardless of the page's active theme mode.
-  primaryColor = "#54A87A",
-  accentColor = "#7CC79E",
+  primaryColor,
+  accentColor,
   letterColor,
 }: NexusLogoProps) {
+  // Default colors follow the active light/dark mode so the mark keeps contrast on
+  // either background. They come from the Nexus brand tokens (not the palette itself)
+  // on purpose: inside the dashboard the MUI theme is overlaid with an institution's
+  // colors, and the Nexus product mark must not turn into a tenant's color.
+  const mode = useTheme().palette.mode;
+  const brand = BRAND_PALETTE[mode];
+  const resolvedPrimary = primaryColor ?? brand.primary.main;
+  const resolvedAccent = accentColor ?? brand.primary.light;
+
   const generatedId = useId().replace(/:/g, "");
   const maskId = `nexus-mark-mask-${generatedId}`;
 
   const isWhite = theme === "white";
 
-  const primary = isWhite ? "#FFFFFF" : primaryColor;
-  const accent = isWhite ? "#FFFFFF" : accentColor;
-  const letters = isWhite ? "#FFFFFF" : (letterColor ?? primaryColor);
+  const primary = isWhite ? "#FFFFFF" : resolvedPrimary;
+  const accent = isWhite ? "#FFFFFF" : resolvedAccent;
+  const letters = isWhite ? "#FFFFFF" : (letterColor ?? resolvedPrimary);
 
   if (variant === "icon") {
     const { width: vbW, height: vbH } = ICON_VIEWBOX;
