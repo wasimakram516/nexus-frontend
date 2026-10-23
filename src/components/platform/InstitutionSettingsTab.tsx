@@ -10,6 +10,7 @@ import { platformService } from "@/services/platform.service";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { parseSettingObject } from "@/lib/settings";
+import ExamSettingsCard from "@/components/platform/ExamSettingsCard";
 
 function unwrapSettingValue(value: unknown, depth = 0): string {
   if (depth > 10 || value === null || value === undefined) return "—";
@@ -128,7 +129,7 @@ export default function InstitutionSettingsTab({ institutionId, runtimeConfig, o
   };
 
   const otherEntries = raw
-    ? Object.entries(raw).filter(([key]) => key !== "recycle_bin" && key !== "payroll" && key !== "attendance")
+    ? Object.entries(raw).filter(([key]) => key !== "recycle_bin" && key !== "payroll" && key !== "attendance" && key !== "exams")
     : [];
 
   return (
@@ -147,6 +148,10 @@ export default function InstitutionSettingsTab({ institutionId, runtimeConfig, o
             <InfoRow label="Attendance mode" value={attendanceModeValue} />
           </CardContent>
         </Card>
+      </Grid>
+
+      <Grid size={12}>
+        <ExamSettingsCard institutionId={institutionId} setting={raw?.exams} onSaved={onSaved} />
       </Grid>
 
       {otherEntries.length > 0 && (

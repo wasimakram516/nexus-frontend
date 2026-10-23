@@ -60,7 +60,7 @@ describe("InstitutionSettingsTab", () => {
       },
     });
 
-    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: /^edit$/i }));
 
     expect(screen.getByLabelText(/retention period/i)).toHaveValue(14);
     expect(screen.getByLabelText(/per-day basis/i)).toHaveValue(26);
@@ -75,7 +75,7 @@ describe("InstitutionSettingsTab", () => {
     } as never);
 
     renderTab({ settings: {} }, onSaved);
-    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: /^edit$/i }));
 
     await user.clear(screen.getByLabelText(/retention period/i));
     await user.type(screen.getByLabelText(/retention period/i), "14");
@@ -105,7 +105,7 @@ describe("InstitutionSettingsTab", () => {
     } as never);
 
     renderTab({ settings: {} });
-    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: /^edit$/i }));
     await user.click(screen.getByRole("button", { name: /^save$/i }));
 
     expect(platformService.updateSettings).toHaveBeenCalledWith(
@@ -122,7 +122,7 @@ describe("InstitutionSettingsTab", () => {
     const user = userEvent.setup();
     renderTab({ settings: {} });
 
-    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: /^edit$/i }));
     await user.click(screen.getByRole("button", { name: /cancel/i }));
 
     expect(platformService.updateSettings).not.toHaveBeenCalled();
@@ -135,7 +135,7 @@ describe("InstitutionSettingsTab", () => {
     const user = userEvent.setup();
     renderTab({ settings: {} });
 
-    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: /^edit$/i }));
     await user.clear(screen.getByLabelText(/retention period/i));
     await user.type(screen.getByLabelText(/retention period/i), "5");
 
@@ -147,7 +147,7 @@ describe("InstitutionSettingsTab", () => {
     const user = userEvent.setup();
     renderTab({ settings: {} });
 
-    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: /^edit$/i }));
     await user.clear(screen.getByLabelText(/per-day basis/i));
     await user.type(screen.getByLabelText(/per-day basis/i), "0");
 
