@@ -80,4 +80,21 @@ export const examinationsService = {
     apiClient.post(`/examinations/exam-subjects/${examSubjectId}/results/bulk`, payload),
   getFailingStudents: (examSubjectId: string, sectionId: string) =>
     apiClient.get(`/examinations/exam-subjects/${examSubjectId}/failing-students`, { params: { sectionId } }),
+
+  // Results, printables and self-service
+  getClassResultSummary: (examId: string, sectionId?: string) =>
+    apiClient.get(`/examinations/exams/${examId}/class-result-summary`, { params: { sectionId } }),
+  getStudentResultSummary: (examId: string, studentId: string) =>
+    apiClient.get(`/examinations/exams/${examId}/students/${studentId}/result-summary`),
+  getDatesheet: (examId: string) => apiClient.get(`/examinations/exams/${examId}/datesheet`),
+  getAdmitCard: (examId: string, studentId: string) =>
+    apiClient.get(`/examinations/exams/${examId}/students/${studentId}/admit-card`),
+  getAdmitCards: (examId: string, sectionId?: string) =>
+    apiClient.get(`/examinations/exams/${examId}/admit-cards`, { params: { sectionId } }),
+  getReportCard: (studentId: string, academicYearId: string) =>
+    apiClient.get(`/examinations/students/${studentId}/academic-years/${academicYearId}/report-card`),
+  getReportCards: (academicYearId: string, classId: string, sectionId?: string) =>
+    apiClient.get(`/examinations/academic-years/${academicYearId}/report-cards`, { params: { classId, sectionId } }),
+  getExamsForMe: (academicYearId?: string) =>
+    apiClient.get("/examinations/exams/for-me", { params: { academicYearId } }),
 };
