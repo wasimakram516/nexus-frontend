@@ -63,4 +63,13 @@ export const examinationsService = {
   createRetakeExam: (id: string, payload: Record<string, unknown>) =>
     apiClient.post(`/examinations/exams/${id}/retakes`, payload),
   getRetakeExams: (id: string) => apiClient.get(`/examinations/exams/${id}/retakes`),
+
+  // Exam papers (the subjects sat within one exam)
+  getExamSubjects: (params?: { examId?: string }) =>
+    apiClient.get("/examinations/exam-subjects", { params }),
+  createExamSubject: (payload: Record<string, unknown>) =>
+    apiClient.post("/examinations/exam-subjects", payload),
+  updateExamSubject: (id: string, payload: Record<string, unknown>) =>
+    apiClient.patch(`/examinations/exam-subjects/${id}`, payload),
+  deleteExamSubject: (id: string) => apiClient.delete(`/examinations/exam-subjects/${id}`),
 };
