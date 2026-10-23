@@ -213,6 +213,55 @@ describe("ExaminationsManager exams", () => {
     );
   });
 
+  it("offers results, datesheet, admit cards and report cards from the documents menu", async () => {
+    render(<ExaminationsManager />);
+
+    fireEvent.click(within(await rowOf("First Term Exam")).getByRole("button", { name: "Documents" }));
+
+    expect(await screen.findByRole("menuitem", { name: "Results" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Datesheet" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Admit cards" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Report cards for the class" })).toBeInTheDocument();
+  });
+
+  it("opens the datesheet for the exam", async () => {
+    render(<ExaminationsManager />);
+
+    fireEvent.click(within(await rowOf("First Term Exam")).getByRole("button", { name: "Documents" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Datesheet" }));
+
+    expect(await screen.findByText("Datesheet: First Term Exam")).toBeInTheDocument();
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("/examinations/exams/exam-1/datesheet"));
+  });
+
+  it("opens the results for the exam", async () => {
+    render(<ExaminationsManager />);
+
+    fireEvent.click(within(await rowOf("First Term Exam")).getByRole("button", { name: "Documents" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Results" }));
+
+    expect(await screen.findByText("Results: First Term Exam")).toBeInTheDocument();
+  });
+
+  it("does not offer report cards for a retake exam, and hides documents the user cannot read", async () => {
+    exams = [exam({ examType: "RETAKE", originalExamId: "exam-0", status: "PUBLISHED" })];
+    render(<ExaminationsManager />);
+
+    fireEvent.click(within(await rowOf("First Term Exam")).getByRole("button", { name: "Documents" }));
+    await screen.findByRole("menuitem", { name: "Results" });
+
+    expect(screen.queryByRole("menuitem", { name: "Report cards for the class" })).not.toBeInTheDocument();
+  });
+
+  it("hides the documents menu from someone who can read neither exams nor results", async () => {
+    mocks.runtime = { can: (feature, action) => feature === "exam_subjects" && action === "read" };
+    render(<ExaminationsManager />);
+
+    const row = await rowOf("First Term Exam");
+    expect(within(row).queryByRole("button", { name: "Documents" })).not.toBeInTheDocument();
+    expect(within(row).getByRole("button", { name: "Papers" })).toBeInTheDocument();
+  });
+
   it("describes a retake by the exam it retakes", async () => {
     exams = [exam({}), exam({ id: "exam-2", name: "Retake", examType: "RETAKE", originalExamId: "exam-1", status: "PUBLISHED" })];
     render(<ExaminationsManager />);

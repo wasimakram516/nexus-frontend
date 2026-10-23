@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  Menu,
   MenuItem,
   Tab,
   Tabs,
@@ -21,10 +22,13 @@ import {
 } from "@mui/material";
 import EventRepeat from "@mui/icons-material/EventRepeat";
 import ListAlt from "@mui/icons-material/ListAlt";
+import Print from "@mui/icons-material/Print";
 import Lock from "@mui/icons-material/Lock";
 import LockOpen from "@mui/icons-material/LockOpen";
 import Publish from "@mui/icons-material/Publish";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import ClassResultsDialog from "@/components/dashboard/ClassResultsDialog";
+import ExamDocumentDialog, { ExamDocumentKind } from "@/components/dashboard/ExamDocumentDialog";
 import ExamPapersDialog, { ClassSubject } from "@/components/dashboard/ExamPapersDialog";
 import { ClassSection } from "@/components/dashboard/MarksEntryDialog";
 import GradingScalesSection, { GradingScale } from "@/components/dashboard/GradingScalesSection";
@@ -44,6 +48,7 @@ interface Exam {
   name: string;
   classId: string;
   campusId: string;
+  academicYearId: string;
   examTermId: string;
   gradingScaleId: string;
   status: "DRAFT" | "PUBLISHED";
@@ -118,6 +123,9 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
   const [subjects, setSubjects] = useState<ClassSubject[]>([]);
   const [sections, setSections] = useState<ClassSection[]>([]);
   const [papersFor, setPapersFor] = useState<Exam | null>(null);
+  const [resultsFor, setResultsFor] = useState<Exam | null>(null);
+  const [printDoc, setPrintDoc] = useState<{ kind: ExamDocumentKind; exam: Exam } | null>(null);
+  const [menu, setMenu] = useState<{ anchor: HTMLElement; exam: Exam } | null>(null);
   const [confirmPublish, setConfirmPublish] = useState<Exam | null>(null);
   const [retakeFor, setRetakeFor] = useState<Exam | null>(null);
 
@@ -197,6 +205,11 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
 
   const examActions = (exam: Exam) => (
     <>
+      {(can("exams", "read") || can("exam_results", "read")) && (
+        <Tooltip title="Results and printouts">
+          <IconButton aria-label="Documents" size="small" onClick={(e) => setMenu({ anchor: e.currentTarget, exam })}><Print fontSize="small" /></IconButton>
+        </Tooltip>
+      )}
       {can("exam_subjects", "read") && (
         <Tooltip title="Papers (subjects, marks and dates)">
           <IconButton aria-label="Papers" size="small" onClick={() => setPapersFor(exam)}><ListAlt fontSize="small" /></IconButton>
@@ -348,6 +361,29 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
           setConfirmPublish(null);
         }}
         onCancel={() => setConfirmPublish(null)}
+      />
+
+      <Menu anchorEl={menu?.anchor} open={Boolean(menu)} onClose={() => setMenu(null)}>
+        {can("exam_results", "read") && (
+          <MenuItem onClick={() => { setResultsFor(menu?.exam ?? null); setMenu(null); }}>Results</MenuItem>
+        )}
+        {can("exams", "read") && (
+          <MenuItem onClick={() => { setPrintDoc(menu ? { kind: "datesheet", exam: menu.exam } : null); setMenu(null); }}>Datesheet</MenuItem>
+        )}
+        {can("exams", "read") && (
+          <MenuItem onClick={() => { setPrintDoc(menu ? { kind: "admit-cards", exam: menu.exam } : null); setMenu(null); }}>Admit cards</MenuItem>
+        )}
+        {can("exam_results", "read") && menu?.exam.examType === "REGULAR" && (
+          <MenuItem onClick={() => { setPrintDoc(menu ? { kind: "report-cards", exam: menu.exam } : null); setMenu(null); }}>Report cards for the class</MenuItem>
+        )}
+      </Menu>
+
+      <ClassResultsDialog exam={resultsFor} sections={sections} onClose={() => setResultsFor(null)} />
+      <ExamDocumentDialog
+        kind={printDoc?.kind ?? null}
+        exam={printDoc?.exam ?? null}
+        sections={sections}
+        onClose={() => setPrintDoc(null)}
       />
 
       <ExamPapersDialog
