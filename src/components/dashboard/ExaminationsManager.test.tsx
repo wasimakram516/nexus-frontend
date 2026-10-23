@@ -121,10 +121,10 @@ describe("ExaminationsManager tabs", () => {
     expect(await screen.findByRole("tab", { name: "Terms", selected: true })).toBeInTheDocument();
   });
 
-  it("says plainly on the Exams tab that marks cannot be entered yet", async () => {
+  it("points to Enter marks on the Exams tab", async () => {
     render(<ExaminationsManager />);
 
-    expect(await screen.findByText(/scores cannot be recorded here for now/i)).toBeInTheDocument();
+    expect(await screen.findByText(/use Enter marks to record scores/i)).toBeInTheDocument();
   });
 
   it("keeps the tab the user chose when the data reloads", async () => {

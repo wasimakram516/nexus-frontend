@@ -72,4 +72,12 @@ export const examinationsService = {
   updateExamSubject: (id: string, payload: Record<string, unknown>) =>
     apiClient.patch(`/examinations/exam-subjects/${id}`, payload),
   deleteExamSubject: (id: string) => apiClient.delete(`/examinations/exam-subjects/${id}`),
+
+  // Marks entry
+  getExamResults: (examSubjectId: string, sectionId: string) =>
+    apiClient.get(`/examinations/exam-subjects/${examSubjectId}/results`, { params: { sectionId } }),
+  saveExamResults: (examSubjectId: string, payload: Record<string, unknown>) =>
+    apiClient.post(`/examinations/exam-subjects/${examSubjectId}/results/bulk`, payload),
+  getFailingStudents: (examSubjectId: string, sectionId: string) =>
+    apiClient.get(`/examinations/exam-subjects/${examSubjectId}/failing-students`, { params: { sectionId } }),
 };

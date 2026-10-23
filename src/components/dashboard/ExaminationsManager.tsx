@@ -26,6 +26,7 @@ import LockOpen from "@mui/icons-material/LockOpen";
 import Publish from "@mui/icons-material/Publish";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import ExamPapersDialog, { ClassSubject } from "@/components/dashboard/ExamPapersDialog";
+import { ClassSection } from "@/components/dashboard/MarksEntryDialog";
 import GradingScalesSection, { GradingScale } from "@/components/dashboard/GradingScalesSection";
 import ResourceSection from "@/components/dashboard/ResourceSection";
 import { useMessage } from "@/contexts/MessageContext";
@@ -115,12 +116,13 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
   const [years, setYears] = useState<Named[]>([]);
   const [classes, setClasses] = useState<Named[]>([]);
   const [subjects, setSubjects] = useState<ClassSubject[]>([]);
+  const [sections, setSections] = useState<ClassSection[]>([]);
   const [papersFor, setPapersFor] = useState<Exam | null>(null);
   const [confirmPublish, setConfirmPublish] = useState<Exam | null>(null);
   const [retakeFor, setRetakeFor] = useState<Exam | null>(null);
 
   const load = useCallback(async () => {
-    const [scalesRes, termsRes, examsRes, yearsRes, campusesRes, levelsRes, classesRes, subjectsRes] = await Promise.all([
+    const [scalesRes, termsRes, examsRes, yearsRes, campusesRes, levelsRes, classesRes, subjectsRes, sectionsRes] = await Promise.all([
       apiHandler<GradingScale[]>(() => examinationsService.getGradingScales(institutionId), { showMessage, silent: true }),
       apiHandler<ExamTerm[]>(() => examinationsService.getExamTerms(undefined, institutionId), { showMessage, silent: true }),
       apiHandler<Exam[]>(() => examinationsService.getExams(), { showMessage, silent: true }),
@@ -129,6 +131,7 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
       apiHandler<Named[]>(() => academicsService.getLevels(), { showMessage, silent: true }),
       apiHandler<Named[]>(() => academicsService.getClasses(), { showMessage, silent: true }),
       apiHandler<ClassSubject[]>(() => academicsService.getSubjects(), { showMessage, silent: true }),
+      apiHandler<ClassSection[]>(() => academicsService.getSections(), { showMessage, silent: true }),
     ]);
 
     // The exam list and class list are not institution-addressed, so the
@@ -150,6 +153,7 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
     const scopedClasses = (classesRes.data ?? []).filter((c) => !institutionId || (c.levelId && levelIds.has(c.levelId)));
     const classIds = new Set(scopedClasses.map((c) => c.id));
     setClasses(scopedClasses);
+    setSections((sectionsRes.data ?? []).filter((section) => !institutionId || (section.classId && classIds.has(section.classId))));
     setSubjects((subjectsRes.data ?? []).filter((subject) => !institutionId || (subject.classId && classIds.has(subject.classId))));
     setExams((examsRes.data ?? []).filter((e) => !institutionId || campusIds.has(e.campusId)));
     setLoading(false);
@@ -235,7 +239,7 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
 
       {tab === TAB_EXAMS && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Use Papers on each exam to add its subjects, marks and dates. Entering scores for students is not available yet, so scores cannot be recorded here for now.
+          Use Papers on each exam to add its subjects, marks and dates. Open a paper and use Enter marks to record scores for each student.
         </Alert>
       )}
 
@@ -352,6 +356,8 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
         canCreate={can("exam_subjects", "create")}
         canUpdate={can("exam_subjects", "update")}
         canDelete={can("exam_subjects", "delete")}
+        sections={sections}
+        canEnterMarks={can("exam_results", "update")}
         onClose={() => setPapersFor(null)}
       />
 

@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Tooltip } from "@mui/material";
+import MarksEntryDialog, { ClassSection } from "@/components/dashboard/MarksEntryDialog";
 import ResourceSection from "@/components/dashboard/ResourceSection";
+import EditNote from "@mui/icons-material/EditNote";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
@@ -41,6 +43,9 @@ interface ExamPapersDialogProps {
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
+  /** Every section in scope; the marks grid narrows it to the exam's class. */
+  sections?: ClassSection[];
+  canEnterMarks?: boolean;
   onClose: () => void;
 }
 
@@ -56,11 +61,14 @@ export default function ExamPapersDialog({
   canCreate,
   canUpdate,
   canDelete,
+  sections = [],
+  canEnterMarks = false,
   onClose,
 }: ExamPapersDialogProps) {
   const { showMessage } = useMessage();
   const [papers, setPapers] = useState<ExamPaper[]>([]);
   const [loading, setLoading] = useState(false);
+  const [marksFor, setMarksFor] = useState<ExamPaper | null>(null);
   const examId = exam?.id;
 
   const load = useCallback(async () => {
@@ -154,7 +162,21 @@ export default function ExamPapersDialog({
               ? (id) => run(() => examinationsService.deleteExamSubject(id), "Paper moved to recycle bin.")
               : undefined
           }
+          renderRowActions={(r) => (
+            <Tooltip title="Enter marks">
+              <IconButton aria-label="Enter marks" size="small" onClick={() => setMarksFor(r)}>
+                <EditNote fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           deleteMessage={(r) => `Remove the ${subjectName(r)} paper from this exam?`}
+        />
+        <MarksEntryDialog
+          paper={marksFor ? { id: marksFor.id, subjectName: subjectName(marksFor), maxMarks: Number(marksFor.maxMarks), passingMarks: Number(marksFor.passingMarks) } : null}
+          exam={exam}
+          sections={sections}
+          canEdit={canEnterMarks}
+          onClose={() => setMarksFor(null)}
         />
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 3 }}>

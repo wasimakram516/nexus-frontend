@@ -174,6 +174,36 @@ describe("ExamPapersDialog", () => {
     expect(mocks.patch.mock.calls[0][1]).not.toHaveProperty("subjectId");
   });
 
+  it("opens the marks grid for a paper, even once the exam is published", async () => {
+    mocks.get.mockImplementation(async (url: string) => ({
+      data: {
+        data:
+          url === "/examinations/exam-subjects"
+            ? papers
+            : { maxMarks: 100, passingMarks: 40, locked: true, students: [] },
+      },
+    }));
+    render(
+      <ExamPapersDialog
+        exam={{ ...draft, status: "PUBLISHED" }}
+        subjects={subjects}
+        sections={[{ id: "sec-a", name: "A", classId: "class-1" }]}
+        canCreate
+        canUpdate
+        canDelete
+        canEnterMarks
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(within(await rowOf("Maths")).getByRole("button", { name: "Enter marks" }));
+
+    expect(await screen.findByText("Marks: Maths")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(mocks.get).toHaveBeenCalledWith("/examinations/exam-subjects/paper-1/results", { params: { sectionId: "sec-a" } }),
+    );
+  });
+
   it("hides every action from a read-only user", async () => {
     renderDialog({ canCreate: false, canUpdate: false, canDelete: false });
 
