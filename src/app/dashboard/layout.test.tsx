@@ -43,7 +43,7 @@ vi.mock("@/components/dashboard/TrialBanner", () => ({ default: () => <span>tria
 import DashboardLayout from "./layout";
 
 const labels = () =>
-  ["Overview", "People", "Academics", "Attendance", "Finance", "Notices", "Campuses", "Users", "Roles", "Custom Fields", "Activity"].filter(
+  ["Overview", "People", "Academics", "Attendance", "Finance", "Notices", "Exams", "My Exams", "Campuses", "Users", "Roles", "Custom Fields", "Activity"].filter(
     (l) => screen.queryByText(l),
   );
 
@@ -83,6 +83,37 @@ describe("DashboardLayout navigation gating", () => {
     state.grants = new Set(["audit_logs.read"]);
     render(<DashboardLayout><div /></DashboardLayout>);
     expect(labels()).toEqual(["Overview", "People", "Finance", "Activity"]);
+  });
+
+  it("shows Exams to staff who can view the module, and My Exams only to students and guardians", () => {
+    state.enabled = new Set(["EXAMINATIONS"]);
+    state.viewable = new Set(["EXAMINATIONS"]);
+    state.user = { name: "Teacher", role: "STAFF" };
+    const staff = render(<DashboardLayout><div>page</div></DashboardLayout>);
+    expect(labels()).toEqual(["Overview", "Exams"]);
+    staff.unmount();
+
+    // Students and guardians have no exam permissions, so only the role and the module matter.
+    state.viewable = new Set();
+    for (const role of ["STUDENT", "GUARDIAN"]) {
+      state.user = { name: "Ayesha", role };
+      const view = render(<DashboardLayout><div>page</div></DashboardLayout>);
+      expect(labels()).toEqual(["Overview", "My Exams"]);
+      view.unmount();
+    }
+  });
+
+  it("hides My Exams when the institution has not enabled exams, and from ADMIN and STAFF", () => {
+    state.enabled = new Set();
+    state.user = { name: "Ayesha", role: "STUDENT" };
+    const student = render(<DashboardLayout><div>page</div></DashboardLayout>);
+    expect(labels()).toEqual(["Overview"]);
+    student.unmount();
+
+    state.enabled = new Set(["EXAMINATIONS"]);
+    state.user = { name: "Amna", role: "ADMIN" };
+    render(<DashboardLayout><div>page</div></DashboardLayout>);
+    expect(screen.queryByText("My Exams")).not.toBeInTheDocument();
   });
 
   it("navigates on click", () => {

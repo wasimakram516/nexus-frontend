@@ -67,6 +67,8 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
   module?: ModuleKey;
+  /** Visible when the institution has the module, with no permission needed (students and guardians). */
+  requiresModule?: ModuleKey;
   roles?: UserRole[];
   permission?: { feature: string; action: PermissionAction };
 }
@@ -81,6 +83,7 @@ const navItems: NavItem[] = [
   { label: "Finance",       href: "/dashboard/finance",       icon: <AccountBalance />, module: "FINANCE" },
   { label: "Notices",       href: "/dashboard/notices",       icon: <Campaign />,       module: "NOTICES" },
   { label: "Exams",         href: "/dashboard/exams",         icon: <AutoStories />,    module: "EXAMINATIONS" },
+  { label: "My Exams",      href: "/dashboard/my-exams",      icon: <AutoStories />,    requiresModule: "EXAMINATIONS", roles: ["STUDENT", "GUARDIAN"] },
   { label: "Campuses",      href: "/dashboard/campuses",      icon: <Business />,       roles: ["ADMIN"] },
   { label: "Users",         href: "/dashboard/users",         icon: <ManageAccounts />, roles: ["ADMIN"] },
   { label: "Roles",         href: "/dashboard/roles",         icon: <Shield />,         roles: ["ADMIN"] },
@@ -142,6 +145,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const visibleItems = navItems.filter((item) => {
     if (item.module && (!isModuleEnabled(item.module) || !canViewModule(item.module))) return false;
+    if (item.requiresModule && !isModuleEnabled(item.requiresModule)) return false;
     if (item.roles && user && !item.roles.includes(user.role)) return false;
     if (item.permission && !can(item.permission.feature, item.permission.action)) return false;
     return true;
