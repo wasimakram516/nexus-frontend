@@ -202,6 +202,17 @@ describe("ExaminationsManager exams", () => {
     );
   });
 
+  it("opens the papers of an exam from its row", async () => {
+    render(<ExaminationsManager />);
+
+    fireEvent.click(within(await rowOf("First Term Exam")).getByRole("button", { name: "Papers" }));
+
+    expect(await screen.findByText("Papers for First Term Exam")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(mocks.get).toHaveBeenCalledWith("/examinations/exam-subjects", { params: { examId: "exam-1" } }),
+    );
+  });
+
   it("describes a retake by the exam it retakes", async () => {
     exams = [exam({}), exam({ id: "exam-2", name: "Retake", examType: "RETAKE", originalExamId: "exam-1", status: "PUBLISHED" })];
     render(<ExaminationsManager />);
