@@ -25,6 +25,7 @@ import AcademicsManager from "@/components/dashboard/AcademicsManager";
 import CampusesManager from "@/components/dashboard/CampusesManager";
 import AttendanceManager from "@/components/dashboard/AttendanceManager";
 import CustomFieldsManager from "@/components/dashboard/CustomFieldsManager";
+import ExaminationsManager from "@/components/dashboard/ExaminationsManager";
 import FinanceManager from "@/components/dashboard/FinanceManager";
 import NoticesManager from "@/components/dashboard/NoticesManager";
 import PeopleManager from "@/components/dashboard/PeopleManager";
@@ -46,7 +47,7 @@ const MODULE_META: Record<string, { label: string; description: string; icon: Re
   notices:         { label: "Notices",       description: "Announcements with audience targeting, publish windows, and attachments.", icon: <Campaign sx={{ fontSize: 40 }} />, accent: MODULE_ACCENTS.notices },
 };
 
-const IMPLEMENTED = new Set(["campuses", "people", "academics", "attendance", "finance", "users", "custom-fields", "notices"]);
+const IMPLEMENTED = new Set(["campuses", "people", "academics", "attendance", "finance", "users", "custom-fields", "notices", "examinations"]);
 
 export default function ModulePage() {
   const { id: slugOrId, module } = useParams<{ id: string; module: string }>();
@@ -93,6 +94,8 @@ export default function ModulePage() {
         return <CustomFieldsManager institutionId={institutionId} />;
       case "notices":
         return <NoticesManager institutionId={institutionId} />;
+      case "examinations":
+        return <ExaminationsManager institutionId={institutionId} />;
       default:
         return null;
     }
