@@ -33,18 +33,12 @@ const exam = (overrides: Record<string, unknown>) => ({
 });
 
 let exams: Array<Record<string, unknown>>;
+let scalesData: Array<Record<string, unknown>>;
+let termsData: Array<Record<string, unknown>>;
 
 function serve(url: string): unknown {
-  if (url.endsWith("/grading-scales")) {
-    return [{ id: "scale-1", name: "Standard", isCurrent: true, bands: [{ id: "b", grade: "P", minPercentage: "0", maxPercentage: "100" }] }];
-  }
-  if (url.endsWith("/exam-terms")) {
-    return [
-      { id: "term-1", name: "First Term", academicYearId: "year-1", weight: "1.00", sortOrder: 0, startDate: null, endDate: null },
-      { id: "term-2", name: "Final Term", academicYearId: "year-1", weight: "1.00", sortOrder: 1, startDate: null, endDate: null },
-      { id: "term-9", name: "Other Year Term", academicYearId: "year-9", weight: "1.00", sortOrder: 0, startDate: null, endDate: null },
-    ];
-  }
+  if (url.endsWith("/grading-scales")) return scalesData;
+  if (url.endsWith("/exam-terms")) return termsData;
   if (url === "/examinations/exams") return exams;
   if (url.endsWith("/academic-years")) {
     return [{ id: "year-1", name: "2026-27" }, { id: "year-9", name: "2025-26" }];
@@ -70,6 +64,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.runtime = null;
   exams = [exam({})];
+  scalesData = [{ id: "scale-1", name: "Standard", isCurrent: true, bands: [{ id: "b", grade: "P", minPercentage: "0", maxPercentage: "100" }] }];
+  termsData = [
+    { id: "term-1", name: "First Term", academicYearId: "year-1", weight: "1.00", sortOrder: 0, startDate: null, endDate: null },
+    { id: "term-2", name: "Final Term", academicYearId: "year-1", weight: "1.00", sortOrder: 1, startDate: null, endDate: null },
+    { id: "term-9", name: "Other Year Term", academicYearId: "year-9", weight: "1.00", sortOrder: 0, startDate: null, endDate: null },
+  ];
   mocks.get.mockImplementation(async (url: string) => ({ data: { data: serve(url) } }));
   mocks.post.mockResolvedValue({ data: { data: {}, message: "ok" } });
   mocks.patch.mockResolvedValue({ data: { data: {}, message: "ok" } });
@@ -83,7 +83,62 @@ async function submitCreate() {
   fireEvent.click(button);
 }
 
+/** Waits for the dialog to be ready, then saves an edit. */
+async function submitSave() {
+  const button = screen.getByRole("button", { name: "Save Changes" });
+  await waitFor(() => expect(button).toBeEnabled());
+  fireEvent.click(button);
+}
+
 const rowOf = async (name: string) => (await screen.findByText(name)).closest("tr")!;
+
+describe("ExaminationsManager tabs", () => {
+  it("lists the tabs in setup order", async () => {
+    render(<ExaminationsManager />);
+
+    const tabs = await screen.findAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toEqual(["Grading Scales", "Terms", "Exams"]);
+  });
+
+  it("opens on Exams once grading scales and terms exist", async () => {
+    render(<ExaminationsManager />);
+
+    expect(await screen.findByRole("tab", { name: "Exams", selected: true })).toBeInTheDocument();
+  });
+
+  it("opens on Grading Scales when none exist yet", async () => {
+    scalesData = [];
+    termsData = [];
+    render(<ExaminationsManager />);
+
+    expect(await screen.findByRole("tab", { name: "Grading Scales", selected: true })).toBeInTheDocument();
+  });
+
+  it("opens on Terms when there is a grading scale but no term", async () => {
+    termsData = [];
+    render(<ExaminationsManager />);
+
+    expect(await screen.findByRole("tab", { name: "Terms", selected: true })).toBeInTheDocument();
+  });
+
+  it("says plainly on the Exams tab that marks cannot be entered yet", async () => {
+    render(<ExaminationsManager />);
+
+    expect(await screen.findByText(/scores cannot be recorded here for now/i)).toBeInTheDocument();
+  });
+
+  it("keeps the tab the user chose when the data reloads", async () => {
+    render(<ExaminationsManager />);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Terms" }));
+    fireEvent.click(within(await rowOf("First Term")).getByRole("button", { name: "Edit" }));
+    fireEvent.change(screen.getByLabelText(/Term Name/), { target: { value: "First Term v2" } });
+    await submitSave();
+
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalled());
+    expect(await screen.findByRole("tab", { name: "Terms", selected: true })).toBeInTheDocument();
+  });
+});
 
 describe("ExaminationsManager exams", () => {
   it("lists exams with class, term, type, status and grading scale names", async () => {

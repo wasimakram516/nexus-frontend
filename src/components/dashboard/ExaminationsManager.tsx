@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -67,6 +68,10 @@ interface Named {
   levelId?: string;
 }
 
+const TAB_SCALES = 0;
+const TAB_TERMS = 1;
+const TAB_EXAMS = 2;
+
 const RETAKE_TYPES: Array<{ value: Exclude<ExamType, "REGULAR">; label: string }> = [
   { value: "RETAKE", label: "Retake" },
   { value: "IMPROVEMENT", label: "Improvement" },
@@ -98,7 +103,9 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
   const can = (feature: string, action: "create" | "read" | "update" | "delete") =>
     institutionId ? true : (runtime?.can(feature, action) ?? true);
 
-  const [tab, setTab] = useState(0);
+  // Tabs follow the setup order. null until the first load finishes, so the
+  // screen can open on the first step that has nothing in it yet.
+  const [tab, setTab] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [scales, setScales] = useState<GradingScale[]>([]);
   const [terms, setTerms] = useState<ExamTerm[]>([]);
@@ -129,8 +136,11 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
     const levelIds = new Set(
       (levelsRes.data ?? []).filter((l) => !institutionId || (l.campusId && campusIds.has(l.campusId))).map((l) => l.id),
     );
-    setScales(scalesRes.data ?? []);
-    setTerms(termsRes.data ?? []);
+    const loadedScales = scalesRes.data ?? [];
+    const loadedTerms = termsRes.data ?? [];
+    setTab((current) => current ?? (loadedScales.length === 0 ? TAB_SCALES : loadedTerms.length === 0 ? TAB_TERMS : TAB_EXAMS));
+    setScales(loadedScales);
+    setTerms(loadedTerms);
     setYears(yearsRes.data ?? []);
     setClasses((classesRes.data ?? []).filter((c) => !institutionId || (c.levelId && levelIds.has(c.levelId))));
     setExams((examsRes.data ?? []).filter((e) => !institutionId || campusIds.has(e.campusId)));
@@ -200,13 +210,23 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
 
   return (
     <Box>
-      <Tabs value={tab} onChange={(_, value: number) => setTab(value)} sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}>
-        <Tab label="Exams" />
-        <Tab label="Terms" />
+      <Tabs value={tab ?? false} onChange={(_, value: number) => setTab(value)} sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}>
         <Tab label="Grading Scales" />
+        <Tab label="Terms" />
+        <Tab label="Exams" />
       </Tabs>
 
-      {tab === 0 && (
+      {tab === null && (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+      )}
+
+      {tab === TAB_EXAMS && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          This creates the exam itself. Adding subject papers and entering marks are not available yet, so scores cannot be recorded here for now.
+        </Alert>
+      )}
+
+      {tab === TAB_EXAMS && (
         <ResourceSection<Exam>
           title="Exams"
           customFieldEntity="exam"
@@ -255,7 +275,7 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
         />
       )}
 
-      {tab === 1 && (
+      {tab === TAB_TERMS && (
         <ResourceSection<ExamTerm>
           title="Exam Terms"
           singular="Exam Term"
@@ -285,7 +305,7 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
         />
       )}
 
-      {tab === 2 && (
+      {tab === TAB_SCALES && (
         <GradingScalesSection
           scales={scales}
           loading={loading}
