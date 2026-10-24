@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import {
   Box, Card, CardContent, CircularProgress, Container, Typography,
 } from "@mui/material";
@@ -17,6 +17,7 @@ import ManageAccounts from "@mui/icons-material/ManageAccounts";
 import QueryStats from "@mui/icons-material/QueryStats";
 import School from "@mui/icons-material/School";
 import Tune from "@mui/icons-material/Tune";
+import { useSectionCrumbLabel } from "@/lib/urlSection";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
@@ -52,6 +53,8 @@ const IMPLEMENTED = new Set(["campuses", "people", "academics", "attendance", "f
 export default function ModulePage() {
   const { id: slugOrId, module } = useParams<{ id: string; module: string }>();
   const { showMessage } = useMessage();
+  const pathname = usePathname();
+  const sectionCrumb = useSectionCrumbLabel();
   const [institution, setInstitution] = useState<Record<string, unknown> | null>(null);
   const [institutionId, setInstitutionId] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -108,8 +111,11 @@ export default function ModulePage() {
           { label: "Institutions", href: "/platform/institutions" },
           { label: institution?.name as string ?? slugOrId, href: `/platform/institutions/${slug}` },
           { label: "Manage", href: `/platform/institutions/${slug}/manage` },
-          { label: meta.label },
-        ]} />
+          // Inside a section the module crumb links back to the module's own page.
+          sectionCrumb
+            ? [{ label: meta.label, href: pathname }, { label: sectionCrumb }]
+            : [{ label: meta.label }],
+        ].flat()} />
 
         {IMPLEMENTED.has(module) && institutionId ? (
           <>

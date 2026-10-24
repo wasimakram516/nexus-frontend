@@ -40,6 +40,7 @@ import FeeVoucherPrintDialog, { type VoucherPrintTarget } from "@/components/das
 import GenerateVouchersDialog, { type NamedRow } from "@/components/dashboard/GenerateVouchersDialog";
 import SalaryPaymentPreview from "@/components/dashboard/SalaryPaymentPreview";
 import ResourceSection, { FieldDef, Option } from "@/components/dashboard/ResourceSection";
+import { slugify, useSectionCrumb, useUrlSection } from "@/lib/urlSection";
 import { useMessage } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -75,7 +76,9 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
   const canManage = institutionId ? true : (runtime?.canManageModule("FINANCE") ?? true);
 
   // null = category hub; otherwise the label of the open section.
-  const [activeKey, setActiveKey] = useState<string | null>(null);
+  // Which section is open lives in the address bar, so a refresh stays put and
+  // the browser's back button returns to the module's page.
+  const [sectionSlug, setSectionSlug] = useUrlSection();
   const [loading, setLoading] = useState(true);
 
   const [users, setUsers] = useState<UserLite[]>([]);
@@ -658,6 +661,10 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
     },
   ];
 
+  const activeSection = sections.find((s) => slugify(s.label) === sectionSlug) ?? null;
+  const setActiveKey = (label: string | null) => setSectionSlug(label ? slugify(label) : null);
+  useSectionCrumb(activeSection?.label ?? null);
+
   if (!loading && campuses.length === 0) {
     return (
       <CampusRequiredNotice
@@ -666,8 +673,6 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       />
     );
   }
-
-  const activeSection = sections.find((s) => s.label === activeKey) ?? null;
 
   if (activeSection) {
     return (

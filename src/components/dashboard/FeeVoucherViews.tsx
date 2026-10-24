@@ -10,6 +10,16 @@ const BORDER = "1px solid #777";
 const GREY = "#d9d9d9";
 const fontSize = "0.72rem";
 
+/** The printable height of an A4 landscape page with 8mm margins, less a little so it never spills onto a second page. */
+const PAGE_HEIGHT = "192mm";
+
+/** Shown when the school has not written its own instructions. */
+export const DEFAULT_NOTES = [
+  "Please pay your fee on or before the due date.",
+  "A fine will be charged on payments made after the due date.",
+  "Keep the bank receipt as proof of payment.",
+];
+
 /** A two-column label and value row inside a bordered block. */
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -42,7 +52,7 @@ function VoucherCopy({ item, copy }: { item: PrintableVoucher; copy: string }) {
   const paid = isPositive(voucher.totalPaid);
 
   return (
-    <Box sx={{ border: BORDER, display: "flex", flexDirection: "column", breakInside: "avoid", minWidth: 0 }}>
+    <Box sx={{ border: BORDER, display: "flex", flexDirection: "column", breakInside: "avoid", minWidth: 0, height: "100%" }}>
       {/* Logo and the name of this copy */}
       <Box sx={{ display: "flex", alignItems: "stretch", borderBottom: BORDER }}>
         <Box sx={{ width: 74, p: 0.5, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -113,15 +123,12 @@ function VoucherCopy({ item, copy }: { item: PrintableVoucher; copy: string }) {
         </>
       )}
 
-      {/* The school's own instructions */}
-      {print.voucherInstructions.length > 0 && (
-        <Box sx={{ p: 0.5, fontSize: "0.66rem", fontWeight: 700, borderBottom: BORDER, flex: 1 }}>
-          {print.voucherInstructions.map((line, index) => (
-            <Box key={index} sx={{ mb: 0.5 }}>{`* ${line}`}</Box>
-          ))}
-        </Box>
-      )}
-      {print.voucherInstructions.length === 0 && <Box sx={{ flex: 1 }} />}
+      {/* The school's own instructions, or a short standard note, filling the space down to the footer */}
+      <Box sx={{ p: 0.5, fontSize: "0.7rem", fontWeight: 700, borderBottom: BORDER, flex: 1 }}>
+        {(print.voucherInstructions.length > 0 ? print.voucherInstructions : DEFAULT_NOTES).map((line, index) => (
+          <Box key={index} sx={{ mb: 0.75 }}>{`* ${line}`}</Box>
+        ))}
+      </Box>
 
       {/* Footer */}
       <Box sx={{ bgcolor: "#000", color: "#fff", textAlign: "center", fontSize, p: 0.4 }}>{institution.name}</Box>
@@ -139,7 +146,7 @@ export function FeeVoucherView({ item }: { item: PrintableVoucher }) {
       <Typography className="no-print" variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
         {`${item.student.name} · ${item.voucher.voucherNumber}`}
       </Typography>
-      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5, alignItems: "stretch" }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5, alignItems: "stretch", height: PAGE_HEIGHT }}>
         {VOUCHER_COPIES.map((copy) => (
           <VoucherCopy key={copy} item={item} copy={copy} />
         ))}

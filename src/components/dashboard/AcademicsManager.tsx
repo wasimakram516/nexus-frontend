@@ -25,6 +25,7 @@ import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
 import PeriodSlotsSection, { PeriodSlot } from "@/components/dashboard/PeriodSlotsSection";
 import ResourceSection from "@/components/dashboard/ResourceSection";
 import TeachingAssignmentsSection, { TeachingAssignment } from "@/components/dashboard/TeachingAssignmentsSection";
+import { useSectionCrumb, useUrlSection } from "@/lib/urlSection";
 import { useMessage } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -67,7 +68,9 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
   const canManageTimetable = institutionId ? true : (runtime?.canManageModule("TIMETABLE") ?? true);
 
   // null = hub of structure cards; otherwise the open section.
-  const [activeKey, setActiveKey] = useState<string | null>(null);
+  // Which section is open lives in the address bar, so a refresh stays put and
+  // the browser's back button returns to the module's page.
+  const [sectionSlug, setActiveKey] = useUrlSection();
   const [loading, setLoading] = useState(true);
   const [campuses, setCampuses] = useState<AcademicItem[]>([]);
   const [levels, setLevels] = useState<AcademicItem[]>([]);
@@ -265,6 +268,10 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
       count: periodSlots.length,
     },
   ];
+
+  const activeDef = sectionDefs.find((def) => def.key === sectionSlug) ?? null;
+  const activeKey = activeDef?.key ?? null;
+  useSectionCrumb(activeDef?.label ?? null);
 
   if (!loading && campuses.length === 0) {
     return (

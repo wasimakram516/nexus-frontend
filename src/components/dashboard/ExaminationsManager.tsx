@@ -33,6 +33,7 @@ import ExamPapersDialog, { ClassSubject } from "@/components/dashboard/ExamPaper
 import { ClassSection } from "@/components/dashboard/MarksEntryDialog";
 import GradingScalesSection, { GradingScale } from "@/components/dashboard/GradingScalesSection";
 import ResourceSection from "@/components/dashboard/ResourceSection";
+import { useSectionCrumb, useUrlSection } from "@/lib/urlSection";
 import { useMessage } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -79,6 +80,8 @@ interface Named {
 const TAB_SCALES = 0;
 const TAB_TERMS = 1;
 const TAB_EXAMS = 2;
+const TAB_SLUGS = ["grading-scales", "terms", "exams"] as const;
+const TAB_LABELS = ["Grading Scales", "Terms", "Exams"] as const;
 
 const RETAKE_TYPES: Array<{ value: Exclude<ExamType, "REGULAR">; label: string }> = [
   { value: "RETAKE", label: "Retake" },
@@ -113,7 +116,12 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
 
   // Tabs follow the setup order. null until the first load finishes, so the
   // screen can open on the first step that has nothing in it yet.
-  const [tab, setTab] = useState<number | null>(null);
+  const [autoTab, setTab] = useState<number | null>(null);
+  // A tab chosen by the user lives in the address bar, so a refresh stays on it.
+  const [tabSlug, setTabSlug] = useUrlSection();
+  const urlTab = TAB_SLUGS.findIndex((slug) => slug === tabSlug);
+  const tab = urlTab >= 0 ? urlTab : autoTab;
+  useSectionCrumb(tab === null ? null : TAB_LABELS[tab]);
   const [loading, setLoading] = useState(true);
   const [scales, setScales] = useState<GradingScale[]>([]);
   const [terms, setTerms] = useState<ExamTerm[]>([]);
@@ -240,7 +248,7 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
 
   return (
     <Box>
-      <Tabs value={tab ?? false} onChange={(_, value: number) => setTab(value)} sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}>
+      <Tabs value={tab ?? false} onChange={(_, value: number) => setTabSlug(TAB_SLUGS[value])} sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}>
         <Tab label="Grading Scales" />
         <Tab label="Terms" />
         <Tab label="Exams" />

@@ -18,6 +18,7 @@ import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
 import PlatformBreadcrumbs from "@/components/shared/PlatformBreadcrumbs";
 import InstitutionOverviewTab from "@/components/platform/InstitutionOverviewTab";
+import { slugify, useUrlSection } from "@/lib/urlSection";
 import InstitutionBrandingTab from "@/components/platform/InstitutionBrandingTab";
 import InstitutionEntitlementsTab from "@/components/platform/InstitutionEntitlementsTab";
 import InstitutionSubscriptionTab from "@/components/platform/InstitutionSubscriptionTab";
@@ -43,7 +44,10 @@ export default function InstitutionDetailPage() {
   const { id: slugOrId } = useParams<{ id: string }>();
   const router = useRouter();
   const { showMessage } = useMessage();
-  const [tab, setTab] = useState(0);
+  // The open tab lives in the address bar, so a refresh stays on it.
+  const [tabSlug, setTabSlug] = useUrlSection();
+  const tabFromUrl = TABS.findIndex((t) => slugify(t.label) === tabSlug);
+  const tab = tabFromUrl >= 0 ? tabFromUrl : 0;
   const [institution, setInstitution] = useState<Record<string, unknown> | null>(null);
   const [runtimeConfig, setRuntimeConfig] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,10 +101,16 @@ export default function InstitutionDetailPage() {
     <Box sx={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, py: { xs: 2, sm: 3 }, borderBottom: "1px solid", borderColor: "divider", backgroundColor: "background.paper" }}>
-        <PlatformBreadcrumbs crumbs={[
-          { label: "Institutions", href: "/platform/institutions" },
-          { label: institution.name as string },
-        ]} />
+        <PlatformBreadcrumbs crumbs={tab === 0
+          ? [
+              { label: "Institutions", href: "/platform/institutions" },
+              { label: institution.name as string },
+            ]
+          : [
+              { label: "Institutions", href: "/platform/institutions" },
+              { label: institution.name as string, href: `/platform/institutions/${slug}` },
+              { label: TABS[tab].label },
+            ]} />
 
         {/* Institution identity */}
         <Box sx={{ display: "flex", alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
@@ -144,7 +154,7 @@ export default function InstitutionDetailPage() {
       {/* Tabs */}
       <Box sx={{ borderBottom: "1px solid", borderColor: "divider", backgroundColor: "background.paper" }}>
         <Container maxWidth="xl">
-          <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">
+          <Tabs value={tab} onChange={(_, v: number) => setTabSlug(v === 0 ? null : slugify(TABS[v].label))} variant="scrollable" scrollButtons="auto">
             {TABS.map((t) => (
               <Tab key={t.label} label={t.label} icon={t.icon} iconPosition="start"
                 sx={{ minHeight: 48, textTransform: "none", fontWeight: 600, fontSize: { xs: "0.75rem", sm: "0.875rem" } }} />

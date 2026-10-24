@@ -87,7 +87,7 @@ describe("FeeVoucherPrintDialog", () => {
     expect(mocks.get).toHaveBeenCalledWith("/finance/fee-vouchers/v-Ayesha/printable");
   });
 
-  it("uses the institution's currency label and leaves out instructions it has not set", async () => {
+  it("uses the institution's currency label and the standard notes when it has set no instructions", async () => {
     const plain = voucher("Ayesha");
     mocks.get.mockResolvedValue({
       data: { data: { ...plain, print: { currencyLabel: "SAR", voucherInstructions: [], voucherContact: "" } } },
@@ -95,7 +95,10 @@ describe("FeeVoucherPrintDialog", () => {
     renderDialog({ kind: "single", voucherId: "v-Ayesha" });
 
     expect(await screen.findAllByText("SAR Five Thousand, Three Hundred And Fifty.")).toHaveLength(3);
-    expect(screen.queryByText(/^\* /)).not.toBeInTheDocument();
+    // With no instructions of its own, each copy carries the standard notes.
+    expect(screen.getAllByText("* Please pay your fee on or before the due date.")).toHaveLength(3);
+    expect(screen.getAllByText("* A fine will be charged on payments made after the due date.")).toHaveLength(3);
+    expect(screen.queryByText("* Pay before the due date.")).not.toBeInTheDocument();
   });
 
   it("shows discounts and fines only when there are some, and the balance only after a payment", async () => {

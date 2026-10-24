@@ -57,6 +57,7 @@ import {
 import { apiHandler } from "@/lib/apiHandler";
 import { authService } from "@/services/auth.service";
 import { buildBrandedTheme } from "@/theme/branded-theme";
+import DashboardBreadcrumbs from "@/components/shared/DashboardBreadcrumbs";
 import { HEX_COLOR_6, mergeLegacyBranding, sanitizeTokenOverrides } from "@/theme/branding-tokens";
 
 const DRAWER_EXPANDED = 240;
@@ -335,6 +336,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           )}
         </MobileTopBar>}
         <TrialBanner />
+        <DashboardBreadcrumbs pathname={pathname} items={navItems} />
         {children}
       </Box>
     </Box>
