@@ -25,6 +25,7 @@ import ReceiptLong from "@mui/icons-material/ReceiptLong";
 import RequestQuote from "@mui/icons-material/RequestQuote";
 import SwapVert from "@mui/icons-material/SwapVert";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
+import GenerateVouchersDialog, { type NamedRow } from "@/components/dashboard/GenerateVouchersDialog";
 import SalaryPaymentPreview from "@/components/dashboard/SalaryPaymentPreview";
 import ResourceSection, { FieldDef, Option } from "@/components/dashboard/ResourceSection";
 import { useMessage } from "@/contexts/MessageContext";
@@ -81,6 +82,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
   const [fines, setFines] = useState<Row[]>([]);
   const [vouchers, setVouchers] = useState<FeeVoucherRecord[]>([]);
   const [feePayments, setFeePayments] = useState<Row[]>([]);
+  const [generateOpen, setGenerateOpen] = useState(false);
 
   const load = useCallback(async () => {
     const list = <T,>(fn: () => Promise<{ data: { data: T } }>) =>
@@ -486,6 +488,12 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       icon: <ReceiptLong />,
       count: vouchers.length,
       node: (
+        <>
+        {canManage && (
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
+            <Button variant="outlined" onClick={() => setGenerateOpen(true)}>Generate vouchers for a month</Button>
+          </Box>
+        )}
         <ResourceSection
           customFieldEntity="fee_voucher" institutionId={institutionId}
           title="Fee Vouchers" subtitle="Monthly fee vouchers issued to students." rows={vouchers} loading={loading}
@@ -507,6 +515,15 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
           ]}
           {...crud("Fee voucher", { create: financeService.createVoucher, update: financeService.updateVoucher, remove: financeService.deleteVoucher })}
         />
+        <GenerateVouchersDialog
+          open={generateOpen}
+          campuses={campuses as NamedRow[]}
+          classes={classes as NamedRow[]}
+          bankAccounts={bankAccounts as NamedRow[]}
+          onClose={() => setGenerateOpen(false)}
+          onGenerated={() => void load()}
+        />
+        </>
       ),
     },
     {
