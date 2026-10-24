@@ -96,6 +96,8 @@ export const financeService = {
     apiClient.get<{ data: FeeVoucherRecord[] }>("/finance/fee-vouchers", { params }),
   generateVouchers: (payload: Record<string, unknown>) =>
     apiClient.post("/finance/fee-vouchers/bulk-generate", payload),
+  generateFines: (payload: Record<string, unknown>) =>
+    apiClient.post("/finance/student-fines/generate", payload),
   getVoucher: (id: string) => apiClient.get(`/finance/fee-vouchers/${id}`),
   updateVoucher: (id: string, payload: Record<string, unknown>) =>
     apiClient.patch(`/finance/fee-vouchers/${id}`, payload),

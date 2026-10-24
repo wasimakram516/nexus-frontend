@@ -55,7 +55,7 @@ interface GenerationResult {
   totals: { generated: number; skipped: number; failed: number; totalAmount: string };
 }
 
-const MONTHS = [
+export const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];

@@ -25,6 +25,7 @@ import ReceiptLong from "@mui/icons-material/ReceiptLong";
 import RequestQuote from "@mui/icons-material/RequestQuote";
 import SwapVert from "@mui/icons-material/SwapVert";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
+import CalculateFinesDialog from "@/components/dashboard/CalculateFinesDialog";
 import GenerateVouchersDialog, { type NamedRow } from "@/components/dashboard/GenerateVouchersDialog";
 import SalaryPaymentPreview from "@/components/dashboard/SalaryPaymentPreview";
 import ResourceSection, { FieldDef, Option } from "@/components/dashboard/ResourceSection";
@@ -83,6 +84,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
   const [vouchers, setVouchers] = useState<FeeVoucherRecord[]>([]);
   const [feePayments, setFeePayments] = useState<Row[]>([]);
   const [generateOpen, setGenerateOpen] = useState(false);
+  const [finesOpen, setFinesOpen] = useState(false);
 
   const load = useCallback(async () => {
     const list = <T,>(fn: () => Promise<{ data: { data: T } }>) =>
@@ -462,6 +464,12 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       icon: <MoneyOff />,
       count: fines.length,
       node: (
+        <>
+        {canManage && (
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
+            <Button variant="outlined" onClick={() => setFinesOpen(true)}>Calculate fines for a month</Button>
+          </Box>
+        )}
         <ResourceSection
           customFieldEntity="student_fine" institutionId={institutionId}
           title="Student Fines" subtitle="Monthly fines applied to students." rows={fines} loading={loading}
@@ -479,6 +487,14 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
           ]}
           {...crud("Fine", { create: financeService.createFine, remove: financeService.deleteFine })}
         />
+        <CalculateFinesDialog
+          open={finesOpen}
+          campuses={campuses as NamedRow[]}
+          classes={classes as NamedRow[]}
+          onClose={() => setFinesOpen(false)}
+          onCalculated={() => void load()}
+        />
+        </>
       ),
     },
     {
