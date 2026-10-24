@@ -7,6 +7,7 @@ export interface PrintableVoucher {
     voucherNumber: string;
     month: number;
     year: number;
+    issueDate: string;
     dueDate: string;
     status: string;
     lines: Array<{ label: string; amount: string }>;
@@ -32,9 +33,15 @@ export interface PrintableVoucher {
     iban: string | null;
     branchCode: string | null;
   } | null;
+  /** The institution's wording for the printed voucher. */
+  print: {
+    currencyLabel: string;
+    voucherInstructions: string[];
+    voucherContact: string;
+  };
 }
 
-export const VOUCHER_COPIES = ["Bank copy", "School copy", "Parent copy"] as const;
+export const VOUCHER_COPIES = ["Student Copy", "School Copy", "Bank Copy"] as const;
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",

@@ -17,7 +17,7 @@ import { PrintMeta } from "@/lib/examDocuments";
 const ACCENT_FALLBACK = "#1a237e";
 
 /** Print rules: hide everything but the sheet, and start each document on a new page. */
-const PRINT_STYLES = {
+const printStyles = (landscape: boolean) => ({
   "@media print": {
     "body *": { visibility: "hidden !important" },
     "#print-root, #print-root *": { visibility: "visible !important" },
@@ -32,9 +32,9 @@ const PRINT_STYLES = {
       maxHeight: "none !important",
       boxShadow: "none !important",
     },
-    "@page": { margin: "12mm" },
+    "@page": { margin: landscape ? "8mm" : "12mm", ...(landscape ? { size: "A4 landscape" } : {}) },
   },
-} as const;
+});
 
 interface PrintSheetProps {
   open: boolean;
@@ -45,6 +45,8 @@ interface PrintSheetProps {
   onClose: () => void;
   /** Controls above the document, such as a section picker. Not printed. */
   controls?: React.ReactNode;
+  /** Print on a landscape page, for documents with several copies side by side. */
+  landscape?: boolean;
   children: React.ReactNode;
 }
 
@@ -53,10 +55,10 @@ interface PrintSheetProps {
  * document itself is printed, each document starting on its own page. Exam
  * documents use it now; fee vouchers can reuse it.
  */
-export default function PrintSheet({ open, title, loading, error, onClose, controls, children }: PrintSheetProps) {
+export default function PrintSheet({ open, title, loading, error, onClose, controls, landscape = false, children }: PrintSheetProps) {
   return (
     <Dialog open={open} onClose={onClose} fullScreen>
-      <GlobalStyles styles={PRINT_STYLES} />
+      <GlobalStyles styles={printStyles(landscape)} />
       <AppBar position="sticky" color="default" elevation={1} className="no-print">
         <Toolbar sx={{ gap: 2 }}>
           <Typography variant="h6" sx={{ flex: 1, fontWeight: 700 }}>{title}</Typography>
@@ -68,7 +70,7 @@ export default function PrintSheet({ open, title, loading, error, onClose, contr
       </AppBar>
       {controls && <Box className="no-print" sx={{ px: 3, pt: 2 }}>{controls}</Box>}
       <Box sx={{ p: { xs: 1, sm: 3 }, bgcolor: "grey.100", flex: 1 }}>
-        <Box id="print-root" sx={{ maxWidth: 900, mx: "auto" }}>
+        <Box id="print-root" sx={{ maxWidth: landscape ? 1280 : 900, mx: "auto" }}>
           {loading ? (
             <Box className="no-print" sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
           ) : error ? (
@@ -108,9 +110,9 @@ export function DocumentHeader({ meta, title }: DocumentHeaderProps) {
 }
 
 /** One printed page: white, dark text, and a page break after it. */
-export function PrintPage({ children }: { children: React.ReactNode }) {
+export function PrintPage({ children, compact = false }: { children: React.ReactNode; compact?: boolean }) {
   return (
-    <Box className="print-page" sx={{ bgcolor: "#fff", color: "#111", p: 4, mb: 3, boxShadow: 1, "@media print": { boxShadow: "none", p: 0, mb: 0 } }}>
+    <Box className="print-page" sx={{ bgcolor: "#fff", color: "#111", p: compact ? 1.5 : 4, mb: 3, boxShadow: 1, "@media print": { boxShadow: "none", p: 0, mb: 0 } }}>
       {children}
     </Box>
   );

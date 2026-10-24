@@ -115,6 +115,7 @@ export default function FeeVoucherPrintDialog({ target, campuses, classes, onClo
       error={error}
       onClose={onClose}
       controls={controls}
+      landscape
     >
       {empty ? <Box className="no-print" sx={{ py: 6, textAlign: "center", color: "text.secondary" }}>{emptyMessage}</Box> : null}
       {items.map((item) => (

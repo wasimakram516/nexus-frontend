@@ -26,6 +26,7 @@ const voucher = (name: string, overrides: Record<string, unknown> = {}) => ({
     voucherNumber: `FV-202609-R-${name}`,
     month: 9,
     year: 2026,
+    issueDate: "2026-09-01T00:00:00.000Z",
     dueDate: "2026-09-10T00:00:00.000Z",
     status: "PENDING",
     lines: [
@@ -43,6 +44,11 @@ const voucher = (name: string, overrides: Record<string, unknown> = {}) => ({
   },
   student: { id: name, name, regNo: `R-${name}`, className: "Grade 1", sectionName: "A" },
   bank: { bankName: "HBL", accountTitle: "School Fees", accountNumber: "123456", iban: "PK00HBL", branchCode: null },
+  print: {
+    currencyLabel: "Rs.",
+    voucherInstructions: ["Pay before the due date.", "Keep the bank receipt."],
+    voucherContact: "info@school.test",
+  },
 });
 
 function renderDialog(target: VoucherPrintTarget | null) {
@@ -64,15 +70,32 @@ describe("FeeVoucherPrintDialog", () => {
     expect(screen.queryByRole("button", { name: /Print/ })).not.toBeInTheDocument();
   });
 
-  it("loads one voucher and shows the bank, school and parent copies", async () => {
+  it("loads one voucher as student, school and bank copies side by side", async () => {
     renderDialog({ kind: "single", voucherId: "v-Ayesha" });
 
-    expect((await screen.findAllByText("Bank copy")).length).toBe(1);
-    expect(screen.getByText("School copy")).toBeInTheDocument();
-    expect(screen.getByText("Parent copy")).toBeInTheDocument();
-    expect(screen.getAllByText("5350.00").length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Pay to School Fees, HBL, account 123456, IBAN PK00HBL/).length).toBe(3);
+    expect(await screen.findByText("Student Copy")).toBeInTheDocument();
+    expect(screen.getByText("School Copy")).toBeInTheDocument();
+    expect(screen.getByText("Bank Copy")).toBeInTheDocument();
+    expect(screen.getAllByText("FV-202609-R-Ayesha")).toHaveLength(3);
+    expect(screen.getAllByText("Payable within due date")).toHaveLength(3);
+    expect(screen.getAllByText("Rs. Five Thousand, Three Hundred And Fifty.")).toHaveLength(3);
+    expect(screen.getAllByText("HBL")).toHaveLength(3);
+    expect(screen.getAllByText("PK00HBL")).toHaveLength(3);
+    expect(screen.getAllByText("* Pay before the due date.")).toHaveLength(3);
+    expect(screen.getAllByText("info@school.test")).toHaveLength(3);
+    expect(screen.getAllByText("Greenfield School")).toHaveLength(3);
     expect(mocks.get).toHaveBeenCalledWith("/finance/fee-vouchers/v-Ayesha/printable");
+  });
+
+  it("uses the institution's currency label and leaves out instructions it has not set", async () => {
+    const plain = voucher("Ayesha");
+    mocks.get.mockResolvedValue({
+      data: { data: { ...plain, print: { currencyLabel: "SAR", voucherInstructions: [], voucherContact: "" } } },
+    });
+    renderDialog({ kind: "single", voucherId: "v-Ayesha" });
+
+    expect(await screen.findAllByText("SAR Five Thousand, Three Hundred And Fifty.")).toHaveLength(3);
+    expect(screen.queryByText(/^\* /)).not.toBeInTheDocument();
   });
 
   it("shows discounts and fines only when there are some, and the balance only after a payment", async () => {
@@ -81,10 +104,10 @@ describe("FeeVoucherPrintDialog", () => {
     });
     renderDialog({ kind: "single", voucherId: "v-Ayesha" });
 
-    await screen.findByText("School copy");
+    await screen.findByText("School Copy");
     expect(screen.queryByText("Discounts")).not.toBeInTheDocument();
     expect(screen.queryByText("Attendance fine")).not.toBeInTheDocument();
-    expect(screen.getAllByText("Remaining balance").length).toBe(3);
+    expect(screen.getAllByText("Remaining balance")).toHaveLength(3);
   });
 
   it("asks for a campus first in batch mode when there are several", async () => {
@@ -104,7 +127,7 @@ describe("FeeVoucherPrintDialog", () => {
   it("loads a month for the only campus and prints one page per voucher", async () => {
     renderDialog({ kind: "batch" });
 
-    expect(await screen.findAllByText("Parent copy")).toHaveLength(2);
+    expect(await screen.findAllByText("Bank Copy")).toHaveLength(2);
     expect(mocks.get).toHaveBeenCalledWith(
       "/finance/fee-vouchers/printable",
       expect.objectContaining({ params: expect.objectContaining({ campusId: "campus-1", year: new Date().getFullYear() }) }),
@@ -113,7 +136,7 @@ describe("FeeVoucherPrintDialog", () => {
 
   it("offers only this campus's classes and reloads with the chosen class", async () => {
     renderDialog({ kind: "batch" });
-    await screen.findAllByText("Parent copy");
+    await screen.findAllByText("Bank Copy");
 
     fireEvent.mouseDown(screen.getByLabelText("Class"));
     expect(screen.queryByRole("option", { name: "Elsewhere" })).not.toBeInTheDocument();
