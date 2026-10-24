@@ -54,6 +54,26 @@ describe("apiHandler", () => {
     expect(showMessage).toHaveBeenCalledWith("boom", "error");
   });
 
+  it("shows the cause of an unexpected error when the server sends it, cut to fit a notification", async () => {
+    const showMessage = vi.fn();
+    const failure = (cause: unknown) =>
+      Object.assign(new Error("x"), {
+        response: { status: 500, data: { message: "Internal server error", error: { details: { cause } } } },
+      });
+
+    await apiHandler(async () => { throw failure("PrismaClientKnownRequestError: column foo does not exist"); }, { showMessage });
+    expect(showMessage).toHaveBeenLastCalledWith("Internal server error: PrismaClientKnownRequestError: column foo does not exist", "error");
+
+    await apiHandler(async () => { throw failure("y".repeat(500)); }, { showMessage });
+    expect(showMessage).toHaveBeenLastCalledWith(`Internal server error: ${"y".repeat(240)}`, "error");
+
+    await apiHandler(async () => { throw failure(undefined); }, { showMessage });
+    expect(showMessage).toHaveBeenLastCalledWith("Internal server error", "error");
+
+    await apiHandler(async () => { throw failure(""); }, { showMessage });
+    expect(showMessage).toHaveBeenLastCalledWith("Internal server error", "error");
+  });
+
   it("does not suppress 403 when not silent", async () => {
     const showMessage = vi.fn();
     const err = Object.assign(new Error("Forbidden"), { response: { status: 403, data: { message: "No access" } } });
