@@ -101,6 +101,8 @@ export const financeService = {
   getPrintableVoucher: (id: string) => apiClient.get(`/finance/fee-vouchers/${id}/printable`),
   getPrintableVouchers: (params: Record<string, unknown>) =>
     apiClient.get("/finance/fee-vouchers/printable", { params }),
+  recordFamilyPayment: (payload: Record<string, unknown>) =>
+    apiClient.post("/finance/fee-payments/family", payload),
   getMyFees: () => apiClient.get("/finance/my-fees"),
   getMyPrintableVoucher: (id: string) => apiClient.get(`/finance/my-fees/vouchers/${id}/printable`),
   getFamilyBilling: (guardianId: string) => apiClient.get(`/finance/family-billing/${guardianId}`),

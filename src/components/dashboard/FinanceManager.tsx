@@ -640,6 +640,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
           nameByUserId={Object.fromEntries(users.map((user) => [user.id, user.name]))}
           campusIds={institutionId ? campuses.map((campus) => campus.id) : null}
           onPrintVoucher={(voucherId) => setPrintTarget({ kind: "single", voucherId })}
+          canRecordPayment={canManage}
         />
       ),
     },

@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import FamilyBillingPanel from "./FamilyBillingPanel";
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), showMessage: vi.fn() }));
-vi.mock("@/lib/axios", () => ({ default: { get: mocks.get } }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), showMessage: vi.fn() }));
+vi.mock("@/lib/axios", () => ({ default: { get: mocks.get, post: mocks.post } }));
 vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: mocks.showMessage }) }));
 
 const ledger = (id: string, name: string, remaining: string, status = "OVERDUE") => ({
@@ -103,5 +103,36 @@ describe("FamilyBillingPanel", () => {
     fireEvent.click(await screen.findByRole("option", { name: "Mr Khan (father)" }));
 
     expect(await screen.findByText("The family's fees could not be loaded.")).toBeInTheDocument();
+  });
+
+  it("offers to record a family payment only to someone allowed to, and only when something is owed", async () => {
+    const { unmount } = render(<FamilyBillingPanel nameByUserId={names} campusIds={null} />);
+    fireEvent.mouseDown(screen.getByLabelText("Guardian"));
+    fireEvent.click(await screen.findByRole("option", { name: "Mr Khan (father)" }));
+    await screen.findByText("To pay 4000.00");
+    expect(screen.queryByRole("button", { name: "Record a family payment" })).not.toBeInTheDocument();
+    unmount();
+
+    render(<FamilyBillingPanel nameByUserId={names} campusIds={null} canRecordPayment />);
+    fireEvent.mouseDown(screen.getByLabelText("Guardian"));
+    fireEvent.click(await screen.findByRole("option", { name: "Mr Khan (father)" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Record a family payment" }));
+
+    expect(await screen.findByText("Record a family payment", { selector: "h2" })).toBeInTheDocument();
+  });
+
+  it("reloads the family after a payment is recorded, without closing the result", async () => {
+    mocks.post.mockResolvedValue({
+      data: { data: { results: [{ voucherId: "v-a", voucherNumber: "FV-202609-R-a", studentName: "Ayesha", amount: "3000.00", status: "RECORDED", message: null }], totals: { recorded: 1, failed: 0, totalRecorded: "3000.00" } } },
+    });
+    render(<FamilyBillingPanel nameByUserId={names} campusIds={null} canRecordPayment />);
+    fireEvent.mouseDown(screen.getByLabelText("Guardian"));
+    fireEvent.click(await screen.findByRole("option", { name: "Mr Khan (father)" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Record a family payment" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Record \d/ }));
+
+    expect(await screen.findByText("1 recorded")).toBeInTheDocument();
+    await waitFor(() => expect(mocks.get.mock.calls.filter((call) => String(call[0]).includes("family-billing")).length).toBe(2));
+    expect(screen.getByText("1 recorded")).toBeInTheDocument();
   });
 });

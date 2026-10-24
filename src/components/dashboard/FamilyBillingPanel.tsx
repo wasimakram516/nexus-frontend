@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Autocomplete, Box, CircularProgress, TextField, Typography } from "@mui/material";
+import { Alert, Autocomplete, Box, Button, CircularProgress, TextField, Typography } from "@mui/material";
 import FamilyFeesView, { type FamilyFees } from "@/components/dashboard/FamilyFeesView";
+import FamilyPaymentDialog from "@/components/dashboard/FamilyPaymentDialog";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { financeService } from "@/services/finance.service";
@@ -21,6 +22,8 @@ interface FamilyBillingPanelProps {
   /** Only guardians at these campuses are offered; null offers every campus the caller can see. */
   campusIds: string[] | null;
   onPrintVoucher?: (voucherId: string) => void;
+  /** Shows the button that records a payment across the family's vouchers. */
+  canRecordPayment?: boolean;
 }
 
 /**
@@ -28,13 +31,15 @@ interface FamilyBillingPanelProps {
  * dues together, so a parent who comes in with several children is dealt with
  * once. Vouchers stay per child; this only gathers them.
  */
-export default function FamilyBillingPanel({ nameByUserId, campusIds, onPrintVoucher }: FamilyBillingPanelProps) {
+export default function FamilyBillingPanel({ nameByUserId, campusIds, onPrintVoucher, canRecordPayment = false }: FamilyBillingPanelProps) {
   const { showMessage } = useMessage();
   const [guardians, setGuardians] = useState<GuardianRow[] | null>(null);
   const [guardianId, setGuardianId] = useState<string | null>(null);
   const [family, setFamily] = useState<FamilyFees | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paying, setPaying] = useState(false);
+  const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +72,7 @@ export default function FamilyBillingPanel({ nameByUserId, campusIds, onPrintVou
     return () => {
       cancelled = true;
     };
-  }, [guardianId, showMessage]);
+  }, [guardianId, reloadCount, showMessage]);
 
   const options = useMemo(
     () =>
@@ -98,7 +103,26 @@ export default function FamilyBillingPanel({ nameByUserId, campusIds, onPrintVou
       {!guardianId && <Alert severity="info">Choose a guardian to see their family.</Alert>}
       {error && <Alert severity="error">{error}</Alert>}
       {loading && <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress /></Box>}
-      {!loading && family && <FamilyFeesView family={family} onPrintVoucher={onPrintVoucher} />}
+      {!loading && family && (
+        <>
+          {canRecordPayment && guardianId && family.openVouchers.length > 0 && (
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+              <Button variant="contained" onClick={() => setPaying(true)}>Record a family payment</Button>
+            </Box>
+          )}
+          <FamilyFeesView family={family} onPrintVoucher={onPrintVoucher} />
+        </>
+      )}
+      {/* Outside the loading check, so reloading the totals after a payment does not close the result. */}
+      {family && guardianId && (
+        <FamilyPaymentDialog
+          open={paying}
+          guardianId={guardianId}
+          family={family}
+          onClose={() => setPaying(false)}
+          onRecorded={() => setReloadCount((count) => count + 1)}
+        />
+      )}
     </Box>
   );
 }
