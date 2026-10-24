@@ -1,22 +1,25 @@
 "use client";
 
 import { Box, Container, Typography } from "@mui/material";
-import ExaminationsManager from "@/components/dashboard/ExaminationsManager";
+import FinanceManager from "@/components/dashboard/FinanceManager";
+import { ModuleBase } from "@/lib/urlSection";
 import ModuleGate from "@/components/dashboard/ModuleGate";
 
-export default function ExamsPage() {
+export default function FinancePage() {
   return (
-    <ModuleGate module="EXAMINATIONS">
+    <ModuleGate module="FINANCE">
       <Box sx={{ flex: 1, overflow: "auto" }}>
         <Box sx={{ px: 4, py: 3, borderBottom: "1px solid", borderColor: "divider", backgroundColor: "background.paper" }}>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>Exams</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>Finance</Typography>
           <Typography variant="body2" color="text.secondary">
-            Grading scales, exam terms and exams, including retakes.
+            Payroll, fee structures, vouchers and payments.
           </Typography>
         </Box>
 
         <Container maxWidth="xl" sx={{ py: 3 }}>
-          <ExaminationsManager />
+          <ModuleBase path="/dashboard/finance">
+            <FinanceManager />
+          </ModuleBase>
         </Container>
       </Box>
     </ModuleGate>

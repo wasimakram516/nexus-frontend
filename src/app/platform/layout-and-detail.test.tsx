@@ -49,7 +49,7 @@ vi.mock("@/components/platform/InstitutionSettingsTab", () => ({ default: () => 
 vi.mock("@/components/platform/InstitutionPermissionsTab", () => ({ default: ({ institutionId }: { institutionId: string }) => <div>permissions-tab {institutionId}</div> }));
 
 import PlatformLayout from "./layout";
-import InstitutionDetailPage from "./institutions/[id]/page";
+import InstitutionDetailPage from "./institutions/[id]/[[...tab]]/page";
 
 const ok = (data: unknown = {}) => Promise.resolve({ data: { data, message: "ok" } });
 
@@ -168,19 +168,26 @@ describe("InstitutionDetailPage", () => {
     expect(screen.getByText("green-school")).toBeInTheDocument();
   });
 
-  it("switches tabs and passes the resolved UUID to child tabs", async () => {
-    render(<InstitutionDetailPage />);
+  it("switches tabs through real addresses and passes the resolved UUID to child tabs", async () => {
+    const { rerender } = render(<InstitutionDetailPage />);
     await screen.findByText(/overview-tab/);
-    fireEvent.click(screen.getByRole("tab", { name: /Branding/ }));
-    expect(screen.getByText("branding-tab uuid-1")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: /Entitlements/ }));
-    expect(screen.getByText("entitlements-tab")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: /Subscription/ }));
-    expect(screen.getByText("subscription-tab")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: /Settings/ }));
-    expect(screen.getByText("settings-tab")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: /Permissions/ }));
-    expect(screen.getByText("permissions-tab uuid-1")).toBeInTheDocument();
+    const base = `/platform/institutions/${mocks.params.id}`;
+    // A tab is an address below the institution, so choosing one navigates and the page follows the address.
+    const openTab = (name: RegExp, slug: string, text: string) => {
+      fireEvent.click(screen.getByRole("tab", { name }));
+      expect(mocks.push).toHaveBeenLastCalledWith(`${base}/${slug}`);
+      mocks.pathname = `${base}/${slug}`;
+      rerender(<InstitutionDetailPage />);
+      expect(screen.getByText(text)).toBeInTheDocument();
+    };
+    openTab(/Branding/, "branding", "branding-tab uuid-1");
+    openTab(/Entitlements/, "entitlements", "entitlements-tab");
+    openTab(/Subscription/, "subscription", "subscription-tab");
+    openTab(/Settings/, "settings", "settings-tab");
+    openTab(/Permissions/, "permissions", "permissions-tab uuid-1");
+
+    fireEvent.click(screen.getByRole("tab", { name: /Overview/ }));
+    expect(mocks.push).toHaveBeenLastCalledWith(base);
   });
 
   it("refreshes using the UUID after a tab saves", async () => {

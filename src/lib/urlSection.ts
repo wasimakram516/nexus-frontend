@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useState, useSyncExternalStore } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
-const URL_EVENT = "nexus:url-section";
-
-/** A label as a short, stable URL value: "Fee Vouchers" becomes "fee-vouchers". */
+/** A label as a short, stable URL segment: "Fee Vouchers" becomes "fee-vouchers". */
 export function slugify(label: string): string {
   return label
     .toLowerCase()
@@ -13,43 +12,56 @@ export function slugify(label: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function subscribeToUrl(callback: () => void): () => void {
-  window.addEventListener("popstate", callback);
-  window.addEventListener(URL_EVENT, callback);
-  return () => {
-    window.removeEventListener("popstate", callback);
-    window.removeEventListener(URL_EVENT, callback);
-  };
+/** The address of the module's own page, such as `/dashboard/finance`. */
+const ModuleBaseContext = createContext<string | null>(null);
+
+/**
+ * Tells the module inside it where its own page lives, so the place that is
+ * open can be a real address below it (`/dashboard/finance/fee-vouchers`).
+ */
+export function ModuleBase({ path, children }: { path: string; children: React.ReactNode }) {
+  return createElement(ModuleBaseContext.Provider, { value: path }, children);
+}
+
+/** The first path segment after the module's address, or null when the module's own page is showing. */
+export function sectionFromPath(pathname: string | null, base: string): string | null {
+  if (!pathname || (pathname !== base && !pathname.startsWith(`${base}/`))) return null;
+  const rest = pathname.slice(base.length).split("/").filter(Boolean)[0];
+  return rest ? decodeURIComponent(rest) : null;
+}
+
+/** The router, or nothing when the component is shown outside the app (such as in a test). */
+function useOptionalRouter(): ReturnType<typeof useRouter> | null {
+  try {
+    return useRouter();
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Where the user is inside a module (a Finance section, an Exams tab) kept in
- * the address bar as `?section=fee-vouchers`. Refreshing or sharing the link
- * lands on the same place, and the browser's back button steps up to the
- * module's own page. It returns nothing until the page has loaded, so the
- * server and the first browser render agree.
+ * Where the user is inside a module (a Finance section, an Exams tab) as a
+ * real address below the module's own page. Because it is an ordinary route,
+ * a refresh stays put, links and breadcrumbs navigate to it, and the browser's
+ * back and forward buttons just work. Outside a module page it falls back to
+ * remembering the place in memory only.
  *
- * @param {string} [param] - The query parameter to use.
- * @returns {[string | null, (next: string | null) => void]} The current value and a setter; `null` clears it.
+ * @returns {[string | null, (next: string | null) => void]} The open place's slug, and a setter; `null` goes back to the module's own page.
  */
-export function useUrlSection(param = "section"): [string | null, (next: string | null) => void] {
-  const value = useSyncExternalStore(
-    subscribeToUrl,
-    () => new URLSearchParams(window.location.search).get(param),
-    () => null,
-  );
-  const setValue = useCallback(
+export function useModuleSection(): [string | null, (next: string | null) => void] {
+  const base = useContext(ModuleBaseContext);
+  const pathname = usePathname();
+  const router = useOptionalRouter();
+  const [local, setLocal] = useState<string | null>(null);
+
+  const setSection = useCallback(
     (next: string | null) => {
-      const url = new URL(window.location.href);
-      if (next) url.searchParams.set(param, next);
-      else url.searchParams.delete(param);
-      if (url.href === window.location.href) return;
-      window.history.pushState(window.history.state, "", url);
-      window.dispatchEvent(new Event(URL_EVENT));
+      if (base && router) router.push(next ? `${base}/${next}` : base);
+      else setLocal(next);
     },
-    [param],
+    [base, router],
   );
-  return [value, setValue];
+  return [base && router ? sectionFromPath(pathname, base) : local, setSection];
 }
 
 /* The label of the place the user is in, shown as the last breadcrumb. */

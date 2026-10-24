@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
   Box, Card, CardContent, CircularProgress, Container, Typography,
 } from "@mui/material";
@@ -17,7 +17,7 @@ import ManageAccounts from "@mui/icons-material/ManageAccounts";
 import QueryStats from "@mui/icons-material/QueryStats";
 import School from "@mui/icons-material/School";
 import Tune from "@mui/icons-material/Tune";
-import { useSectionCrumbLabel } from "@/lib/urlSection";
+import { ModuleBase, useSectionCrumbLabel } from "@/lib/urlSection";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
@@ -53,7 +53,6 @@ const IMPLEMENTED = new Set(["campuses", "people", "academics", "attendance", "f
 export default function ModulePage() {
   const { id: slugOrId, module } = useParams<{ id: string; module: string }>();
   const { showMessage } = useMessage();
-  const pathname = usePathname();
   const sectionCrumb = useSectionCrumbLabel();
   const [institution, setInstitution] = useState<Record<string, unknown> | null>(null);
   const [institutionId, setInstitutionId] = useState<string>("");
@@ -61,6 +60,8 @@ export default function ModulePage() {
 
   const meta = MODULE_META[module] ?? { label: module, description: "", icon: null, accent: DEFAULT_MODULE_ACCENT };
   const slug = (institution?.slug as string) || slugOrId;
+  // The module's own address, below which each open section is a real route.
+  const modulePath = `/platform/institutions/${slugOrId}/manage/${module}`;
 
   useEffect(() => {
     apiHandler(() => platformService.getInstitution(slugOrId), { showMessage, silent: true }).then(({ data }) => {
@@ -113,7 +114,7 @@ export default function ModulePage() {
           { label: "Manage", href: `/platform/institutions/${slug}/manage` },
           // Inside a section the module crumb links back to the module's own page.
           sectionCrumb
-            ? [{ label: meta.label, href: pathname }, { label: sectionCrumb }]
+            ? [{ label: meta.label, href: modulePath }, { label: sectionCrumb }]
             : [{ label: meta.label }],
         ].flat()} />
 
@@ -123,7 +124,7 @@ export default function ModulePage() {
               <Typography variant="h5" sx={{ fontWeight: 700 }}>{meta.label}</Typography>
               <Typography variant="body2" color="text.secondary">{meta.description}</Typography>
             </Box>
-            {renderModule()}
+            <ModuleBase path={modulePath}>{renderModule()}</ModuleBase>
           </>
         ) : (
           <Card>

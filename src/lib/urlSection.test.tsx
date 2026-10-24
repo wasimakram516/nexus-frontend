@@ -1,9 +1,17 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
-import { slugify, useSectionCrumb, useSectionCrumbLabel, useUrlSection } from "./urlSection";
+import { ModuleBase, sectionFromPath, slugify, useModuleSection, useSectionCrumb, useSectionCrumbLabel } from "./urlSection";
 
-afterEach(() => {
-  window.history.replaceState(null, "", "/");
+const mocks = vi.hoisted(() => ({ pathname: "/", push: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => mocks.pathname,
+  useRouter: () => ({ push: mocks.push }),
+}));
+
+beforeEach(() => {
+  mocks.pathname = "/";
+  mocks.push.mockReset();
 });
 
 describe("slugify", () => {
@@ -17,61 +25,74 @@ describe("slugify", () => {
   });
 });
 
-describe("useUrlSection", () => {
-  it("reads the section from the address bar", () => {
-    window.history.replaceState(null, "", "/dashboard/finance?section=fee-vouchers");
+describe("sectionFromPath", () => {
+  it.each([
+    ["/dashboard/finance", null],
+    ["/dashboard/finance/", null],
+    ["/dashboard/finance/fee-vouchers", "fee-vouchers"],
+    ["/dashboard/finance/fee-vouchers/extra", "fee-vouchers"],
+    ["/dashboard/finance/fee%20vouchers", "fee vouchers"],
+    ["/dashboard/financeX/fee-vouchers", null],
+    ["/dashboard/people/fee-vouchers", null],
+    [null, null],
+  ])("reads %s as %s", (pathname, section) => {
+    expect(sectionFromPath(pathname, "/dashboard/finance")).toBe(section);
+  });
+});
 
-    const { result } = renderHook(() => useUrlSection());
+describe("useModuleSection", () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <ModuleBase path="/dashboard/finance">{children}</ModuleBase>
+  );
+
+  it("reads the open section from the address below the module", () => {
+    mocks.pathname = "/dashboard/finance/fee-vouchers";
+
+    const { result } = renderHook(() => useModuleSection(), { wrapper });
 
     expect(result.current[0]).toBe("fee-vouchers");
   });
 
-  it("is empty when the address has no section", () => {
-    const { result } = renderHook(() => useUrlSection());
+  it("is empty on the module's own page", () => {
+    mocks.pathname = "/dashboard/finance";
+
+    const { result } = renderHook(() => useModuleSection(), { wrapper });
 
     expect(result.current[0]).toBeNull();
   });
 
-  it("puts the section in the address bar, keeping the rest of it, and clears it again", () => {
-    window.history.replaceState(null, "", "/dashboard/finance?campus=main");
-    const { result } = renderHook(() => useUrlSection());
+  it("navigates to a real address below the module, and back to the module's page for null", () => {
+    mocks.pathname = "/dashboard/finance";
+    const { result } = renderHook(() => useModuleSection(), { wrapper });
 
-    act(() => result.current[1]("fee-vouchers"));
-    expect(result.current[0]).toBe("fee-vouchers");
-    expect(window.location.search).toBe("?campus=main&section=fee-vouchers");
+    act(() => result.current[1]("fines"));
+    expect(mocks.push).toHaveBeenLastCalledWith("/dashboard/finance/fines");
+
+    act(() => result.current[1](null));
+    expect(mocks.push).toHaveBeenLastCalledWith("/dashboard/finance");
+  });
+
+  it("follows the address when it changes, as it does for a breadcrumb or the back button", () => {
+    mocks.pathname = "/dashboard/finance/fines";
+    const { result, rerender } = renderHook(() => useModuleSection(), { wrapper });
+    expect(result.current[0]).toBe("fines");
+
+    mocks.pathname = "/dashboard/finance";
+    rerender();
+
+    expect(result.current[0]).toBeNull();
+  });
+
+  it("remembers the place in memory when it is not inside a module page", () => {
+    const { result } = renderHook(() => useModuleSection());
+
+    act(() => result.current[1]("fines"));
+
+    expect(result.current[0]).toBe("fines");
+    expect(mocks.push).not.toHaveBeenCalled();
 
     act(() => result.current[1](null));
     expect(result.current[0]).toBeNull();
-    expect(window.location.search).toBe("?campus=main");
-  });
-
-  it("adds one history entry per change, so back returns to the module page", () => {
-    const { result } = renderHook(() => useUrlSection());
-    const before = window.history.length;
-
-    act(() => result.current[1]("fines"));
-    act(() => result.current[1]("fines"));
-
-    expect(window.history.length).toBe(before + 1);
-  });
-
-  it("follows the browser's back and forward buttons", () => {
-    const { result } = renderHook(() => useUrlSection());
-    act(() => result.current[1]("fines"));
-
-    act(() => {
-      window.history.replaceState(null, "", "/");
-      window.dispatchEvent(new PopStateEvent("popstate"));
-    });
-
-    expect(result.current[0]).toBeNull();
-  });
-
-  it("can use another parameter name", () => {
-    window.history.replaceState(null, "", "/?tab=settings");
-    const { result } = renderHook(() => useUrlSection("tab"));
-
-    expect(result.current[0]).toBe("settings");
   });
 });
 

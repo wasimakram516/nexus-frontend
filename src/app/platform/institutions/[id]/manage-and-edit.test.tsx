@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
   getCampuses: vi.fn(),
 }));
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }), useParams: () => mocks.params, usePathname: () => "/platform/institutions/taleem/manage/finance" }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }), useParams: () => mocks.params }));
 vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: mocks.showMessage }) }));
 vi.mock("@/services/platform.service", () => ({
   platformService: {
@@ -63,7 +63,7 @@ vi.mock("@/components/dashboard/PeopleManager", () => ({ default: ({ institution
 vi.mock("@/components/dashboard/UsersManager", () => ({ default: ({ institutionId }: { institutionId: string }) => <div>users-manager {institutionId}</div> }));
 
 import InstitutionManagePage from "./manage/page";
-import ModulePage from "./manage/[module]/page";
+import ModulePage from "./manage/[module]/[[...section]]/page";
 import EditInstitutionWizard from "./edit/page";
 
 const ok = (data: unknown = {}) => Promise.resolve({ data: { data, message: "ok" } });

@@ -3,6 +3,7 @@
 import { Box, Container, Typography } from "@mui/material";
 import AcademicsManager from "@/components/dashboard/AcademicsManager";
 import ScreenGuide from "@/components/guide/ScreenGuide";
+import { ModuleBase } from "@/lib/urlSection";
 import ModuleGate from "@/components/dashboard/ModuleGate";
 
 export default function AcademicsPage() {
@@ -17,7 +18,9 @@ export default function AcademicsPage() {
         </Box>
 
         <Container maxWidth="xl" sx={{ py: 3 }}>
-          <AcademicsManager />
+          <ModuleBase path="/dashboard/academics">
+            <AcademicsManager />
+          </ModuleBase>
         </Container>
         <ScreenGuide screen="academics" />
       </Box>

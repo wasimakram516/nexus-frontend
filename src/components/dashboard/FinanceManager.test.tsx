@@ -1,9 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import FinanceManager from "./FinanceManager";
-import { useSectionCrumbLabel } from "@/lib/urlSection";
+import { ModuleBase, useSectionCrumbLabel } from "@/lib/urlSection";
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), showMessage: vi.fn() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), showMessage: vi.fn(), pathname: "/dashboard/finance", push: vi.fn() }));
+vi.mock("next/navigation", () => ({ usePathname: () => mocks.pathname, useRouter: () => ({ push: mocks.push }) }));
 vi.mock("@/lib/axios", () => ({ default: { get: mocks.get, post: mocks.post } }));
 vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: mocks.showMessage }) }));
 vi.mock("@/contexts/RuntimeConfigContext", () => ({ useOptionalRuntimeConfig: () => null }));
@@ -32,13 +33,9 @@ async function openForm(section: string, button: RegExp): Promise<void> {
   await screen.findByRole("dialog");
 }
 
-// The open section lives in the address bar, so every test starts from a clean one.
-afterEach(() => {
-  window.history.replaceState(null, "", "/");
-});
-
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.pathname = "/dashboard/finance";
   mocks.post.mockResolvedValue({ data: { data: { id: "saved" } } });
   mocks.get.mockImplementation(async (url: string) => {
     const data: Record<string, unknown> = {
@@ -58,31 +55,43 @@ function Crumb() {
 }
 
 describe("FinanceManager navigation", () => {
-  it("opens a section into the address bar and the breadcrumb, and goes back to the hub", async () => {
+  it("opens a section into the breadcrumb and goes back to the hub", async () => {
     render(<><Crumb /><FinanceManager /></>);
     await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("/finance/salaries", { params: undefined }));
 
     fireEvent.click(await screen.findByRole("button", { name: /Fee Vouchers/ }));
-
-    expect(window.location.search).toBe("?section=fee-vouchers");
     expect(screen.getByTestId("crumb")).toHaveTextContent("Fee Vouchers");
 
     fireEvent.click(screen.getByRole("button", { name: "All Finance" }));
-    expect(window.location.search).toBe("");
     expect(screen.getByTestId("crumb")).toHaveTextContent("none");
   });
 
-  it("returns to the same section after a refresh", async () => {
-    window.history.replaceState(null, "", "/?section=adjustments");
-    render(<><Crumb /><FinanceManager /></>);
+  it("opens the section named in the address and shows it in the breadcrumb", async () => {
+    mocks.pathname = "/dashboard/finance/adjustments";
+    render(<><Crumb /><ModuleBase path="/dashboard/finance"><FinanceManager /></ModuleBase></>);
 
     expect(await screen.findByRole("button", { name: "All Finance" })).toBeInTheDocument();
     expect(screen.getByTestId("crumb")).toHaveTextContent("Adjustments");
   });
 
+  it("goes to a real address for a section, and back to the module for the hub", async () => {
+    render(<ModuleBase path="/dashboard/finance"><FinanceManager /></ModuleBase>);
+
+    fireEvent.click(await screen.findByRole("button", { name: /Fee Vouchers/ }));
+    expect(mocks.push).toHaveBeenLastCalledWith("/dashboard/finance/fee-vouchers");
+  });
+
+  it("goes back to the module's own address from inside a section", async () => {
+    mocks.pathname = "/dashboard/finance/fee-vouchers";
+    render(<ModuleBase path="/dashboard/finance"><FinanceManager /></ModuleBase>);
+
+    fireEvent.click(await screen.findByRole("button", { name: "All Finance" }));
+    expect(mocks.push).toHaveBeenLastCalledWith("/dashboard/finance");
+  });
+
   it("shows the hub for a section name it does not know", async () => {
-    window.history.replaceState(null, "", "/?section=nonsense");
-    render(<FinanceManager />);
+    mocks.pathname = "/dashboard/finance/nonsense";
+    render(<ModuleBase path="/dashboard/finance"><FinanceManager /></ModuleBase>);
 
     expect(await screen.findByRole("button", { name: /Fee Vouchers/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "All Finance" })).not.toBeInTheDocument();

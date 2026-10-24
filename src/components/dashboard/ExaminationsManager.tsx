@@ -33,7 +33,7 @@ import ExamPapersDialog, { ClassSubject } from "@/components/dashboard/ExamPaper
 import { ClassSection } from "@/components/dashboard/MarksEntryDialog";
 import GradingScalesSection, { GradingScale } from "@/components/dashboard/GradingScalesSection";
 import ResourceSection from "@/components/dashboard/ResourceSection";
-import { useSectionCrumb, useUrlSection } from "@/lib/urlSection";
+import { useSectionCrumb, useModuleSection } from "@/lib/urlSection";
 import { useMessage } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -118,7 +118,7 @@ export default function ExaminationsManager({ institutionId }: ExaminationsManag
   // screen can open on the first step that has nothing in it yet.
   const [autoTab, setTab] = useState<number | null>(null);
   // A tab chosen by the user lives in the address bar, so a refresh stays on it.
-  const [tabSlug, setTabSlug] = useUrlSection();
+  const [tabSlug, setTabSlug] = useModuleSection();
   const urlTab = TAB_SLUGS.findIndex((slug) => slug === tabSlug);
   const tab = urlTab >= 0 ? urlTab : autoTab;
   useSectionCrumb(tab === null ? null : TAB_LABELS[tab]);

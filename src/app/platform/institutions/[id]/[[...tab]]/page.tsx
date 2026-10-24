@@ -18,7 +18,7 @@ import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
 import PlatformBreadcrumbs from "@/components/shared/PlatformBreadcrumbs";
 import InstitutionOverviewTab from "@/components/platform/InstitutionOverviewTab";
-import { slugify, useUrlSection } from "@/lib/urlSection";
+import { ModuleBase, slugify, useModuleSection } from "@/lib/urlSection";
 import InstitutionBrandingTab from "@/components/platform/InstitutionBrandingTab";
 import InstitutionEntitlementsTab from "@/components/platform/InstitutionEntitlementsTab";
 import InstitutionSubscriptionTab from "@/components/platform/InstitutionSubscriptionTab";
@@ -38,14 +38,14 @@ const TABS = [
   { label: "Permissions",  icon: <Lock fontSize="small" /> },
 ];
 
-export default function InstitutionDetailPage() {
+function InstitutionDetail() {
   // The URL segment is the slug (e.g. "taleem-ul-islam"), not the UUID.
   // After fetching, we extract institution.id (UUID) for all downstream API calls.
   const { id: slugOrId } = useParams<{ id: string }>();
   const router = useRouter();
   const { showMessage } = useMessage();
   // The open tab lives in the address bar, so a refresh stays on it.
-  const [tabSlug, setTabSlug] = useUrlSection();
+  const [tabSlug, setTabSlug] = useModuleSection();
   const tabFromUrl = TABS.findIndex((t) => slugify(t.label) === tabSlug);
   const tab = tabFromUrl >= 0 ? tabFromUrl : 0;
   const [institution, setInstitution] = useState<Record<string, unknown> | null>(null);
@@ -175,5 +175,15 @@ export default function InstitutionDetailPage() {
         </Container>
       </Box>
     </Box>
+  );
+}
+
+/** The institution's page, with each tab as a real address below it (`/platform/institutions/taleem/settings`). */
+export default function InstitutionDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  return (
+    <ModuleBase path={`/platform/institutions/${id}`}>
+      <InstitutionDetail />
+    </ModuleBase>
   );
 }
