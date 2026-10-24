@@ -6,6 +6,8 @@ afterEach(() => {
   cleanup();
   window.sessionStorage.clear();
   window.localStorage.clear();
+  // Where the user is inside a module lives in the address bar; start every test from a clean one.
+  window.history.replaceState(null, "", "/");
 });
 
 // jsdom doesn't implement matchMedia; MUI's theme/breakpoint hooks call it.

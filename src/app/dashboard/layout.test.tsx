@@ -151,7 +151,8 @@ describe("DashboardLayout navigation gating", () => {
   it("only highlights Overview on the exact dashboard route", () => {
     state.pathname = "/dashboard/finance";
     render(<DashboardLayout><div /></DashboardLayout>);
-    const bg = (label: string) => getComputedStyle(screen.getByText(label).closest("[role=button]") as HTMLElement).backgroundColor;
+    // The page also shows the module in its breadcrumb, so look only at the sidebar entries.
+    const bg = (label: string) => getComputedStyle(screen.getAllByText(label).map((el) => el.closest("[role=button]")).find(Boolean) as HTMLElement).backgroundColor;
     expect(bg("Finance")).not.toBe(bg("Overview"));
     expect(bg("People")).toBe(bg("Overview"));
   });

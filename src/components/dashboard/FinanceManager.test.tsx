@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import FinanceManager from "./FinanceManager";
+import { useSectionCrumbLabel } from "@/lib/urlSection";
 
 const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), showMessage: vi.fn() }));
 vi.mock("@/lib/axios", () => ({ default: { get: mocks.get, post: mocks.post } }));
@@ -31,6 +32,11 @@ async function openForm(section: string, button: RegExp): Promise<void> {
   await screen.findByRole("dialog");
 }
 
+// The open section lives in the address bar, so every test starts from a clean one.
+afterEach(() => {
+  window.history.replaceState(null, "", "/");
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.post.mockResolvedValue({ data: { data: { id: "saved" } } });
@@ -44,6 +50,42 @@ beforeEach(() => {
       "/custom-fields/form-definitions": [{ id: "note", fieldKey: "note", label: "Finance note", inputType: "TEXT", isRequired: false, defaultValue: "Reviewed" }],
     };
     return { data: { data: data[url] ?? [] } };
+  });
+});
+
+function Crumb() {
+  return <span data-testid="crumb">{useSectionCrumbLabel() ?? "none"}</span>;
+}
+
+describe("FinanceManager navigation", () => {
+  it("opens a section into the address bar and the breadcrumb, and goes back to the hub", async () => {
+    render(<><Crumb /><FinanceManager /></>);
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("/finance/salaries", { params: undefined }));
+
+    fireEvent.click(await screen.findByRole("button", { name: /Fee Vouchers/ }));
+
+    expect(window.location.search).toBe("?section=fee-vouchers");
+    expect(screen.getByTestId("crumb")).toHaveTextContent("Fee Vouchers");
+
+    fireEvent.click(screen.getByRole("button", { name: "All Finance" }));
+    expect(window.location.search).toBe("");
+    expect(screen.getByTestId("crumb")).toHaveTextContent("none");
+  });
+
+  it("returns to the same section after a refresh", async () => {
+    window.history.replaceState(null, "", "/?section=adjustments");
+    render(<><Crumb /><FinanceManager /></>);
+
+    expect(await screen.findByRole("button", { name: "All Finance" })).toBeInTheDocument();
+    expect(screen.getByTestId("crumb")).toHaveTextContent("Adjustments");
+  });
+
+  it("shows the hub for a section name it does not know", async () => {
+    window.history.replaceState(null, "", "/?section=nonsense");
+    render(<FinanceManager />);
+
+    expect(await screen.findByRole("button", { name: /Fee Vouchers/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "All Finance" })).not.toBeInTheDocument();
   });
 });
 

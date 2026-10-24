@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
   getCampuses: vi.fn(),
 }));
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }), useParams: () => mocks.params }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }), useParams: () => mocks.params, usePathname: () => "/platform/institutions/taleem/manage/finance" }));
 vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: mocks.showMessage }) }));
 vi.mock("@/services/platform.service", () => ({
   platformService: {
