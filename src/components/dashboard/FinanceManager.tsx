@@ -10,7 +10,9 @@ import {
   Chip,
   Grid,
   IconButton,
+  MenuItem,
   Skeleton,
+  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -31,6 +33,7 @@ import RequestQuote from "@mui/icons-material/RequestQuote";
 import SwapVert from "@mui/icons-material/SwapVert";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
 import CalculateFinesDialog from "@/components/dashboard/CalculateFinesDialog";
+import FeeBreakdownInput from "@/components/dashboard/FeeBreakdownInput";
 import { DefaultersPanel, LedgerPanel } from "@/components/dashboard/FeeReportsPanels";
 import FeeVoucherPrintDialog, { type VoucherPrintTarget } from "@/components/dashboard/FeeVoucherPrintDialog";
 import GenerateVouchersDialog, { type NamedRow } from "@/components/dashboard/GenerateVouchersDialog";
@@ -137,7 +140,14 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
     const voucherIds = new Set(scopedVouchers.map((v) => v.id));
 
     setCampuses(scopedCampuses);
-    setClasses(classesRes.data ?? []);
+    // The class list carries its level; flatten the level's name and campus so
+    // pickers can tell same-named classes apart and filter by campus.
+    setClasses(
+      (classesRes.data ?? []).map((row) => {
+        const level = row.level as { name?: string; campusId?: string } | undefined;
+        return { ...row, campusId: level?.campusId, levelName: level?.name };
+      }),
+    );
     setStudents(scopedStudents);
     setSalaries(byCampus(salariesRes.data));
     setDeductionRules(byCampus(rulesRes.data));
@@ -189,7 +199,10 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
   );
 
   const campusOptions: Option[] = campuses.map((c) => ({ value: c.id, label: String(c.name) }));
-  const classOptions: Option[] = classes.map((c) => ({ value: c.id, label: String(c.name) }));
+  // Same-named classes exist in different levels and campuses, so say which one.
+  const classLabel = (c: Row) =>
+    [String(c.name), c.levelName, c.campusId ? campusMap[String(c.campusId)] : undefined].filter(Boolean).join(" · ");
+  const classOptions: Option[] = classes.map((c) => ({ value: c.id, label: classLabel(c) }));
   const staffOptions: Option[] = users
     .filter((u) => STAFF_ROLES.includes(u.role))
     .map((u) => ({ value: u.id, label: `${u.name} (${u.role})` }));
@@ -415,9 +428,28 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
               } },
             createdCol]}
           fields={[
-            { key: "classId", label: "Class", type: "select", options: classOptions, required: true, cols: 6 },
             { key: "campusId", label: "Campus", type: "select", options: campusOptions, required: true, cols: 6 },
-            { key: "feeBreakdown", label: "Fee Breakdown (JSON)", type: "json", required: true, helperText: 'e.g. {"tuition": 5000, "transport": 1500}' },
+            {
+              key: "classId", label: "Class", type: "select", required: true, cols: 6,
+              renderInput: (value, onChange, disabled, form) => {
+                const campusClasses = classes.filter((c) => !form.campusId || c.campusId === form.campusId);
+                return (
+                  <TextField
+                    select fullWidth label="Class *" value={campusClasses.some((c) => c.id === value) ? value : ""} disabled={disabled || !form.campusId}
+                    helperText={form.campusId ? undefined : "Choose a campus first."}
+                    onChange={(e) => onChange(e.target.value)}
+                  >
+                    {campusClasses.map((c) => (
+                      <MenuItem key={c.id} value={c.id}>{[String(c.name), c.levelName].filter(Boolean).join(" · ")}</MenuItem>
+                    ))}
+                  </TextField>
+                );
+              },
+            },
+            {
+              key: "feeBreakdown", label: "Fee lines", type: "json", required: true,
+              renderInput: (value, onChange, disabled) => <FeeBreakdownInput value={value} onChange={onChange} disabled={disabled} />,
+            },
           ]}
           {...crud("Fee structure", { create: financeService.createFeeStructure, update: financeService.updateFeeStructure, remove: financeService.deleteFeeStructure })}
         />
