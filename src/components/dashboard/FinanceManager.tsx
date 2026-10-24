@@ -9,7 +9,9 @@ import {
   CardContent,
   Chip,
   Grid,
+  IconButton,
   Skeleton,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import AccountBalanceWallet from "@mui/icons-material/AccountBalanceWallet";
@@ -21,11 +23,13 @@ import Paid from "@mui/icons-material/Paid";
 import Payments from "@mui/icons-material/Payments";
 import Percent from "@mui/icons-material/Percent";
 import PointOfSale from "@mui/icons-material/PointOfSale";
+import Print from "@mui/icons-material/Print";
 import ReceiptLong from "@mui/icons-material/ReceiptLong";
 import RequestQuote from "@mui/icons-material/RequestQuote";
 import SwapVert from "@mui/icons-material/SwapVert";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
 import CalculateFinesDialog from "@/components/dashboard/CalculateFinesDialog";
+import FeeVoucherPrintDialog, { type VoucherPrintTarget } from "@/components/dashboard/FeeVoucherPrintDialog";
 import GenerateVouchersDialog, { type NamedRow } from "@/components/dashboard/GenerateVouchersDialog";
 import SalaryPaymentPreview from "@/components/dashboard/SalaryPaymentPreview";
 import ResourceSection, { FieldDef, Option } from "@/components/dashboard/ResourceSection";
@@ -85,6 +89,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
   const [feePayments, setFeePayments] = useState<Row[]>([]);
   const [generateOpen, setGenerateOpen] = useState(false);
   const [finesOpen, setFinesOpen] = useState(false);
+  const [printTarget, setPrintTarget] = useState<VoucherPrintTarget | null>(null);
 
   const load = useCallback(async () => {
     const list = <T,>(fn: () => Promise<{ data: { data: T } }>) =>
@@ -506,7 +511,8 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       node: (
         <>
         {canManage && (
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mb: 1 }}>
+            <Button variant="outlined" onClick={() => setPrintTarget({ kind: "batch" })}>Print vouchers</Button>
             <Button variant="outlined" onClick={() => setGenerateOpen(true)}>Generate vouchers for a month</Button>
           </Box>
         )}
@@ -529,7 +535,20 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
             { key: "lateFeeFine", label: "Late Fee Fine", type: "number", cols: 6 },
             { key: "bankId", label: "Bank Account", type: "select", options: bankOptions },
           ]}
+          renderRowActions={(r) => (
+            <Tooltip title="Print voucher">
+              <IconButton size="small" aria-label="Print voucher" onClick={() => setPrintTarget({ kind: "single", voucherId: r.id })}>
+                <Print fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           {...crud("Fee voucher", { create: financeService.createVoucher, update: financeService.updateVoucher, remove: financeService.deleteVoucher })}
+        />
+        <FeeVoucherPrintDialog
+          target={printTarget}
+          campuses={campuses as NamedRow[]}
+          classes={classes as NamedRow[]}
+          onClose={() => setPrintTarget(null)}
         />
         <GenerateVouchersDialog
           open={generateOpen}
