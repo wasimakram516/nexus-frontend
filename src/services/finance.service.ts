@@ -101,6 +101,9 @@ export const financeService = {
   getPrintableVoucher: (id: string) => apiClient.get(`/finance/fee-vouchers/${id}/printable`),
   getPrintableVouchers: (params: Record<string, unknown>) =>
     apiClient.get("/finance/fee-vouchers/printable", { params }),
+  getDefaulters: (params: Record<string, unknown>) =>
+    apiClient.get("/finance/fee-defaulters", { params }),
+  getLedger: (studentId: string) => apiClient.get(`/finance/fee-ledger/${studentId}`),
   getVoucher: (id: string) => apiClient.get(`/finance/fee-vouchers/${id}`),
   updateVoucher: (id: string, payload: Record<string, unknown>) =>
     apiClient.patch(`/finance/fee-vouchers/${id}`, payload),

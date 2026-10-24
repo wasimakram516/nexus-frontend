@@ -22,6 +22,8 @@ import MoneyOff from "@mui/icons-material/MoneyOff";
 import Paid from "@mui/icons-material/Paid";
 import Payments from "@mui/icons-material/Payments";
 import Percent from "@mui/icons-material/Percent";
+import ReportProblem from "@mui/icons-material/ReportProblem";
+import MenuBook from "@mui/icons-material/MenuBook";
 import PointOfSale from "@mui/icons-material/PointOfSale";
 import Print from "@mui/icons-material/Print";
 import ReceiptLong from "@mui/icons-material/ReceiptLong";
@@ -29,6 +31,7 @@ import RequestQuote from "@mui/icons-material/RequestQuote";
 import SwapVert from "@mui/icons-material/SwapVert";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
 import CalculateFinesDialog from "@/components/dashboard/CalculateFinesDialog";
+import { DefaultersPanel, LedgerPanel } from "@/components/dashboard/FeeReportsPanels";
 import FeeVoucherPrintDialog, { type VoucherPrintTarget } from "@/components/dashboard/FeeVoucherPrintDialog";
 import GenerateVouchersDialog, { type NamedRow } from "@/components/dashboard/GenerateVouchersDialog";
 import SalaryPaymentPreview from "@/components/dashboard/SalaryPaymentPreview";
@@ -562,6 +565,20 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       ),
     },
     {
+      label: "Defaulters",
+      category: "Student Fees",
+      description: "Students who owe fees past the due date.",
+      icon: <ReportProblem />,
+      node: <DefaultersPanel campuses={campuses as NamedRow[]} classes={classes as NamedRow[]} />,
+    },
+    {
+      label: "Student Ledger",
+      category: "Student Fees",
+      description: "A student's vouchers, payments and balance.",
+      icon: <MenuBook />,
+      node: <LedgerPanel students={studentOptions.map((option) => ({ value: option.value, label: option.label }))} />,
+    },
+    {
       label: "Fee Payments",
       category: "Student Fees",
       description: "Payments recorded against vouchers.",
@@ -663,7 +680,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
                           >
                             {section.icon}
                           </Box>
-                          {loading ? (
+                          {section.count === undefined ? null : loading ? (
                             <Skeleton width={32} height={24} />
                           ) : (
                             <Chip
