@@ -43,7 +43,7 @@ vi.mock("@/components/dashboard/TrialBanner", () => ({ default: () => <span>tria
 import DashboardLayout from "./layout";
 
 const labels = () =>
-  ["Overview", "People", "Academics", "Attendance", "Finance", "Notices", "Exams", "My Exams", "Campuses", "Users", "Roles", "Custom Fields", "Activity"].filter(
+  ["Overview", "People", "Academics", "Attendance", "Finance", "Notices", "Exams", "My Exams", "My Fees", "Campuses", "Users", "Roles", "Custom Fields", "Activity"].filter(
     (l) => screen.queryByText(l),
   );
 
@@ -101,6 +101,29 @@ describe("DashboardLayout navigation gating", () => {
       expect(labels()).toEqual(["Overview", "My Exams"]);
       view.unmount();
     }
+  });
+
+  it("shows My Fees only to students and guardians, and only when fees are enabled", () => {
+    state.enabled = new Set(["FINANCE"]);
+    state.viewable = new Set();
+    for (const role of ["STUDENT", "GUARDIAN"]) {
+      state.user = { name: "Parent", role };
+      const view = render(<DashboardLayout><div>page</div></DashboardLayout>);
+      expect(labels()).toEqual(["Overview", "My Fees"]);
+      view.unmount();
+    }
+
+    state.enabled = new Set();
+    state.user = { name: "Parent", role: "GUARDIAN" };
+    const off = render(<DashboardLayout><div>page</div></DashboardLayout>);
+    expect(labels()).toEqual(["Overview"]);
+    off.unmount();
+
+    state.enabled = new Set(["FINANCE"]);
+    state.viewable = new Set(["FINANCE"]);
+    state.user = { name: "Amna", role: "ADMIN" };
+    render(<DashboardLayout><div>page</div></DashboardLayout>);
+    expect(screen.queryByText("My Fees")).not.toBeInTheDocument();
   });
 
   it("hides My Exams when the institution has not enabled exams, and from ADMIN and STAFF", () => {

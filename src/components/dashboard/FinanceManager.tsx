@@ -25,6 +25,7 @@ import Paid from "@mui/icons-material/Paid";
 import Payments from "@mui/icons-material/Payments";
 import Percent from "@mui/icons-material/Percent";
 import ReportProblem from "@mui/icons-material/ReportProblem";
+import FamilyRestroom from "@mui/icons-material/FamilyRestroom";
 import MenuBook from "@mui/icons-material/MenuBook";
 import PointOfSale from "@mui/icons-material/PointOfSale";
 import Print from "@mui/icons-material/Print";
@@ -35,6 +36,7 @@ import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
 import CalculateFinesDialog from "@/components/dashboard/CalculateFinesDialog";
 import FeeBreakdownInput from "@/components/dashboard/FeeBreakdownInput";
 import { OneTimeChargesField } from "@/components/dashboard/OneTimeChargesEditor";
+import FamilyBillingPanel from "@/components/dashboard/FamilyBillingPanel";
 import { DefaultersPanel, LedgerPanel } from "@/components/dashboard/FeeReportsPanels";
 import FeeVoucherPrintDialog, { type VoucherPrintTarget } from "@/components/dashboard/FeeVoucherPrintDialog";
 import GenerateVouchersDialog, { type NamedRow } from "@/components/dashboard/GenerateVouchersDialog";
@@ -626,7 +628,20 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
       category: "Student Fees",
       description: "A student's vouchers, payments and balance.",
       icon: <MenuBook />,
-      node: <LedgerPanel students={studentOptions.map((option) => ({ value: option.value, label: option.label }))} />,
+      node: <LedgerPanel students={studentOptions.map((option) => ({ value: option.value, label: option.label }))} onPrintVoucher={(voucherId) => setPrintTarget({ kind: "single", voucherId })} />,
+    },
+    {
+      label: "Family Billing",
+      category: "Student Fees",
+      description: "What all of a guardian's children owe, together.",
+      icon: <FamilyRestroom />,
+      node: (
+        <FamilyBillingPanel
+          nameByUserId={Object.fromEntries(users.map((user) => [user.id, user.name]))}
+          campusIds={institutionId ? campuses.map((campus) => campus.id) : null}
+          onPrintVoucher={(voucherId) => setPrintTarget({ kind: "single", voucherId })}
+        />
+      ),
     },
     {
       label: "Fee Payments",

@@ -10,7 +10,8 @@ import { apiHandler } from "@/lib/apiHandler";
 import { PrintableVoucher } from "@/lib/feeVoucherDocuments";
 import { financeService } from "@/services/finance.service";
 
-export type VoucherPrintTarget = { kind: "single"; voucherId: string } | { kind: "batch" };
+/** `own` prints through the student and guardian route, which checks the voucher belongs to them. */
+export type VoucherPrintTarget = { kind: "single"; voucherId: string; own?: boolean } | { kind: "batch" };
 
 interface FeeVoucherPrintDialogProps {
   target: VoucherPrintTarget | null;
@@ -56,7 +57,10 @@ export default function FeeVoucherPrintDialog({ target, campuses, classes, onClo
     setError(null);
     const { data } =
       target.kind === "single"
-        ? await apiHandler<PrintableVoucher>(() => financeService.getPrintableVoucher(target.voucherId) as never, { showMessage })
+        ? await apiHandler<PrintableVoucher>(
+            () => (target.own ? financeService.getMyPrintableVoucher(target.voucherId) : financeService.getPrintableVoucher(target.voucherId)) as never,
+            { showMessage },
+          )
         : await apiHandler<PrintableVoucher[]>(
             () =>
               financeService.getPrintableVouchers({

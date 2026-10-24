@@ -101,6 +101,9 @@ export const financeService = {
   getPrintableVoucher: (id: string) => apiClient.get(`/finance/fee-vouchers/${id}/printable`),
   getPrintableVouchers: (params: Record<string, unknown>) =>
     apiClient.get("/finance/fee-vouchers/printable", { params }),
+  getMyFees: () => apiClient.get("/finance/my-fees"),
+  getMyPrintableVoucher: (id: string) => apiClient.get(`/finance/my-fees/vouchers/${id}/printable`),
+  getFamilyBilling: (guardianId: string) => apiClient.get(`/finance/family-billing/${guardianId}`),
   getDefaulters: (params: Record<string, unknown>) =>
     apiClient.get("/finance/fee-defaulters", { params }),
   getLedger: (studentId: string) => apiClient.get(`/finance/fee-ledger/${studentId}`),

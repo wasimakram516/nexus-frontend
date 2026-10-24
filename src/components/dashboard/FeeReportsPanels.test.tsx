@@ -146,7 +146,7 @@ describe("LedgerPanel", () => {
     fireEvent.mouseDown(screen.getByLabelText("Student"));
     fireEvent.click(await screen.findByRole("option", { name: "Bilal (R-2)" }));
 
-    expect(await screen.findByText("This student has no vouchers yet.")).toBeInTheDocument();
+    expect(await screen.findByText("No vouchers yet.")).toBeInTheDocument();
   });
 
   it("shows an error when the ledger cannot be loaded", async () => {

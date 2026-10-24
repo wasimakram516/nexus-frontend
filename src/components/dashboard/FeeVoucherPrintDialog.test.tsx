@@ -58,7 +58,7 @@ function renderDialog(target: VoucherPrintTarget | null) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.get.mockImplementation(async (url: string) => {
-    if (url.endsWith("/printable") && url.includes("/fee-vouchers/v-")) return { data: { data: voucher("Ayesha") } };
+    if (url.endsWith("/printable") && (url.includes("/fee-vouchers/v-") || url.includes("/my-fees/vouchers/"))) return { data: { data: voucher("Ayesha") } };
     return { data: { data: [voucher("Ayesha"), voucher("Bilal")] } };
   });
 });
@@ -85,6 +85,13 @@ describe("FeeVoucherPrintDialog", () => {
     expect(screen.getAllByText("info@school.test")).toHaveLength(3);
     expect(screen.getAllByText("Greenfield School")).toHaveLength(3);
     expect(mocks.get).toHaveBeenCalledWith("/finance/fee-vouchers/v-Ayesha/printable");
+  });
+
+  it("loads an own voucher through the route that checks ownership", async () => {
+    renderDialog({ kind: "single", voucherId: "v-Ayesha", own: true });
+
+    expect(await screen.findByText("Student Copy")).toBeInTheDocument();
+    expect(mocks.get).toHaveBeenCalledWith("/finance/my-fees/vouchers/v-Ayesha/printable");
   });
 
   it("uses the institution's currency label and the standard notes when it has set no instructions", async () => {

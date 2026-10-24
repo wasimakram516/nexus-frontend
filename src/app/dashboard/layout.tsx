@@ -85,6 +85,7 @@ const navItems: NavItem[] = [
   { label: "Notices",       href: "/dashboard/notices",       icon: <Campaign />,       module: "NOTICES" },
   { label: "Exams",         href: "/dashboard/exams",         icon: <AutoStories />,    module: "EXAMINATIONS" },
   { label: "My Exams",      href: "/dashboard/my-exams",      icon: <AutoStories />,    requiresModule: "EXAMINATIONS", roles: ["STUDENT", "GUARDIAN"] },
+  { label: "My Fees",       href: "/dashboard/my-fees",       icon: <AccountBalance />, requiresModule: "FINANCE", roles: ["STUDENT", "GUARDIAN"] },
   { label: "Campuses",      href: "/dashboard/campuses",      icon: <Business />,       roles: ["ADMIN"] },
   { label: "Users",         href: "/dashboard/users",         icon: <ManageAccounts />, roles: ["ADMIN"] },
   { label: "Roles",         href: "/dashboard/roles",         icon: <Shield />,         roles: ["ADMIN"] },
