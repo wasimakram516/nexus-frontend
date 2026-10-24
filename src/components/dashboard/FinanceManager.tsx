@@ -34,6 +34,7 @@ import SwapVert from "@mui/icons-material/SwapVert";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
 import CalculateFinesDialog from "@/components/dashboard/CalculateFinesDialog";
 import FeeBreakdownInput from "@/components/dashboard/FeeBreakdownInput";
+import { OneTimeChargesField } from "@/components/dashboard/OneTimeChargesEditor";
 import { DefaultersPanel, LedgerPanel } from "@/components/dashboard/FeeReportsPanels";
 import FeeVoucherPrintDialog, { type VoucherPrintTarget } from "@/components/dashboard/FeeVoucherPrintDialog";
 import GenerateVouchersDialog, { type NamedRow } from "@/components/dashboard/GenerateVouchersDialog";
@@ -507,7 +508,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
         <>
         {canManage && (
           <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
-            <Button variant="outlined" onClick={() => setFinesOpen(true)}>Calculate fines for a month</Button>
+            <Button variant="outlined" onClick={() => setFinesOpen(true)}>Calculate fines for a class or campus</Button>
           </Box>
         )}
         <ResourceSection
@@ -547,8 +548,8 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
         <>
         {canManage && (
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mb: 1 }}>
-            <Button variant="outlined" onClick={() => setPrintTarget({ kind: "batch" })}>Print vouchers</Button>
-            <Button variant="outlined" onClick={() => setGenerateOpen(true)}>Generate vouchers for a month</Button>
+            <Button variant="outlined" onClick={() => setPrintTarget({ kind: "batch" })}>Print vouchers for a class or campus</Button>
+            <Button variant="outlined" onClick={() => setGenerateOpen(true)}>Generate vouchers for a class or campus</Button>
           </Box>
         )}
         <ResourceSection
@@ -569,10 +570,24 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
             { key: "dueDate", label: "Due Date", type: "date", required: true, cols: 6 },
             { key: "lateFeeFine", label: "Late Fee Fine", type: "number", cols: 6 },
             { key: "bankId", label: "Bank Account", type: "select", options: bankOptions },
+            {
+              key: "oneTimeCharges", label: "One-time charges", type: "json",
+              renderInput: (value, onChange, disabled) => <OneTimeChargesField value={value} onChange={onChange} disabled={disabled} />,
+            },
           ]}
+          createLabel="Add voucher for one student"
+          extraFormValues={(row) => {
+            // The lines on the voucher that its fee structure does not have are its one-time charges.
+            const structure = feeStructures.find((item) => item.id === row.feeStructureId)?.feeBreakdown as Record<string, unknown> | undefined;
+            const breakdown = (row as { feeBreakdown?: Record<string, unknown> }).feeBreakdown ?? {};
+            const extras = Object.entries(breakdown)
+              .filter(([label]) => !(structure && label in structure))
+              .map(([label, amount]) => ({ label, amount: Number(amount) }));
+            return { oneTimeCharges: JSON.stringify(extras) };
+          }}
           renderRowActions={(r) => (
-            <Tooltip title="Print voucher">
-              <IconButton size="small" aria-label="Print voucher" onClick={() => setPrintTarget({ kind: "single", voucherId: r.id })}>
+            <Tooltip title="Print this voucher">
+              <IconButton size="small" aria-label="Print this voucher" onClick={() => setPrintTarget({ kind: "single", voucherId: r.id })}>
                 <Print fontSize="small" />
               </IconButton>
             </Tooltip>

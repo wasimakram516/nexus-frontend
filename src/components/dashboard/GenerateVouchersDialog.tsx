@@ -12,7 +12,6 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
-  IconButton,
   MenuItem,
   Table,
   TableBody,
@@ -22,8 +21,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import Add from "@mui/icons-material/Add";
-import Delete from "@mui/icons-material/Delete";
+import OneTimeChargesEditor, { chargesPayload, filledCharges, invalidCharge, type Charge } from "@/components/dashboard/OneTimeChargesEditor";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { financeService } from "@/services/finance.service";
@@ -34,11 +32,6 @@ export interface NamedRow {
   campusId?: string;
   bankName?: string;
   accountTitle?: string;
-}
-
-interface Charge {
-  label: string;
-  amount: string;
 }
 
 interface StudentLine {
@@ -114,21 +107,12 @@ export default function GenerateVouchersDialog({
   const campusBanks = bankAccounts.filter((row) => row.campusId === campusId);
   const monthNumber = Number(month);
   const yearNumber = Number(year);
-  const filled = charges.filter((charge) => charge.label.trim() || charge.amount.trim());
-  const chargeProblem = filled.find(
-    (charge) =>
-      !charge.label.trim() ||
-      !Number.isFinite(Number(charge.amount)) ||
-      Number(charge.amount) <= 0 ||
-      Math.round(Number(charge.amount) * 100) / 100 !== Number(charge.amount),
-  );
+  const chargesBad = Boolean(invalidCharge(charges));
   const formProblem = !campusId
     ? "Choose a campus."
     : !Number.isInteger(yearNumber) || yearNumber < 2000
       ? "Enter a valid year."
-      : chargeProblem
-        ? "Each one-time charge needs a label and an amount above zero with at most two decimals."
-        : null;
+      : null;
 
   /** Any change makes a previous preview stale. */
   const edit = <T,>(setter: (value: T) => void) => (value: T) => {
@@ -145,9 +129,7 @@ export default function GenerateVouchersDialog({
     ...(classId ? { classId } : {}),
     ...(dueDate ? { dueDate } : {}),
     ...(bankId ? { bankId } : {}),
-    ...(filled.length
-      ? { oneTimeCharges: filled.map((charge) => ({ label: charge.label.trim(), amount: Number(charge.amount) })) }
-      : {}),
+    ...(filledCharges(charges).length ? { oneTimeCharges: chargesPayload(charges) } : {}),
   });
 
   const run = async (preview: boolean) => {
@@ -171,12 +153,17 @@ export default function GenerateVouchersDialog({
 
   return (
     <Dialog open={open} onClose={() => { if (!running) onClose(); }} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ fontWeight: 700 }}>Generate fee vouchers</DialogTitle>
+      <DialogTitle sx={{ fontWeight: 700 }}>Generate fee vouchers for a class or campus</DialogTitle>
       <DialogContent sx={{ pt: "16px !important" }}>
         {finished && result ? (
           <Report result={result} />
         ) : (
           <Grid container spacing={2.5}>
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="body2" color="text.secondary">
+                Creates this month&apos;s voucher for every student in the campus or class you choose. For just one student, close this and use Add voucher for one student.
+              </Typography>
+            </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField select label="Campus *" value={campusId} onChange={(e) => { edit(setCampusId)(e.target.value); setClassId(""); setBankId(""); }} fullWidth disabled={running}>
                 {campuses.map((campus) => (
@@ -224,39 +211,12 @@ export default function GenerateVouchersDialog({
             </Grid>
 
             <Grid size={{ xs: 12 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>One-time charges</Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-                Added to every voucher in this run only, such as an admission fee or exam fee.
-              </Typography>
-              {charges.map((charge, index) => (
-                <Box key={index} sx={{ display: "flex", gap: 1.5, mb: 1.5, alignItems: "center" }}>
-                  <TextField
-                    label="Label"
-                    size="small"
-                    value={charge.label}
-                    disabled={running}
-                    onChange={(e) => edit(setCharges)(charges.map((c, i) => (i === index ? { ...c, label: e.target.value } : c)))}
-                    sx={{ flex: 2 }}
-                    slotProps={{ htmlInput: { "aria-label": `Charge label ${index + 1}`, maxLength: 60 } }}
-                  />
-                  <TextField
-                    label="Amount"
-                    size="small"
-                    type="number"
-                    value={charge.amount}
-                    disabled={running}
-                    onChange={(e) => edit(setCharges)(charges.map((c, i) => (i === index ? { ...c, amount: e.target.value } : c)))}
-                    sx={{ flex: 1 }}
-                    slotProps={{ htmlInput: { "aria-label": `Charge amount ${index + 1}`, min: 0, step: 0.01 } }}
-                  />
-                  <IconButton aria-label={`Remove charge ${index + 1}`} disabled={running} onClick={() => edit(setCharges)(charges.filter((_, i) => i !== index))}>
-                    <Delete fontSize="small" />
-                  </IconButton>
-                </Box>
-              ))}
-              <Button size="small" startIcon={<Add />} disabled={running || charges.length >= 10} onClick={() => edit(setCharges)([...charges, { label: "", amount: "" }])}>
-                Add charge
-              </Button>
+              <OneTimeChargesEditor
+                charges={charges}
+                onChange={edit(setCharges)}
+                disabled={running}
+                hint="Added to every voucher in this run only, such as an admission fee or exam fee."
+              />
             </Grid>
 
             {formProblem && campusId && (
@@ -278,7 +238,7 @@ export default function GenerateVouchersDialog({
         <Button onClick={onClose} disabled={running}>{finished ? "Close" : "Cancel"}</Button>
         {!finished && (
           <>
-            <Button variant="outlined" onClick={() => run(true)} disabled={running || Boolean(formProblem)}>
+            <Button variant="outlined" onClick={() => run(true)} disabled={running || Boolean(formProblem) || chargesBad}>
               {running && !previewed ? <CircularProgress size={16} color="inherit" /> : "Preview"}
             </Button>
             <Button

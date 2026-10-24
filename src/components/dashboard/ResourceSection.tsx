@@ -82,6 +82,8 @@ interface ResourceSectionProps<T extends { id: string }> {
   onDelete?: (id: string) => Promise<boolean>;
   /** Converts a row into dialog form values; defaults to stringifying matching keys. */
   rowToForm?: (row: T) => Record<string, string>;
+  /** Form values for fields that are not plain columns of the row, added to the default values. */
+  extraFormValues?: (row: T) => Record<string, string>;
   deleteMessage?: (row: T) => string;
   /** Extra per-row action buttons rendered before edit/delete. */
   renderRowActions?: (row: T) => React.ReactNode;
@@ -125,7 +127,11 @@ function buildPayload(form: Record<string, string>, fields: FieldDef[]): Record<
     } else if (field.type === "boolean") {
       payload[field.key] = value === "true";
     } else if (field.type === "json") {
-      payload[field.key] = JSON.parse(value);
+      try {
+        payload[field.key] = JSON.parse(value);
+      } catch {
+        throw new Error(`${field.label} is not complete. Fix the highlighted lines and try again.`);
+      }
     } else {
       payload[field.key] = value;
     }
@@ -153,6 +159,7 @@ export default function ResourceSection<T extends { id: string }>({
   onUpdate,
   onDelete,
   rowToForm,
+  extraFormValues,
   deleteMessage,
   renderRowActions,
 }: ResourceSectionProps<T>): React.JSX.Element {
@@ -195,7 +202,7 @@ export default function ResourceSection<T extends { id: string }>({
   const openEdit = (row: T, readOnly = false): void => {
     setViewing(readOnly);
     setEditing(row);
-    setForm(rowToForm ? rowToForm(row) : defaultRowToForm(row, fields));
+    setForm({ ...(rowToForm ? rowToForm(row) : defaultRowToForm(row, fields)), ...(extraFormValues?.(row) ?? {}) });
     setFormError(null);
     setPrepared(null);
     setDialogOpen(true);
