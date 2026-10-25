@@ -120,3 +120,12 @@ describe("weekdays", () => {
     expect(addDays("2026-11-30", 1)).toBe("2026-12-01");
   });
 });
+
+describe("buildGrid with one day", () => {
+  it("has just that day's column, even when it is a weekend day", () => {
+    const entries = [entry({ id: "sat", dayOfWeek: "SATURDAY", date: "2026-11-07" })];
+
+    expect(buildGrid(entries, "SATURDAY").days).toEqual(["SATURDAY"]);
+    expect(buildGrid([], "WEDNESDAY").days).toEqual(["WEDNESDAY"]);
+  });
+});

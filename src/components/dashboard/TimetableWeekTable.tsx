@@ -2,18 +2,20 @@
 
 import { Box, Chip, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
 import { formatClockRange, formatDate } from "@/lib/dateFormat";
-import { buildGrid, cellLines, DAY_NAMES, type TimetableGroup } from "@/lib/timetableDocuments";
+import { buildGrid, cellLines, DAY_NAMES, type TimetableGroup, type Weekday } from "@/lib/timetableDocuments";
 
 interface TimetableWeekTableProps {
   group: TimetableGroup;
+  /** Show one day's column only. */
+  onlyDay?: Weekday;
 }
 
 /**
  * One timetable as a table: a column per day with its date, a row per time
  * slot. A period taken by a substitute on that date says so.
  */
-export default function TimetableWeekTable({ group }: TimetableWeekTableProps) {
-  const grid = buildGrid(group.entries);
+export default function TimetableWeekTable({ group, onlyDay }: TimetableWeekTableProps) {
+  const grid = buildGrid(group.entries, onlyDay);
   const forTeacher = group.kind === "TEACHER";
 
   return (

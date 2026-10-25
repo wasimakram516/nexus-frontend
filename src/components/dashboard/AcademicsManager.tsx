@@ -19,12 +19,14 @@ import GridView from "@mui/icons-material/GridView";
 import Layers from "@mui/icons-material/Layers";
 import MenuBook from "@mui/icons-material/MenuBook";
 import Schedule from "@mui/icons-material/Schedule";
+import CalendarViewWeek from "@mui/icons-material/CalendarViewWeek";
 import Workspaces from "@mui/icons-material/Workspaces";
 import AcademicYearsSection, { AcademicYear } from "@/components/dashboard/AcademicYearsSection";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
 import PeriodSlotsSection, { PeriodSlot } from "@/components/dashboard/PeriodSlotsSection";
 import ResourceSection from "@/components/dashboard/ResourceSection";
 import TeachingAssignmentsSection, { TeachingAssignment } from "@/components/dashboard/TeachingAssignmentsSection";
+import TimetablesSection from "@/components/dashboard/TimetablesSection";
 import { useSectionCrumb, useModuleSection } from "@/lib/urlSection";
 import { useMessage } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
@@ -267,6 +269,14 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
       icon: <Schedule />,
       count: periodSlots.length,
     },
+    {
+      key: "timetables",
+      label: "Timetables",
+      parent: "Campus",
+      description: "See the timetable of a campus, a class or a teacher, week by week.",
+      icon: <CalendarViewWeek />,
+      count: periodSlots.length,
+    },
   ];
 
   const activeDef = sectionDefs.find((def) => def.key === sectionSlug) ?? null;
@@ -458,6 +468,16 @@ export default function AcademicsManager({ institutionId }: AcademicsManagerProp
           canManage={canManageTimetable}
           onReload={load}
           institutionId={institutionId}
+        />
+      )}
+
+      {activeKey === "timetables" && (
+        <TimetablesSection
+          campuses={campuses}
+          levels={levels}
+          classes={classes}
+          teachers={teachers}
+          teacherName={teacherName}
         />
       )}
 

@@ -69,11 +69,12 @@ export interface TimetableGrid {
 
 /**
  * Turns a week's periods into the day-by-period table a timetable uses: one
- * column per day, one row per time slot, ordered by time.
+ * column per day, one row per time slot, ordered by time. With `onlyDay` the
+ * table has just that day's column.
  */
-export function buildGrid(entries: WeekEntry[]): TimetableGrid {
+export function buildGrid(entries: WeekEntry[], onlyDay?: Weekday): TimetableGrid {
   const used = new Set(entries.map((entry) => entry.dayOfWeek));
-  const days = ORDER.filter((day) => ALWAYS_SHOWN.includes(day) || used.has(day));
+  const days = onlyDay ? [onlyDay] : ORDER.filter((day) => ALWAYS_SHOWN.includes(day) || used.has(day));
   const dates = new Map<Weekday, string>(entries.map((entry) => [entry.dayOfWeek, entry.date]));
   const rows = new Map<string, GridRow>();
   for (const entry of entries) {
