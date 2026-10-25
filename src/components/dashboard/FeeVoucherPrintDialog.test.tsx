@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import FeeVoucherPrintDialog, { VoucherPrintTarget } from "./FeeVoucherPrintDialog";
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), showMessage: vi.fn() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), showMessage: vi.fn(), download: vi.fn() }));
+vi.mock("@/lib/downloadFile", () => ({ downloadFile: mocks.download }));
 
 vi.mock("@/lib/axios", () => ({ default: { get: mocks.get } }));
 vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: mocks.showMessage }) }));
@@ -26,6 +27,7 @@ const voucher = (name: string, overrides: Record<string, unknown> = {}) => ({
     voucherNumber: `FV-202609-R-${name}`,
     month: 9,
     year: 2026,
+    customValues: [{ label: "Reference", value: "INV-9" }],
     issueDate: "2026-09-01T00:00:00.000Z",
     dueDate: "2026-09-10T00:00:00.000Z",
     status: "PENDING",
@@ -165,6 +167,56 @@ describe("FeeVoucherPrintDialog", () => {
     renderDialog({ kind: "batch" });
 
     expect(await screen.findByText("There are no vouchers for this choice.")).toBeInTheDocument();
+  });
+
+  it("shows the custom values the institution chose to print", async () => {
+    renderDialog({ kind: "single", voucherId: "v-Ayesha" });
+
+    expect(await screen.findAllByText("Reference")).toHaveLength(3);
+    expect(screen.getAllByText("INV-9")).toHaveLength(3);
+  });
+
+  it("downloads one voucher as a PDF from its own route, and an own voucher from the owner-checked route", async () => {
+    const view = render(<FeeVoucherPrintDialog target={{ kind: "single", voucherId: "v-Ayesha" }} campuses={campuses} classes={classes} onClose={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Download PDF" }));
+    expect(mocks.download).toHaveBeenLastCalledWith("/finance/fee-vouchers/v-Ayesha/pdf", undefined, "fee-voucher.pdf");
+    view.unmount();
+
+    render(<FeeVoucherPrintDialog target={{ kind: "single", voucherId: "v-Ayesha", own: true }} campuses={campuses} classes={classes} onClose={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Download PDF" }));
+    expect(mocks.download).toHaveBeenLastCalledWith("/finance/my-fees/vouchers/v-Ayesha/pdf", undefined, "fee-voucher.pdf");
+  });
+
+  it("downloads a month for the chosen campus and class as one PDF", async () => {
+    renderDialog({ kind: "batch" });
+    await screen.findAllByText("Bank Copy");
+
+    fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+
+    await waitFor(() =>
+      expect(mocks.download).toHaveBeenCalledWith(
+        "/finance/fee-vouchers/pdf",
+        expect.objectContaining({ campusId: "campus-1", year: new Date().getFullYear() }),
+        "fee-vouchers.pdf",
+      ),
+    );
+  });
+
+  it("tells the person when the PDF cannot be downloaded", async () => {
+    mocks.download.mockRejectedValue(Object.assign(new Error("x"), { response: { data: { message: "No access." } } }));
+    renderDialog({ kind: "single", voucherId: "v-Ayesha" });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Download PDF" }));
+
+    await waitFor(() => expect(mocks.showMessage).toHaveBeenCalledWith("No access.", "error"));
+  });
+
+  it("offers no PDF while there is nothing to download", async () => {
+    mocks.get.mockResolvedValue({ data: { data: [] } });
+    renderDialog({ kind: "batch" });
+
+    await screen.findByText("There are no vouchers for this choice.");
+    expect(screen.queryByRole("button", { name: "Download PDF" })).not.toBeInTheDocument();
   });
 
   it("shows an error when the vouchers cannot be loaded", async () => {

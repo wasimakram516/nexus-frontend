@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AppBar,
   Box,
@@ -11,6 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import Print from "@mui/icons-material/Print";
+import PictureAsPdf from "@mui/icons-material/PictureAsPdf";
 import Close from "@mui/icons-material/Close";
 import { PrintMeta } from "@/lib/examDocuments";
 
@@ -47,6 +49,8 @@ interface PrintSheetProps {
   controls?: React.ReactNode;
   /** Print on a landscape page, for documents with several copies side by side. */
   landscape?: boolean;
+  /** When given, adds a Download PDF button that runs it; the sheet shows the wait. */
+  onDownloadPdf?: () => Promise<void>;
   children: React.ReactNode;
 }
 
@@ -55,7 +59,17 @@ interface PrintSheetProps {
  * document itself is printed, each document starting on its own page. Exam
  * documents use it now; fee vouchers can reuse it.
  */
-export default function PrintSheet({ open, title, loading, error, onClose, controls, landscape = false, children }: PrintSheetProps) {
+export default function PrintSheet({ open, title, loading, error, onClose, controls, landscape = false, onDownloadPdf, children }: PrintSheetProps) {
+  const [downloading, setDownloading] = useState(false);
+  const download = async () => {
+    if (!onDownloadPdf) return;
+    setDownloading(true);
+    try {
+      await onDownloadPdf();
+    } finally {
+      setDownloading(false);
+    }
+  };
   return (
     <Dialog open={open} onClose={onClose} fullScreen>
       <GlobalStyles styles={printStyles(landscape)} />
@@ -65,6 +79,11 @@ export default function PrintSheet({ open, title, loading, error, onClose, contr
           <Button variant="contained" startIcon={<Print />} onClick={() => window.print()} disabled={loading || Boolean(error)}>
             Print
           </Button>
+          {onDownloadPdf && (
+            <Button variant="outlined" startIcon={downloading ? <CircularProgress size={16} /> : <PictureAsPdf />} onClick={download} disabled={loading || Boolean(error) || downloading}>
+              Download PDF
+            </Button>
+          )}
           <Button startIcon={<Close />} onClick={onClose}>Close</Button>
         </Toolbar>
       </AppBar>

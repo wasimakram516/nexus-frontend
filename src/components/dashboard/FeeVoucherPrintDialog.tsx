@@ -7,6 +7,7 @@ import { FeeVoucherView } from "@/components/dashboard/FeeVoucherViews";
 import { MONTHS, type NamedRow } from "@/components/dashboard/GenerateVouchersDialog";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
+import { downloadFile } from "@/lib/downloadFile";
 import { PrintableVoucher } from "@/lib/feeVoucherDocuments";
 import { financeService } from "@/services/finance.service";
 
@@ -82,6 +83,29 @@ export default function FeeVoucherPrintDialog({ target, campuses, classes, onClo
     void load();
   }, [load]);
 
+  /** The PDF of what is on screen: one voucher, or the month for the chosen campus or class. */
+  const downloadPdf = async () => {
+    if (!target) return;
+    try {
+      if (target.kind === "single") {
+        await downloadFile(
+          target.own ? `/finance/my-fees/vouchers/${target.voucherId}/pdf` : `/finance/fee-vouchers/${target.voucherId}/pdf`,
+          undefined,
+          "fee-voucher.pdf",
+        );
+      } else {
+        await downloadFile(
+          "/finance/fee-vouchers/pdf",
+          { campusId, month: Number(month), year: yearNumber, ...(classId ? { classId } : {}) },
+          "fee-vouchers.pdf",
+        );
+      }
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } }; message?: string }).response?.data?.message ?? (err as Error).message;
+      showMessage(message || "The PDF could not be downloaded.", "error");
+    }
+  };
+
   if (!target) return <></>;
 
   const campusClasses = classes.filter((row) => row.campusId === campusId || !row.campusId);
@@ -120,6 +144,7 @@ export default function FeeVoucherPrintDialog({ target, campuses, classes, onClo
       onClose={onClose}
       controls={controls}
       landscape
+      onDownloadPdf={items.length > 0 ? downloadPdf : undefined}
     >
       {empty ? <Box className="no-print" sx={{ py: 6, textAlign: "center", color: "text.secondary" }}>{emptyMessage}</Box> : null}
       {items.map((item) => (

@@ -101,6 +101,9 @@ function VoucherCopy({ item, copy }: { item: PrintableVoucher; copy: string }) {
       <AmountRow label="Payable within due date" value={voucher.finalAmountDue} bold />
       {paid && <AmountRow label="Already paid" value={voucher.totalPaid} />}
       {paid && <AmountRow label="Remaining balance" value={voucher.remainingBalance} bold />}
+      {(voucher.customValues ?? []).map((field) => (
+        <InfoRow key={field.label} label={field.label} value={field.value} />
+      ))}
 
       {words && (
         <>

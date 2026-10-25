@@ -11,6 +11,8 @@ export interface PrintableVoucher {
     dueDate: string;
     status: string;
     lines: Array<{ label: string; amount: string }>;
+    /** Custom field values the institution chose to show on the printed voucher. */
+    customValues: Array<{ label: string; value: string }>;
     totalFees: string;
     discountAmount: string;
     fineAmount: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useCallback, useEffect, useState } from "react";
-import { Alert, Chip, TextField } from "@mui/material";
+import { Alert, Chip, MenuItem, TextField } from "@mui/material";
 import CustomFieldDefaultEditor from "./CustomFieldDefaultEditor";
 import ResourceSection from "@/components/dashboard/ResourceSection";
 import CustomFieldOptionsEditor from "@/components/dashboard/CustomFieldOptionsEditor";
@@ -22,6 +22,7 @@ interface Definition {
   helpText?: string;
   isRequired?: boolean;
   isActive?: boolean;
+  showOnPrint?: boolean;
   sortOrder?: number;
   validation?: unknown;
   visibilityRules?: unknown;
@@ -33,6 +34,9 @@ interface CustomFieldsManagerProps {
   /** When set (superadmin context), definitions are scoped to this institution. */
   institutionId?: string;
 }
+
+/** The kinds of record that have printed documents, so only their fields can be shown on print. */
+export const PRINTABLE_ENTITIES = ["fee_voucher", "exam"];
 
 const INPUT_TYPES = [
   "TEXT", "TEXTAREA", "NUMBER", "EMAIL", "PHONE", "DATE", "DATETIME",
@@ -101,6 +105,7 @@ export default function CustomFieldsManager({ institutionId }: CustomFieldsManag
         { key: "entityType", label: "Entity" },
         { key: "inputType", label: "Input Type" },
         { key: "isRequired", label: "Required", render: (r) => (r.isRequired ? "Yes" : "No") },
+        { key: "showOnPrint", label: "Printed", render: (r) => (r.showOnPrint ? "Yes" : "No") },
         {
           key: "isActive",
           label: "Status",
@@ -126,6 +131,23 @@ export default function CustomFieldsManager({ institutionId }: CustomFieldsManag
         { key: "helpText", label: "Help Text", cols: 6 },
         { key: "isRequired", label: "Required", type: "boolean", cols: 6 },
         { key: "isActive", label: "Active", type: "boolean", cols: 6 },
+        {
+          key: "showOnPrint", label: "Show on printed documents", cols: 6,
+          renderInput: (value, onChange, disabled, form) => {
+            const printable = PRINTABLE_ENTITIES.includes(form.entityType ?? "");
+            return (
+              <TextField
+                select fullWidth label="Show on printed documents" value={printable ? value : ""}
+                disabled={disabled || !printable}
+                onChange={(event) => onChange(event.target.value)}
+                helperText={printable ? "Prints this value on the record's documents, such as a voucher or an exam datesheet and report card." : "This kind of record has no printed documents."}
+              >
+                <MenuItem value="false">No</MenuItem>
+                <MenuItem value="true">Yes</MenuItem>
+              </TextField>
+            );
+          },
+        },
         { key: "visibilityRules", label: "Visibility", type: "json", renderInput: (value, onChange, disabled) => <CustomFieldVisibilityEditor value={value} onChange={onChange} disabled={disabled} /> },
         { key: "validation", label: "File / image rules", type: "json", renderInput: (value, onChange, disabled) => <CustomFieldValidationEditor value={value} onChange={onChange} disabled={disabled} /> },
       ]}
