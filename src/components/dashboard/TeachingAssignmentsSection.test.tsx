@@ -24,14 +24,14 @@ const subjects = [{ id: "subject-1", name: "Math", classId: "class-1" }];
 const teachers = [{ id: "teacher-1", userId: "user-1", campusId: "campus-1" }];
 const teacherName = (id: string) => (id === "teacher-1" ? "Jane Teacher" : "—");
 
-function renderSection(onReload = vi.fn()) {
+function renderSection(onReload = vi.fn(), assignments: React.ComponentProps<typeof TeachingAssignmentsSection>["assignments"] = []) {
   return {
     onReload,
     ...render(
       <MessageProvider>
         <ConfirmProvider>
           <TeachingAssignmentsSection
-            assignments={[]}
+            assignments={assignments}
             loading={false}
             teachers={teachers}
             teacherName={teacherName}
@@ -54,6 +54,15 @@ describe("TeachingAssignmentsSection", () => {
   beforeEach(() => {
     vi.mocked(peopleService.assignTeacherToSubject).mockReset();
     vi.mocked(customFieldsService.getFormDefinitions).mockReset().mockResolvedValue({ data: { data: [] } } as never);
+  });
+
+  it("shows the name of the teacher on each existing assignment", () => {
+    renderSection(vi.fn(), [
+      { id: "a1", staffProfileId: "teacher-1", classId: "class-1", subjectId: "subject-1", sectionId: "section-1", campusId: "campus-1", createdAt: "2026-10-25T08:00:00.000Z" },
+    ]);
+
+    expect(screen.getByText("Jane Teacher")).toBeInTheDocument();
+    expect(screen.queryByText("—")).not.toBeInTheDocument();
   });
 
   it("sends staffProfileId (not teacherId) in the assignment payload", async () => {

@@ -39,7 +39,7 @@ import { peopleService } from "@/services/people.service";
 
 export interface TeachingAssignment {
   id: string;
-  teacherId: string;
+  staffProfileId: string;
   classId: string;
   subjectId: string;
   sectionId?: string | null;
@@ -170,7 +170,7 @@ export default function TeachingAssignmentsSection({
   const handleRemove = async (assignment: TeachingAssignment) => {
     const ok = await confirm({
       title: "Remove Assignment",
-      message: `Unassign ${teacherName(assignment.teacherId)} from ${subjectName[assignment.subjectId] ?? "this subject"} (${className[assignment.classId] ?? "class"}${assignment.sectionId ? ` — ${sectionName[assignment.sectionId] ?? "section"}` : ""})?`,
+      message: `Unassign ${teacherName(assignment.staffProfileId)} from ${subjectName[assignment.subjectId] ?? "this subject"} (${className[assignment.classId] ?? "class"}${assignment.sectionId ? ` — ${sectionName[assignment.sectionId] ?? "section"}` : ""})?`,
       confirmLabel: "Unassign",
       confirmColor: "error",
     });
@@ -232,7 +232,7 @@ export default function TeachingAssignmentsSection({
             <TableBody>
               {assignments.map((assignment) => (
                 <TableRow key={assignment.id} hover>
-                  <TableCell sx={{ fontWeight: 600 }}>{teacherName(assignment.teacherId)}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{teacherName(assignment.staffProfileId)}</TableCell>
                   <TableCell>{subjectName[assignment.subjectId] ?? "—"}</TableCell>
                   <TableCell>{className[assignment.classId] ?? "—"}</TableCell>
                   <TableCell>
