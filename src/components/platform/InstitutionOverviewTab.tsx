@@ -36,6 +36,7 @@ import { authService } from "@/services/auth.service";
 import { usersService } from "@/services/users.service";
 import { platformService } from "@/services/platform.service";
 import RecordMetadataPopover from "@/components/shared/RecordMetadataPopover";
+import TimezonePicker from "@/components/shared/TimezonePicker";
 
 interface Props {
   institution: Record<string, unknown>;
@@ -84,7 +85,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "", slug: "", status: "", deploymentMode: "",
-    primaryDomain: "", contactEmail: "", contactPhone: "", notes: "",
+    primaryDomain: "", contactEmail: "", contactPhone: "", notes: "", timezone: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -98,6 +99,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
       contactEmail: String(institution.contactEmail ?? ""),
       contactPhone: String(institution.contactPhone ?? ""),
       notes: String(institution.notes ?? ""),
+      timezone: String(institution.timezone ?? ""),
     });
     setEditOpen(true);
   };
@@ -120,6 +122,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
           contactEmail: editForm.contactEmail.trim() || undefined,
           contactPhone: editForm.contactPhone.trim() || undefined,
           notes: editForm.notes.trim() || undefined,
+          timezone: editForm.timezone || undefined,
         }),
       { showMessage, successMessage: "Institution details saved." }
     );
@@ -345,6 +348,9 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField label="Primary Domain" size="small" fullWidth value={editForm.primaryDomain} onChange={(e) => ef("primaryDomain", e.target.value)} />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TimezonePicker value={editForm.timezone} onChange={(zone) => ef("timezone", zone)} helperText="Dates and times for this school are written in this timezone." />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField label="Contact Email" type="email" size="small" fullWidth value={editForm.contactEmail} onChange={(e) => ef("contactEmail", e.target.value)} />

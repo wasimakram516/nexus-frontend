@@ -10,7 +10,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import ResourceSection from "./ResourceSection";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +18,8 @@ import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { attendanceCalendarService as calendar, WORKING_DAYS, type WorkingDay, type ClosureDate } from "@/services/attendanceCalendar.service";
 import { platformService } from "@/services/platform.service";
+import { formatDate } from "@/lib/dateFormat";
+import TimezonePicker from "@/components/shared/TimezonePicker";
 
 interface CampusOption { id: string; name: string; timezone?: string | null; institution?: { timezone: string } | null }
 interface Props { institutionId?: string; campuses: CampusOption[] }
@@ -97,7 +98,7 @@ export default function AttendanceCalendarSettings({ institutionId, campuses }: 
             {can("update") && <Button disabled={!days.length || saving} onClick={() => void saveDays()}>Save working days</Button>}
           </Box>
           {institutionId && <Box sx={{ display: "flex", gap: 2, my: 2 }}>
-            <TextField label="Institution timezone" value={timezone} onChange={(event) => setTimezone(event.target.value)} helperText="IANA zone, for example Asia/Karachi. Campuses may override this." disabled={saving} />
+            <TimezonePicker label="Institution timezone" value={timezone} onChange={setTimezone} helperText="Campuses may override this." disabled={saving} />
             <Button disabled={saving || !timezone.trim()} onClick={() => void saveTimezone()}>Save timezone</Button>
           </Box>}
           {campuses.length > 0 && <Box sx={{ my: 2 }} data-testid="applicable-timezones">
@@ -108,7 +109,7 @@ export default function AttendanceCalendarSettings({ institutionId, campuses }: 
             <Typography variant="caption" color="text.secondary">Working days and closures are evaluated in these zones. Edit a campus override under Campuses.</Typography>
           </Box>}
           <ResourceSection title="Closure dates" singular="Closure date" rows={closures} loading={false}
-            columns={[{ key: "date", label: "Date", render: (row) => row.date.slice(0, 10) }, { key: "label", label: "Label" }, { key: "campusId", label: "Campus", render: (row) => campuses.find((campus) => campus.id === row.campusId)?.name ?? (row.campusId ? "Campus" : "All campuses") }]}
+            columns={[{ key: "date", label: "Date", render: (row) => formatDate(row.date) }, { key: "label", label: "Label" }, { key: "campusId", label: "Campus", render: (row) => campuses.find((campus) => campus.id === row.campusId)?.name ?? (row.campusId ? "Campus" : "All campuses") }]}
             fields={[{ key: "date", label: "Closure date", type: "date", required: true }, { key: "label", label: "Closure label", required: true }, { key: "campusId", label: "Campus", type: "select", options: [{ value: "", label: "All campuses" }, ...campuses.map((campus) => ({ value: campus.id, label: campus.name }))] }]}
             onCreate={can("create") ? (payload) => saveClosure(() => calendar.createClosure(payload, institutionId)) : undefined}
             onUpdate={can("update") ? (id, payload) => saveClosure(() => calendar.updateClosure(id, { ...payload, campusId: payload.campusId ?? null }, institutionId)) : undefined}

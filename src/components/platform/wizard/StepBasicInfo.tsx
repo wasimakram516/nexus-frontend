@@ -3,6 +3,7 @@
 import { Box, Card, CardContent, Grid, MenuItem, TextField, Tooltip, Typography } from "@mui/material";
 import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import { WizardData } from "@/app/platform/institutions/new/page";
+import TimezonePicker from "@/components/shared/TimezonePicker";
 import { toSlug } from "@/lib/slugify";
 
 interface Props { data: WizardData; update: (p: Partial<WizardData>) => void; }
@@ -93,6 +94,13 @@ export default function StepBasicInfo({ data, update }: Props) {
                       </MenuItem>
                     ))}
                   </TextField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TimezonePicker
+                    value={data.timezone}
+                    onChange={(timezone) => update({ timezone })}
+                    helperText="Dates and times for this school are written in this timezone. Starts on this device's timezone."
+                  />
                 </Grid>
               </Grid>
             </CardContent>

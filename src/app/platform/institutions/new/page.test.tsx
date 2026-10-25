@@ -27,6 +27,7 @@ vi.mock("@/services/auth.service", () => ({ authService: { register: mocks.regis
 vi.mock("@/services/campuses.service", () => ({ campusesService: { create: mocks.createCampus } }));
 vi.mock("@/services/roles.service", () => ({ rolesService: { getModuleCatalog: mocks.getModuleCatalog } }));
 
+import { browserTimeZone } from "@/components/shared/TimezonePicker";
 import NewInstitutionWizard from "./page";
 
 const ok = (data: unknown = {}) => Promise.resolve({ data: { data, message: "ok" } });
@@ -142,7 +143,7 @@ describe("New institution wizard", () => {
 
     expect(mocks.createInstitution).toHaveBeenCalledWith({
       name: "Green School", slug: "green-school", status: "ACTIVE", deploymentMode: "SHARED_HOSTED",
-      contactEmail: "hi@green.io", planId: "plan-1",
+      contactEmail: "hi@green.io", planId: "plan-1", timezone: browserTimeZone(),
     });
     expect(mocks.updateSubscription).toHaveBeenCalledWith("inst-1", {
       planId: "plan-1", status: "TRIAL", billingCycle: "MONTHLY", currency: "PKR", agreedPrice: 4500, setupFee: 1000,

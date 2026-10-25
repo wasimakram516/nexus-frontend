@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 
@@ -33,7 +34,7 @@ const ok = (data: unknown = {}) => Promise.resolve({ data: { data, message: "ok"
 
 const base: WizardData = {
   name: "Green School", slug: "green-school", status: "ACTIVE", deploymentMode: "DEDICATED_HOSTED",
-  contactEmail: "hi@g.io", contactPhone: "", primaryDomain: "green.edu", notes: "",
+  contactEmail: "hi@g.io", contactPhone: "", primaryDomain: "green.edu", notes: "", timezone: "Asia/Karachi",
   adminName: "", adminEmail: "", adminPassword: "", skipAdmin: false,
   planId: "p", planName: "Starter", billingCycle: "MONTHLY", agreedPrice: "5000", currency: "PKR", setupFee: "",
   displayName: "Green", logoUrl: "",
@@ -95,6 +96,20 @@ describe("StepBasicInfo", () => {
     fireEvent.mouseDown(screen.getAllByRole("combobox")[1]);
     fireEvent.click(await screen.findByRole("option", { name: /Self Hosted/ }));
     expect(latest.deploymentMode).toBe("SELF_HOSTED");
+  });
+
+  it("picks the school's timezone by searching for a city instead of typing an identifier", async () => {
+    let latest = base;
+    const user = userEvent.setup();
+    render(<Harness initial={base} onData={(d) => (latest = d)}>{(p) => <StepBasicInfo {...p} />}</Harness>);
+
+    const picker = screen.getByLabelText("Timezone");
+    expect(picker).toHaveValue("Asia/Karachi (GMT+5)");
+    await user.clear(picker);
+    await user.type(picker, "dubai");
+    await user.click(await screen.findByRole("option", { name: /Asia\/Dubai/ }));
+
+    expect(latest.timezone).toBe("Asia/Dubai");
   });
 });
 

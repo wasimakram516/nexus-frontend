@@ -39,6 +39,7 @@ import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
 import { fetchAllUsers, UserLite } from "@/lib/users";
 import { campusesService } from "@/services/campuses.service";
+import TimezonePicker from "@/components/shared/TimezonePicker";
 
 interface Campus {
   customFields?: Record<string, unknown>;
@@ -331,7 +332,7 @@ export default function CampusesManager({ institutionId }: CampusesManagerProps)
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField label="Location *" value={form.location} onChange={(e) => f("location", e.target.value)} fullWidth placeholder="e.g. 123 Main Street, Lahore" />
-              <TextField label="Campus timezone" value={form.timezone} onChange={(e) => f("timezone", e.target.value)} fullWidth helperText="Optional IANA zone, for example Asia/Dubai. Leave empty to use the institution timezone." />
+              <TimezonePicker label="Campus timezone" value={form.timezone} onChange={(zone) => f("timezone", zone)} clearable emptyLabel="Same as the institution" helperText="Only set this when the campus is in a different timezone from the institution." />
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>

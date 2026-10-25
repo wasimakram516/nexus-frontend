@@ -31,6 +31,7 @@ import StepReview from "@/components/platform/wizard/StepReview";
 import NexGuide from "@/components/guide/NexGuide";
 import { toGuideTips } from "@/components/guide/guide-tips";
 import { SETUP_TIPS } from "@/content/guide";
+import { browserTimeZone } from "@/components/shared/TimezonePicker";
 
 const STEPS = [
   "Basic Info",
@@ -52,6 +53,8 @@ export interface WizardData {
   contactPhone: string;
   primaryDomain: string;
   notes: string;
+  /** IANA zone the school's dates and times are written in. */
+  timezone: string;
   // Step 2 — admin account
   adminName: string;
   adminEmail: string;
@@ -88,7 +91,7 @@ export interface WizardData {
 
 const defaultData: WizardData = {
   name: "", slug: "", status: "ACTIVE", deploymentMode: "SHARED_HOSTED",
-  contactEmail: "", contactPhone: "", primaryDomain: "", notes: "",
+  contactEmail: "", contactPhone: "", primaryDomain: "", notes: "", timezone: "",
   adminName: "", adminEmail: "", adminPassword: "", skipAdmin: false,
   planId: "", planName: "", billingCycle: "MONTHLY", agreedPrice: "", currency: "PKR", setupFee: "",
   displayName: "", logoUrl: "",
@@ -135,6 +138,8 @@ export default function NewInstitutionWizard() {
           setData({ ...defaultData, ...(draft.data ?? {}) });
         }
       } catch { /* ignore corrupted draft */ }
+      // A school starts on the timezone of the device creating it, which is almost always its own.
+      setData((current) => (current.timezone ? current : { ...current, timezone: browserTimeZone() }));
     };
     restoreDraft();
   }, []);
@@ -172,6 +177,7 @@ export default function NewInstitutionWizard() {
       ...(data.contactPhone && { contactPhone: data.contactPhone }),
       ...(data.primaryDomain && { primaryDomain: data.primaryDomain }),
       ...(data.notes && { notes: data.notes }),
+      ...(data.timezone && { timezone: data.timezone }),
       ...(data.planId && { planId: data.planId }),
     };
 

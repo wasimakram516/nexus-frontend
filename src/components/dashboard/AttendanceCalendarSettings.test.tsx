@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { platformService } from "@/services/platform.service";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,7 +40,7 @@ describe("AttendanceCalendarSettings", () => {
     render(<AttendanceCalendarSettings institutionId="institution-1" campuses={[]} />);
     fireEvent.click(screen.getByRole("button", { name: "Attendance calendar settings" }));
     fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
-    expect(await screen.findByLabelText("Institution timezone")).toHaveValue("Asia/Karachi");
+    expect(await screen.findByLabelText("Institution timezone")).toHaveValue("Asia/Karachi (GMT+5)");
     expect(calendar.getWorkingDays).toHaveBeenLastCalledWith("institution-1");
     expect(calendar.getClosures).toHaveBeenLastCalledWith("institution-1");
   });
@@ -63,7 +64,10 @@ describe("AttendanceCalendarSettings", () => {
     vi.mocked(platformService.updateInstitution).mockResolvedValue({ data: { data: {} } } as never);
     render(<AttendanceCalendarSettings institutionId="institution-1" campuses={[]} />);
     fireEvent.click(screen.getByRole("button", { name: "Attendance calendar settings" }));
-    fireEvent.change(await screen.findByLabelText("Institution timezone"), { target: { value: "America/New_York" } });
+    const picker = await screen.findByLabelText("Institution timezone");
+    await userEvent.clear(picker);
+    await userEvent.type(picker, "new york");
+    await userEvent.click(await screen.findByRole("option", { name: /America\/New_York/ }));
     fireEvent.click(screen.getByRole("button", { name: "Save timezone" }));
     await waitFor(() => expect(platformService.updateInstitution).toHaveBeenCalledWith("institution-1", { timezone: "America/New_York" }));
   });
