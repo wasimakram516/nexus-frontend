@@ -338,6 +338,39 @@ describe("PeriodSlotsSection", () => {
     expect(onReload).not.toHaveBeenCalled();
   });
 
+  it("shows a dropped period in its new cell straight away, before the server has answered", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);
+    vi.mocked(timetableService.updatePeriodSlot).mockReturnValue(new Promise(() => {}) as never);
+    renderSection();
+    await pickClassAndSection(user);
+
+    const source = (await screen.findByTestId("slot-cell-1-MONDAY")).querySelector("[draggable=true]") as HTMLElement;
+    fireEvent.dragStart(source);
+    fireEvent.drop(screen.getByTestId("empty-cell-1-TUESDAY"));
+
+    expect(within(await screen.findByTestId("slot-cell-1-TUESDAY")).getByText("Period One")).toBeInTheDocument();
+    expect(screen.getByTestId("empty-cell-1-MONDAY")).toBeInTheDocument();
+  });
+
+  it("puts a dropped period back when the server refuses it", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);
+    vi.mocked(timetableService.updatePeriodSlot).mockRejectedValue({
+      response: { status: 409, data: { message: "Room Lab 1 is already in use then." } },
+    });
+    renderSection();
+    await pickClassAndSection(user);
+
+    const source = (await screen.findByTestId("slot-cell-1-MONDAY")).querySelector("[draggable=true]") as HTMLElement;
+    fireEvent.dragStart(source);
+    fireEvent.drop(screen.getByTestId("empty-cell-1-TUESDAY"));
+
+    expect(await screen.findByText("Room Lab 1 is already in use then.")).toBeInTheDocument();
+    expect(await screen.findByTestId("slot-cell-1-MONDAY")).toBeInTheDocument();
+    expect(screen.getByTestId("empty-cell-1-TUESDAY")).toBeInTheDocument();
+  });
+
   it("does nothing when a period is dropped back on its own cell", async () => {
     const user = userEvent.setup();
     vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);

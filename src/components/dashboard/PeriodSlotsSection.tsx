@@ -189,14 +189,14 @@ export default function PeriodSlotsSection({
 
   /** Loads the full weekly grid for one section. */
   const loadWeek = useCallback(
-    async (sectionId: string) => {
-      setLoadingWeek(true);
+    async (sectionId: string, quiet = false) => {
+      if (!quiet) setLoadingWeek(true);
       const { data } = await apiHandler<PeriodSlot[]>(
         () => timetableService.getSectionWeek(sectionId),
         { showMessage, silent: true }
       );
       setWeekSlots(Array.isArray(data) ? data : []);
-      setLoadingWeek(false);
+      if (!quiet) setLoadingWeek(false);
     },
     [showMessage]
   );
@@ -255,8 +255,8 @@ export default function PeriodSlotsSection({
   const notesBySlot = useMemo(() => clashNotes(clashes), [clashes]);
 
   /** Reloads everything a change to the week can affect. */
-  const refreshAfterChange = () => {
-    void loadWeek(selectedSectionId);
+  const refreshAfterChange = (quiet = false) => {
+    void loadWeek(selectedSectionId, quiet);
     if (selectedCampusId) void loadChecks(selectedCampusId);
     onReload();
   };
@@ -382,8 +382,9 @@ export default function PeriodSlotsSection({
 
   /**
    * Dropping a period on an empty cell moves it there; dropping it on another
-   * period swaps the two. The server refuses a move that would clash and says
-   * who with, so the message is shown and nothing changes.
+   * period swaps the two. The grid changes at once and the server's answer is
+   * checked afterwards: if it refuses (a clash, say) the grid goes back and the
+   * reason is shown, so the person never waits on the network to see the drop.
    */
   const handleDrop = async (periodNumber: number, day: DayOfWeek) => {
     const dragged = weekSlots.find((s) => s.id === dragId);
@@ -391,10 +392,25 @@ export default function PeriodSlotsSection({
     if (!canManage || !dragged) return;
     if (dragged.periodNumber === periodNumber && dragged.dayOfWeek === day) return;
     const target = slotFor(periodNumber, day);
+    const before = weekSlots;
+    setWeekSlots(
+      before.map((slot) => {
+        if (slot.id === dragged.id) {
+          return target
+            ? { ...slot, periodNumber, dayOfWeek: day, startTime: target.startTime, endTime: target.endTime }
+            : { ...slot, periodNumber, dayOfWeek: day };
+        }
+        if (target && slot.id === target.id) {
+          return { ...slot, periodNumber: dragged.periodNumber, dayOfWeek: dragged.dayOfWeek, startTime: dragged.startTime, endTime: dragged.endTime };
+        }
+        return slot;
+      })
+    );
     const { success } = target
       ? await apiHandler(() => timetableService.swapPeriodSlots(dragged.id, target.id), { showMessage, successMessage: "Periods swapped." })
       : await apiHandler(() => timetableService.updatePeriodSlot(dragged.id, { periodNumber, dayOfWeek: day }), { showMessage, successMessage: "Period moved." });
-    if (success) refreshAfterChange();
+    if (success) refreshAfterChange(true);
+    else setWeekSlots(before);
   };
 
   /** Loads the printable week for the selected section, or for a teacher when one is chosen. */
