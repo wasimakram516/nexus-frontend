@@ -24,6 +24,7 @@ import AccountBalance from "@mui/icons-material/AccountBalance";
 import Assessment from "@mui/icons-material/Assessment";
 import Business from "@mui/icons-material/Business";
 import AutoStories from "@mui/icons-material/AutoStories";
+import CalendarMonth from "@mui/icons-material/CalendarMonth";
 import Campaign from "@mui/icons-material/Campaign";
 import ChevronLeft from "@mui/icons-material/ChevronLeft";
 import ChevronRight from "@mui/icons-material/ChevronRight";
@@ -85,6 +86,7 @@ const navItems: NavItem[] = [
   { label: "Notices",       href: "/dashboard/notices",       icon: <Campaign />,       module: "NOTICES" },
   { label: "Exams",         href: "/dashboard/exams",         icon: <AutoStories />,    module: "EXAMINATIONS" },
   { label: "My Exams",      href: "/dashboard/my-exams",      icon: <AutoStories />,    requiresModule: "EXAMINATIONS", roles: ["STUDENT", "GUARDIAN"] },
+  { label: "My Timetable",  href: "/dashboard/my-timetable",  icon: <CalendarMonth />, requiresModule: "TIMETABLE", roles: ["STUDENT", "GUARDIAN", "STAFF"] },
   { label: "My Fees",       href: "/dashboard/my-fees",       icon: <AccountBalance />, requiresModule: "FINANCE", roles: ["STUDENT", "GUARDIAN"] },
   { label: "Campuses",      href: "/dashboard/campuses",      icon: <Business />,       roles: ["ADMIN"] },
   { label: "Users",         href: "/dashboard/users",         icon: <ManageAccounts />, roles: ["ADMIN"] },
