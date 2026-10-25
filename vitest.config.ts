@@ -19,8 +19,10 @@ export default defineConfig({
     css: true,
     exclude: ["node_modules", ".next", "e2e"],
     // Default 5s is too tight for jsdom + MUI render/interaction tests under
-    // parallel-worker CPU contention; raised to cut spurious CI flakiness.
-    testTimeout: 20000,
+    // CPU contention; raised to cut spurious CI flakiness. The heaviest wizard and
+    // form tests (PromotionWizard, signup, PeopleTab) take 20s+ late in a full
+    // single-worker run, so 40s keeps the gate about behavior, not machine load.
+    testTimeout: 40000,
     // Keep jsdom/MUI workers bounded so full-suite resource pressure is reproducible.
     pool: "threads",
     maxWorkers: 1,
