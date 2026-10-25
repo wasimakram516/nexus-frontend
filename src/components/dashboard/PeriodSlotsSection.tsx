@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
+  Autocomplete,
   Box,
   Button,
   Card,
@@ -25,13 +27,19 @@ import {
 } from "@mui/material";
 import Add from "@mui/icons-material/Add";
 import Delete from "@mui/icons-material/Delete";
+import Print from "@mui/icons-material/Print";
+import WarningAmber from "@mui/icons-material/WarningAmber";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
 import DataTableCard from "@/components/shared/DataTableCard";
+import PrintSheet from "@/components/shared/PrintSheet";
+import SubstitutionsPanel from "@/components/dashboard/SubstitutionsPanel";
+import TimetableWeekTable from "@/components/dashboard/TimetableWeekTable";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import { useCustomFieldForm } from "@/hooks/useCustomFieldForm";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
+import { clashNotes, type TimetableClash, type TimetableGroup, type TimetableWeek } from "@/lib/timetableDocuments";
 import { timetableService } from "@/services/timetable.service";
 
 /** Matches the backend's `DayOfWeek` enum (M3 design doc § 5.2) — no frontend equivalent existed yet. */
@@ -78,6 +86,7 @@ export interface PeriodSlot {
   dayOfWeek: DayOfWeek;
   startTime: string;
   endTime: string;
+  room?: string | null;
   customFields?: Record<string, unknown>;
   createdAt: string;
 }
@@ -114,6 +123,7 @@ interface SlotFormState {
   endTime: string;
   subjectId: string;
   staffProfileId: string;
+  room: string;
 }
 
 /** A fresh, empty slot form, optionally pre-filled from the grid cell that was clicked. */
@@ -126,6 +136,7 @@ function emptySlotForm(prefill?: { periodNumber?: number; dayOfWeek?: DayOfWeek 
     endTime: "",
     subjectId: "",
     staffProfileId: "",
+    room: "",
   };
 }
 
@@ -166,6 +177,15 @@ export default function PeriodSlotsSection({
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<SlotFormState>(emptySlotForm());
   const [confirmDelete, setConfirmDelete] = useState<PeriodSlot | null>(null);
+  const [clashes, setClashes] = useState<TimetableClash[]>([]);
+  const [rooms, setRooms] = useState<string[]>([]);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [printOpen, setPrintOpen] = useState(false);
+  const [printGroup, setPrintGroup] = useState<TimetableGroup | null>(null);
+  const [printWeek, setPrintWeek] = useState<TimetableWeek | null>(null);
+  const [printLoading, setPrintLoading] = useState(false);
+  /** Empty prints the selected section; otherwise that teacher's week. */
+  const [printTeacherId, setPrintTeacherId] = useState("");
 
   /** Loads the full weekly grid for one section. */
   const loadWeek = useCallback(
@@ -192,6 +212,19 @@ export default function PeriodSlotsSection({
     }
   }, [selectedSectionId, loadWeek]);
 
+  /** Loads the campus's existing clashes and the rooms already in use. */
+  const loadChecks = useCallback(
+    async (campusId: string) => {
+      const [clashResult, roomResult] = await Promise.all([
+        apiHandler<TimetableClash[]>(() => timetableService.getClashes(campusId), { showMessage, silent: true }),
+        apiHandler<string[]>(() => timetableService.getRooms(campusId), { showMessage, silent: true }),
+      ]);
+      setClashes(Array.isArray(clashResult.data) ? clashResult.data : []);
+      setRooms(Array.isArray(roomResult.data) ? roomResult.data : []);
+    },
+    [showMessage]
+  );
+
   const sectionsForClass = useMemo(
     () => sections.filter((s) => s.classId === selectedClassId),
     [sections, selectedClassId]
@@ -211,6 +244,23 @@ export default function PeriodSlotsSection({
     [classes, levels]
   );
   const selectedCampusId = selectedClassId ? campusOfClass(selectedClassId) : undefined;
+  useEffect(() => {
+    if (selectedCampusId) {
+      (async () => {
+        await loadChecks(selectedCampusId);
+      })();
+    }
+  }, [selectedCampusId, loadChecks]);
+
+  const notesBySlot = useMemo(() => clashNotes(clashes), [clashes]);
+
+  /** Reloads everything a change to the week can affect. */
+  const refreshAfterChange = () => {
+    void loadWeek(selectedSectionId);
+    if (selectedCampusId) void loadChecks(selectedCampusId);
+    onReload();
+  };
+
   const teachersForCampus = useMemo(
     () => teachers.filter((t) => !selectedCampusId || t.campusId === selectedCampusId),
     [teachers, selectedCampusId]
@@ -255,6 +305,7 @@ export default function PeriodSlotsSection({
       endTime: slot.endTime,
       subjectId: slot.subjectId ?? "",
       staffProfileId: slot.staffProfileId ?? "",
+      room: slot.room ?? "",
     });
     setDialogOpen(true);
     void custom.load("update", slot.customFields ?? {});
@@ -292,6 +343,7 @@ export default function PeriodSlotsSection({
       endTime: form.endTime,
       subjectId: form.subjectId || null,
       staffProfileId: form.staffProfileId || null,
+      room: form.room.trim() || null,
       customFields: custom.values,
     };
     // classId/sectionId are only meaningful on create — this grid is always
@@ -314,8 +366,7 @@ export default function PeriodSlotsSection({
     setSaving(false);
     if (success) {
       setDialogOpen(false);
-      loadWeek(selectedSectionId);
-      onReload();
+      refreshAfterChange();
     }
   };
 
@@ -326,10 +377,42 @@ export default function PeriodSlotsSection({
       { showMessage, successMessage: "Period slot moved to recycle bin." }
     );
     setConfirmDelete(null);
-    if (success) {
-      loadWeek(selectedSectionId);
-      onReload();
-    }
+    if (success) refreshAfterChange();
+  };
+
+  /**
+   * Dropping a period on an empty cell moves it there; dropping it on another
+   * period swaps the two. The server refuses a move that would clash and says
+   * who with, so the message is shown and nothing changes.
+   */
+  const handleDrop = async (periodNumber: number, day: DayOfWeek) => {
+    const dragged = weekSlots.find((s) => s.id === dragId);
+    setDragId(null);
+    if (!canManage || !dragged) return;
+    if (dragged.periodNumber === periodNumber && dragged.dayOfWeek === day) return;
+    const target = slotFor(periodNumber, day);
+    const { success } = target
+      ? await apiHandler(() => timetableService.swapPeriodSlots(dragged.id, target.id), { showMessage, successMessage: "Periods swapped." })
+      : await apiHandler(() => timetableService.updatePeriodSlot(dragged.id, { periodNumber, dayOfWeek: day }), { showMessage, successMessage: "Period moved." });
+    if (success) refreshAfterChange();
+  };
+
+  /** Loads the printable week for the selected section, or for a teacher when one is chosen. */
+  const loadPrint = async (teacherId: string) => {
+    setPrintTeacherId(teacherId);
+    setPrintLoading(true);
+    const { data } = await apiHandler<{ week: TimetableWeek; group: TimetableGroup }>(
+      () => (teacherId ? timetableService.getTeacherSchedule(teacherId) : timetableService.getSectionSchedule(selectedSectionId)),
+      { showMessage, silent: true }
+    );
+    setPrintGroup(data?.group ?? null);
+    setPrintWeek(data?.week ?? null);
+    setPrintLoading(false);
+  };
+
+  const openPrint = async () => {
+    setPrintOpen(true);
+    await loadPrint("");
   };
 
   return (
@@ -338,7 +421,8 @@ export default function PeriodSlotsSection({
         <Typography variant="h6" sx={{ fontWeight: 700 }}>Period Slots</Typography>
         <Typography variant="body2" color="text.secondary">
           A section&apos;s weekly-recurring schedule template — named periods with a time range,
-          optional subject and teacher. Pick a class and section to view or edit its week.
+          optional subject, teacher and room. Pick a class and section to view or edit its week,
+          and drag a period to another cell to move it, or onto another period to swap them.
         </Typography>
       </Box>
 
@@ -404,13 +488,31 @@ export default function PeriodSlotsSection({
         </Card>
       ) : (
         <>
-          {canManage && (
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1.5 }}>
+          {clashes.length > 0 && (
+            <Alert severity="warning" sx={{ mb: 1.5 }} icon={<WarningAmber />}>
+              {clashes.length === 1 ? "1 clash on this campus." : `${clashes.length} clashes on this campus.`}
+              <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+                {clashes.slice(0, 5).map((clash) => (
+                  <li key={`${clash.first.id}-${clash.second.id}`}>
+                    {clash.kind === "TEACHER" ? "Teacher" : "Room"} clash: {clash.first.className} {clash.first.sectionName} and{" "}
+                    {clash.second.className} {clash.second.sectionName} ({clash.first.startTime}–{clash.first.endTime} and{" "}
+                    {clash.second.startTime}–{clash.second.endTime})
+                  </li>
+                ))}
+              </Box>
+              {clashes.length > 5 && <Typography variant="body2">and {clashes.length - 5} more.</Typography>}
+            </Alert>
+          )}
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mb: 1.5 }}>
+            <Button variant="outlined" startIcon={<Print />} onClick={openPrint}>
+              Print / PDF
+            </Button>
+            {canManage && (
               <Button variant="outlined" startIcon={<Add />} onClick={() => openCreate()}>
                 Add Period Slot
               </Button>
-            </Box>
-          )}
+            )}
+          </Box>
           <DataTableCard>
             <Table size="small">
               <TableHead>
@@ -435,6 +537,13 @@ export default function PeriodSlotsSection({
                           align="center"
                           data-testid={slot ? `slot-cell-${periodNumber}-${day}` : `empty-cell-${periodNumber}-${day}`}
                           sx={{ p: 0.5, verticalAlign: "top", minWidth: 120 }}
+                          onDragOver={(e) => {
+                            if (canManage && dragId) e.preventDefault();
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            void handleDrop(periodNumber, day);
+                          }}
                         >
                           {slot ? (
                             // Not role="button" — it wraps a real <button> (the delete
@@ -442,11 +551,18 @@ export default function PeriodSlotsSection({
                             // anti-pattern. Click-to-edit still works via onClick; the
                             // delete IconButton remains independently keyboard-reachable.
                             <Box
+                              draggable={canManage}
+                              onDragStart={(e) => {
+                                setDragId(slot.id);
+                                e.dataTransfer?.setData("text/plain", slot.id);
+                              }}
+                              onDragEnd={() => setDragId(null)}
                               onClick={() => handleCellClick(periodNumber, day)}
                               sx={{
                                 position: "relative",
                                 border: "1px solid",
-                                borderColor: "divider",
+                                borderColor: notesBySlot.has(slot.id) ? "error.main" : "divider",
+                                opacity: dragId === slot.id ? 0.5 : 1,
                                 borderRadius: 1,
                                 p: 1,
                                 textAlign: "left",
@@ -471,6 +587,18 @@ export default function PeriodSlotsSection({
                                 <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
                                   {teacherName(slot.staffProfileId)}
                                 </Typography>
+                              )}
+                              {slot.room && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                                  Room {slot.room}
+                                </Typography>
+                              )}
+                              {notesBySlot.has(slot.id) && (
+                                <Tooltip title={(notesBySlot.get(slot.id) ?? []).join(". ")}>
+                                  <Typography variant="caption" color="error" sx={{ display: "block", fontWeight: 600 }}>
+                                    Clash
+                                  </Typography>
+                                </Tooltip>
                               )}
                               {canManage && (
                                 <Tooltip title="Delete">
@@ -511,6 +639,52 @@ export default function PeriodSlotsSection({
           </DataTableCard>
         </>
       )}
+
+      {selectedSectionId && selectedCampusId && (
+        <SubstitutionsPanel
+          campusId={selectedCampusId}
+          sectionId={selectedSectionId}
+          weekSlots={weekSlots}
+          teachers={teachersForCampus}
+          teacherName={teacherName}
+          canManage={canManage}
+        />
+      )}
+
+      <PrintSheet
+        open={printOpen}
+        title="Timetable"
+        landscape
+        loading={printLoading}
+        error={!printLoading && !printGroup ? "The timetable could not be loaded." : null}
+        onClose={() => setPrintOpen(false)}
+        controls={
+          <TextField
+            select
+            size="small"
+            label="Timetable of"
+            value={printTeacherId}
+            onChange={(e) => void loadPrint(e.target.value)}
+            sx={{ minWidth: 260 }}
+          >
+            <MenuItem value="">This section</MenuItem>
+            {teachersForCampus.map((t) => (
+              <MenuItem key={t.id} value={t.id}>{teacherName(t.id)}</MenuItem>
+            ))}
+          </TextField>
+        }
+        onDownloadPdf={() =>
+          printTeacherId ? timetableService.downloadTeacherPdf(printTeacherId) : timetableService.downloadSectionPdf(selectedSectionId)
+        }
+      >
+        {printGroup && printWeek && (
+          <Box className="print-page" sx={{ bgcolor: "#fff", color: "#111", p: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>{printGroup.title}</Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>Week of {printWeek.from} to {printWeek.to}</Typography>
+            <TimetableWeekTable group={printGroup} />
+          </Box>
+        )}
+      </PrintSheet>
 
       <ConfirmDialog
         open={!!confirmDelete}
@@ -619,6 +793,17 @@ export default function PeriodSlotsSection({
                   <MenuItem key={t.id} value={t.id}>{teacherName(t.id)}</MenuItem>
                 ))}
               </TextField>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <Autocomplete
+                freeSolo
+                options={rooms}
+                inputValue={form.room}
+                onInputChange={(_, value) => setForm((p) => ({ ...p, room: value }))}
+                renderInput={(params) => (
+                  <TextField {...params} label="Room" helperText="Optional — two periods cannot use one room at the same time." />
+                )}
+              />
             </Grid>
             <Grid size={{ xs: 12 }}>
               {custom.loading && <Typography role="status">Loading additional fields…</Typography>}

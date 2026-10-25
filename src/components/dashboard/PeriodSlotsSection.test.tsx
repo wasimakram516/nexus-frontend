@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MessageProvider } from "@/contexts/MessageContext";
 import { customFieldsService } from "@/services/customFields.service";
@@ -14,6 +14,15 @@ vi.mock("@/services/timetable.service", () => ({
     updatePeriodSlot: vi.fn(),
     deletePeriodSlot: vi.fn(),
     getSectionWeek: vi.fn(),
+    swapPeriodSlots: vi.fn(),
+    getClashes: vi.fn(),
+    getRooms: vi.fn(),
+    getSubstitutions: vi.fn(),
+    createSubstitution: vi.fn(),
+    cancelSubstitution: vi.fn(),
+    getSectionSchedule: vi.fn(),
+    getTeacherSchedule: vi.fn(),
+    downloadSectionPdf: vi.fn(),
   },
 }));
 
@@ -93,6 +102,15 @@ describe("PeriodSlotsSection", () => {
     vi.mocked(timetableService.getSectionWeek).mockReset();
     vi.mocked(timetableService.updatePeriodSlot).mockReset();
     vi.mocked(timetableService.deletePeriodSlot).mockReset();
+    vi.mocked(timetableService.swapPeriodSlots).mockReset();
+    vi.mocked(timetableService.getClashes).mockReset();
+    vi.mocked(timetableService.getRooms).mockReset();
+    vi.mocked(timetableService.getSubstitutions).mockReset();
+    vi.mocked(timetableService.createSubstitution).mockReset();
+    vi.mocked(timetableService.cancelSubstitution).mockReset();
+    vi.mocked(timetableService.getClashes).mockResolvedValue({ data: { data: [] } } as never);
+    vi.mocked(timetableService.getRooms).mockResolvedValue({ data: { data: ["Lab 1"] } } as never);
+    vi.mocked(timetableService.getSubstitutions).mockResolvedValue({ data: { data: [] } } as never);
     vi.mocked(customFieldsService.getFormDefinitions).mockReset();
     vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({ data: { data: [] } } as never);
   });
@@ -194,6 +212,7 @@ describe("PeriodSlotsSection", () => {
       endTime: "08:40",
       subjectId: null,
       staffProfileId: null,
+      room: null,
       classId: "class-1",
       sectionId: "section-1",
       customFields: {},
@@ -266,6 +285,172 @@ describe("PeriodSlotsSection", () => {
 
     expect(timetableService.deletePeriodSlot).toHaveBeenCalledWith("slot-1");
     expect(onReload).toHaveBeenCalled();
+  });
+
+  it("moves a period to an empty cell when it is dropped there", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);
+    vi.mocked(timetableService.updatePeriodSlot).mockResolvedValue({ data: { message: "ok", data: {} } } as never);
+    const { onReload } = renderSection();
+    await pickClassAndSection(user);
+
+    const source = (await screen.findByTestId("slot-cell-1-MONDAY")).querySelector("[draggable=true]") as HTMLElement;
+    fireEvent.dragStart(source);
+    fireEvent.drop(screen.getByTestId("empty-cell-1-TUESDAY"));
+
+    await waitFor(() =>
+      expect(timetableService.updatePeriodSlot).toHaveBeenCalledWith("slot-1", { periodNumber: 1, dayOfWeek: "TUESDAY" })
+    );
+    expect(timetableService.swapPeriodSlots).not.toHaveBeenCalled();
+    await waitFor(() => expect(onReload).toHaveBeenCalled());
+  });
+
+  it("swaps two periods when one is dropped on the other", async () => {
+    const user = userEvent.setup();
+    const other = { ...secondSlot, periodNumber: 1, dayOfWeek: "TUESDAY" as const };
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot, other] } } as never);
+    vi.mocked(timetableService.swapPeriodSlots).mockResolvedValue({ data: { message: "ok", data: {} } } as never);
+    renderSection();
+    await pickClassAndSection(user);
+
+    const source = (await screen.findByTestId("slot-cell-1-MONDAY")).querySelector("[draggable=true]") as HTMLElement;
+    fireEvent.dragStart(source);
+    fireEvent.drop(screen.getByTestId("slot-cell-1-TUESDAY"));
+
+    await waitFor(() => expect(timetableService.swapPeriodSlots).toHaveBeenCalledWith("slot-1", "slot-2"));
+    expect(timetableService.updatePeriodSlot).not.toHaveBeenCalled();
+  });
+
+  it("shows the server's reason when a drop would clash, and changes nothing", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);
+    vi.mocked(timetableService.updatePeriodSlot).mockRejectedValue({
+      response: { status: 409, data: { message: "Jane Teacher is already teaching Class 2 B at that time." } },
+    });
+    const { onReload } = renderSection();
+    await pickClassAndSection(user);
+
+    const source = (await screen.findByTestId("slot-cell-1-MONDAY")).querySelector("[draggable=true]") as HTMLElement;
+    fireEvent.dragStart(source);
+    fireEvent.drop(screen.getByTestId("empty-cell-1-TUESDAY"));
+
+    expect(await screen.findByText("Jane Teacher is already teaching Class 2 B at that time.")).toBeInTheDocument();
+    expect(onReload).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when a period is dropped back on its own cell", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);
+    renderSection();
+    await pickClassAndSection(user);
+
+    const cell = await screen.findByTestId("slot-cell-1-MONDAY");
+    fireEvent.dragStart(cell.querySelector("[draggable=true]") as HTMLElement);
+    fireEvent.drop(cell);
+
+    expect(timetableService.updatePeriodSlot).not.toHaveBeenCalled();
+    expect(timetableService.swapPeriodSlots).not.toHaveBeenCalled();
+  });
+
+  it("does not let a period be dragged without permission to manage", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);
+    renderSection(false);
+    await pickClassAndSection(user);
+
+    const cell = await screen.findByTestId("slot-cell-1-MONDAY");
+
+    expect(cell.querySelector("[draggable=true]")).toBeNull();
+  });
+
+  it("flags a clashing period and lists the clash", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);
+    const side = (id: string, section: string) => ({
+      id,
+      className: "Class 1",
+      sectionName: section,
+      teacherName: "Jane Teacher",
+      room: null,
+      dayOfWeek: "MONDAY",
+      startTime: "08:00",
+      endTime: "08:40",
+    });
+    vi.mocked(timetableService.getClashes).mockResolvedValue({
+      data: { data: [{ kind: "TEACHER", first: side("slot-1", "A"), second: side("other", "B") }] },
+    } as never);
+    renderSection();
+    await pickClassAndSection(user);
+
+    const cell = await screen.findByTestId("slot-cell-1-MONDAY");
+
+    expect(await within(cell).findByText("Clash")).toBeInTheDocument();
+    expect(screen.getByText("1 clash on this campus.")).toBeInTheDocument();
+    expect(screen.getByText(/Teacher clash: Class 1 A and Class 1 B/)).toBeInTheDocument();
+  });
+
+  it("sends the room typed on a period, and offers rooms already used", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [] } } as never);
+    vi.mocked(timetableService.createPeriodSlot).mockResolvedValue({ data: { message: "ok", data: {} } } as never);
+    renderSection();
+    await pickClassAndSection(user);
+
+    await user.click(await screen.findByRole("button", { name: "Add First Period Slot" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.type(within(dialog).getByLabelText("Name *"), "Period 1");
+    await user.type(within(dialog).getByLabelText("Period Number *"), "1");
+    await user.click(within(dialog).getByLabelText(/Day of Week/));
+    await user.click(await screen.findByRole("option", { name: "Monday" }));
+    await user.type(within(dialog).getByLabelText("Start Time *"), "08:00");
+    await user.type(within(dialog).getByLabelText("End Time *"), "08:40");
+    await user.click(within(dialog).getByLabelText("Room"));
+    expect(await screen.findByRole("option", { name: "Lab 1" })).toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: "Lab 1" }));
+    await user.click(within(dialog).getByRole("button", { name: "Create" }));
+
+    expect(timetableService.createPeriodSlot).toHaveBeenCalledWith(expect.objectContaining({ room: "Lab 1" }));
+  });
+
+  it("opens a printable week for the section", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);
+    vi.mocked(timetableService.getSectionSchedule).mockResolvedValue({
+      data: {
+        data: {
+          week: { from: "2026-11-02", to: "2026-11-08" },
+          group: { kind: "SECTION", id: "section-1", title: "Class 1, section A", subtitle: null, entries: [] },
+        },
+      },
+    } as never);
+    renderSection();
+    await pickClassAndSection(user);
+
+    await user.click(await screen.findByRole("button", { name: /print \/ pdf/i }));
+
+    expect(await screen.findByText("Class 1, section A")).toBeInTheDocument();
+    expect(screen.getByText("Week of 2026-11-02 to 2026-11-08")).toBeInTheDocument();
+    expect(timetableService.getSectionSchedule).toHaveBeenCalledWith("section-1");
+  });
+
+  it("prints a teacher's week instead when one is chosen", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);
+    const reply = (title: string, kind: string) => ({
+      data: { data: { week: { from: "2026-11-02", to: "2026-11-08" }, group: { kind, id: "g", title, subtitle: null, entries: [] } } },
+    });
+    vi.mocked(timetableService.getSectionSchedule).mockResolvedValue(reply("Class 1, section A", "SECTION") as never);
+    vi.mocked(timetableService.getTeacherSchedule).mockResolvedValue(reply("Jane Teacher", "TEACHER") as never);
+    renderSection();
+    await pickClassAndSection(user);
+
+    await user.click(await screen.findByRole("button", { name: /print \/ pdf/i }));
+    await screen.findByText("Class 1, section A");
+    await user.click(screen.getByLabelText("Timetable of"));
+    await user.click(await screen.findByRole("option", { name: "Jane Teacher" }));
+
+    expect(await screen.findByText("Week of 2026-11-02 to 2026-11-08")).toBeInTheDocument();
+    expect(timetableService.getTeacherSchedule).toHaveBeenCalledWith("teacher-1");
   });
 
   it("hides add/delete affordances when canManage is false", async () => {
