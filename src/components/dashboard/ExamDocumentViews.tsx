@@ -2,7 +2,7 @@
 
 import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
 import { DocumentHeader, PrintPage } from "@/components/shared/PrintSheet";
-import { formatDate } from "@/lib/dateFormat";
+import { formatClockRange, formatClockTime, formatDate } from "@/lib/dateFormat";
 import {
   AdmitCardData,
   DatesheetData,
@@ -20,7 +20,7 @@ const cell = { color: "#111", borderColor: "#999", py: 0.75 };
 const head = { ...cell, fontWeight: 700, bgcolor: "#f1f1f1" };
 
 function timeRange(paper: DatesheetPaper): string {
-  return paper.startTime && paper.endTime ? `${paper.startTime} – ${paper.endTime}` : paper.startTime ?? "—";
+  return paper.startTime && paper.endTime ? formatClockRange(paper.startTime, paper.endTime) : formatClockTime(paper.startTime) || "—";
 }
 
 function PapersTable({ papers }: { papers: DatesheetPaper[] }) {

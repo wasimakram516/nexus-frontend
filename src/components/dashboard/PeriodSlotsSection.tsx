@@ -41,6 +41,7 @@ import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { clashNotes, type TimetableClash, type TimetableGroup, type TimetableWeek } from "@/lib/timetableDocuments";
 import { timetableService } from "@/services/timetable.service";
+import { formatClockRange, formatDate } from "@/lib/dateFormat";
 
 /** Matches the backend's `DayOfWeek` enum (M3 design doc § 5.2) — no frontend equivalent existed yet. */
 export type DayOfWeek =
@@ -511,8 +512,8 @@ export default function PeriodSlotsSection({
                 {clashes.slice(0, 5).map((clash) => (
                   <li key={`${clash.first.id}-${clash.second.id}`}>
                     {clash.kind === "TEACHER" ? "Teacher" : "Room"} clash: {clash.first.className} {clash.first.sectionName} and{" "}
-                    {clash.second.className} {clash.second.sectionName} ({clash.first.startTime}–{clash.first.endTime} and{" "}
-                    {clash.second.startTime}–{clash.second.endTime})
+                    {clash.second.className} {clash.second.sectionName} ({formatClockRange(clash.first.startTime ?? "", clash.first.endTime ?? "")} and{" "}
+                    {formatClockRange(clash.second.startTime ?? "", clash.second.endTime ?? "")})
                   </li>
                 ))}
               </Box>
@@ -592,7 +593,7 @@ export default function PeriodSlotsSection({
                                 {slot.name}
                               </Typography>
                               <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                                {slot.startTime}–{slot.endTime}
+                                {formatClockRange(slot.startTime, slot.endTime)}
                               </Typography>
                               {slot.subjectId && (
                                 <Typography variant="caption" sx={{ display: "block" }}>
@@ -696,7 +697,7 @@ export default function PeriodSlotsSection({
         {printGroup && printWeek && (
           <Box className="print-page" sx={{ bgcolor: "#fff", color: "#111", p: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>{printGroup.title}</Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>Week of {printWeek.from} to {printWeek.to}</Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>Week of {formatDate(printWeek.from)} to {formatDate(printWeek.to)}</Typography>
             <TimetableWeekTable group={printGroup} />
           </Box>
         )}

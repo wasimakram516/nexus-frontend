@@ -62,6 +62,7 @@ import { academicsService } from "@/services/academics.service";
 import { campusesService } from "@/services/campuses.service";
 import { peopleService } from "@/services/people.service";
 import { timetableService } from "@/services/timetable.service";
+import { formatTime as formatClockInZone, formatClockRange } from "@/lib/dateFormat";
 
 interface AttendanceRecord {
   id: string;
@@ -201,7 +202,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   };
   const formatTime = (value?: string | null, id = campusId): string => {
     const timezone = timezoneForCampus(id);
-    return value && timezone ? campusTime(timezone, new Date(value)) : "—";
+    return value && timezone ? formatClockInZone(value, timezone) : "—";
   };
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(true);
@@ -1216,7 +1217,7 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
                 <MenuItem value="">Select a period</MenuItem>
                 {periodsForDay.map((slot) => (
                   <MenuItem key={slot.id} value={slot.id}>
-                    {slot.name} ({slot.startTime}–{slot.endTime})
+                    {slot.name} ({formatClockRange(slot.startTime, slot.endTime)})
                   </MenuItem>
                 ))}
               </TextField>

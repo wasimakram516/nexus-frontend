@@ -7,7 +7,7 @@ import ResourceSection from "@/components/dashboard/ResourceSection";
 import EditNote from "@mui/icons-material/EditNote";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
-import { formatDate } from "@/lib/dateFormat";
+import { formatClockRange, formatDate } from "@/lib/dateFormat";
 import { examinationsService } from "@/services/examinations.service";
 
 export interface ExamPaperExam {
@@ -138,7 +138,7 @@ export default function ExamPapersDialog({
             {
               key: "time",
               label: "Time",
-              render: (r) => (r.startTime && r.endTime ? `${r.startTime}–${r.endTime}` : "—"),
+              render: (r) => (r.startTime && r.endTime ? formatClockRange(r.startTime, r.endTime) : "—"),
             },
             { key: "room", label: "Room", render: (r) => r.room ?? "—" },
           ]}

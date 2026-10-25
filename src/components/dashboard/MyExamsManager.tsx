@@ -19,7 +19,7 @@ import ExamDocumentDialog, { DocumentExamRef, ExamDocumentKind } from "@/compone
 import MyResultDialog from "@/components/dashboard/MyResultDialog";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
-import { formatDate } from "@/lib/dateFormat";
+import { formatClockRange, formatClockTime, formatDate } from "@/lib/dateFormat";
 import { examinationsService } from "@/services/examinations.service";
 
 interface MyExam {
@@ -135,7 +135,7 @@ export default function MyExamsManager() {
                           <TableRow key={paper.subjectName}>
                             <TableCell>{paper.examDate ? formatDate(paper.examDate) : "To be announced"}</TableCell>
                             <TableCell sx={{ fontWeight: 600 }}>{paper.subjectName}</TableCell>
-                            <TableCell>{paper.startTime && paper.endTime ? `${paper.startTime} – ${paper.endTime}` : (paper.startTime ?? "—")}</TableCell>
+                            <TableCell>{paper.startTime && paper.endTime ? formatClockRange(paper.startTime, paper.endTime) : (formatClockTime(paper.startTime) || "—")}</TableCell>
                             <TableCell>{paper.room ?? "—"}</TableCell>
                           </TableRow>
                         ))}

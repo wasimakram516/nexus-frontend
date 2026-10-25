@@ -1,7 +1,8 @@
 "use client";
 
 import { Box, Chip, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
-import { buildGrid, cellLines, DAY_NAMES, shortDate, type TimetableGroup } from "@/lib/timetableDocuments";
+import { formatClockRange, formatDate } from "@/lib/dateFormat";
+import { buildGrid, cellLines, DAY_NAMES, type TimetableGroup } from "@/lib/timetableDocuments";
 
 interface TimetableWeekTableProps {
   group: TimetableGroup;
@@ -26,7 +27,7 @@ export default function TimetableWeekTable({ group }: TimetableWeekTableProps) {
                 {DAY_NAMES[day]}
                 {grid.dates.has(day) && (
                   <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                    {shortDate(grid.dates.get(day) as string)}
+                    {formatDate(grid.dates.get(day) as string)}
                   </Typography>
                 )}
               </TableCell>
@@ -46,7 +47,7 @@ export default function TimetableWeekTable({ group }: TimetableWeekTableProps) {
                 <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>
                   {row.label}
                   <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                    {row.startTime} - {row.endTime}
+                    {formatClockRange(row.startTime, row.endTime)}
                   </Typography>
                 </TableCell>
                 {grid.days.map((day) => (

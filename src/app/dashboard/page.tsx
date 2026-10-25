@@ -34,7 +34,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
-import { formatDate } from "@/lib/dateFormat";
+import { formatDate, formatTime as formatInstantTime } from "@/lib/dateFormat";
 import { academicsService } from "@/services/academics.service";
 import { attendanceService } from "@/services/attendance.service";
 import { campusesService } from "@/services/campuses.service";
@@ -75,8 +75,7 @@ const STATUS_COLORS: Record<string, "success" | "error" | "warning" | "info" | "
   LEAVE: "info",
 };
 
-const formatTime = (value?: string | null) =>
-  value ? new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
+const formatTime = (value?: string | null) => (value ? formatInstantTime(value) : "—");
 
 export default function DashboardOverviewPage() {
   const { user } = useAuth();

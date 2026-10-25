@@ -28,7 +28,8 @@ import Close from "@mui/icons-material/Close";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
-import { addDays, DAY_NAMES, shortDate, todayString, weekdayOf, type Weekday } from "@/lib/timetableDocuments";
+import { formatClockRange, formatDate } from "@/lib/dateFormat";
+import { addDays, DAY_NAMES, todayString, weekdayOf, type Weekday } from "@/lib/timetableDocuments";
 import { timetableService } from "@/services/timetable.service";
 
 /** How far ahead the panel looks for arranged cover. */
@@ -177,15 +178,15 @@ export default function SubstitutionsPanel({ campusId, sectionId, weekSlots, tea
             <TableBody>
               {items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>{DAY_NAMES[item.dayOfWeek]} {shortDate(item.date)}</TableCell>
-                  <TableCell>{item.subjectName ?? item.periodName} ({item.startTime}–{item.endTime})</TableCell>
+                  <TableCell>{DAY_NAMES[item.dayOfWeek]} {formatDate(item.date)}</TableCell>
+                  <TableCell>{item.subjectName ?? item.periodName} ({formatClockRange(item.startTime, item.endTime)})</TableCell>
                   <TableCell>{item.originalName ?? "—"}</TableCell>
                   <TableCell>{item.substituteName}</TableCell>
                   <TableCell>{item.reason ?? "—"}</TableCell>
                   {canManage && (
                     <TableCell align="right">
                       <Tooltip title="Cancel cover">
-                        <IconButton size="small" aria-label={`Cancel cover on ${shortDate(item.date)}`} onClick={() => setConfirmCancel(item)}>
+                        <IconButton size="small" aria-label={`Cancel cover on ${formatDate(item.date)}`} onClick={() => setConfirmCancel(item)}>
                           <Close fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -201,7 +202,7 @@ export default function SubstitutionsPanel({ campusId, sectionId, weekSlots, tea
       <ConfirmDialog
         open={!!confirmCancel}
         title="Cancel Cover"
-        message={confirmCancel ? `The period on ${shortDate(confirmCancel.date)} goes back to ${confirmCancel.originalName ?? "its usual teacher"}.` : ""}
+        message={confirmCancel ? `The period on ${formatDate(confirmCancel.date)} goes back to ${confirmCancel.originalName ?? "its usual teacher"}.` : ""}
         confirmLabel="Cancel Cover"
         confirmColor="error"
         onConfirm={cancel}
@@ -216,7 +217,7 @@ export default function SubstitutionsPanel({ campusId, sectionId, weekSlots, tea
               <TextField select label="Period *" value={periodSlotId} onChange={(e) => setPeriodSlotId(e.target.value)} fullWidth>
                 {weekSlots.map((s) => (
                   <MenuItem key={s.id} value={s.id}>
-                    {DAY_NAMES[s.dayOfWeek]} · {s.name} ({s.startTime}–{s.endTime})
+                    {DAY_NAMES[s.dayOfWeek]} · {s.name} ({formatClockRange(s.startTime, s.endTime)})
                   </MenuItem>
                 ))}
               </TextField>

@@ -2,6 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { setDisplayTimeZone } from "@/lib/dateFormat";
 import { platformService } from "@/services/platform.service";
 
 export type ModuleKey =
@@ -42,6 +43,8 @@ import type { ColorOverrides } from "@/theme/branding-tokens";
 
 export interface RuntimeConfig {
   institutionId: string;
+  /** The school's IANA timezone; dates and times are written in it. */
+  timezone?: string;
   branding: {
     displayName: string | null;
     logoUrl: string | null;
@@ -111,7 +114,10 @@ export function RuntimeConfigProvider({ children }: { children: React.ReactNode 
     }
     try {
       const res = await platformService.getMyRuntimeConfig();
-      setConfig(res.data?.data ?? null);
+      const loaded: RuntimeConfig | null = res.data?.data ?? null;
+      // Set before the config is stored so the first render already writes times in the school's zone.
+      setDisplayTimeZone(loaded?.timezone);
+      setConfig(loaded);
     } catch {
       setConfig(null);
     } finally {

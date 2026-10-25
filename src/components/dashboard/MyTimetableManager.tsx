@@ -8,7 +8,8 @@ import PictureAsPdf from "@mui/icons-material/PictureAsPdf";
 import TimetableWeekTable from "@/components/dashboard/TimetableWeekTable";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
-import { shiftWeek, shortDate, todayString, type TimetableGroup, type TimetableWeek } from "@/lib/timetableDocuments";
+import { formatDate } from "@/lib/dateFormat";
+import { shiftWeek, todayString, type TimetableGroup, type TimetableWeek } from "@/lib/timetableDocuments";
 import { timetableService } from "@/services/timetable.service";
 
 interface MySchedule {
@@ -68,7 +69,7 @@ export default function MyTimetableManager() {
           Next
         </Button>
         <Typography sx={{ flex: 1, fontWeight: 600 }}>
-          {schedule ? `${shortDate(schedule.week.from)} to ${shortDate(schedule.week.to)}` : ""}
+          {schedule ? `${formatDate(schedule.week.from)} to ${formatDate(schedule.week.to)}` : ""}
         </Typography>
         <Button
           variant="outlined"

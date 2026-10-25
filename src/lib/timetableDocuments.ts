@@ -1,3 +1,5 @@
+import { formatClockRange } from "@/lib/dateFormat";
+
 export type Weekday = "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
 
 const ORDER: Weekday[] = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
@@ -117,13 +119,6 @@ export function todayString(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** `02 Nov` for a `YYYY-MM-DD` date, without depending on the browser's locale. */
-export function shortDate(date: string): string {
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const [, month, day] = date.split("-").map(Number);
-  return `${String(day).padStart(2, "0")} ${months[month - 1]}`;
-}
-
 /** The two periods that clash with each other, as the clash list reports them. */
 export interface TimetableClash {
   kind: "TEACHER" | "ROOM";
@@ -148,7 +143,7 @@ export function clashNotes(clashes: TimetableClash[]): Map<string, string[]> {
   const add = (id: string, text: string) => notes.set(id, [...(notes.get(id) ?? []), text]);
   for (const clash of clashes) {
     const describe = (other: ClashSide) =>
-      `${clash.kind === "TEACHER" ? "Same teacher" : "Same room"} as ${other.className ?? "another class"} ${other.sectionName ?? ""} at ${other.startTime}-${other.endTime}`.replace(/\s+/g, " ");
+      `${clash.kind === "TEACHER" ? "Same teacher" : "Same room"} as ${other.className ?? "another class"} ${other.sectionName ?? ""} at ${formatClockRange(other.startTime ?? "", other.endTime ?? "")}`.replace(/\s+/g, " ");
     add(clash.first.id, describe(clash.second));
     add(clash.second.id, describe(clash.first));
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, buildGrid, cellLines, clashNotes, shiftWeek, shortDate, weekdayOf, type WeekEntry } from "./timetableDocuments";
+import { addDays, buildGrid, cellLines, clashNotes, shiftWeek, weekdayOf, type WeekEntry } from "./timetableDocuments";
 
 const entry = (overrides: Partial<WeekEntry> = {}): WeekEntry => ({
   id: "e1",
@@ -78,11 +78,6 @@ describe("dates", () => {
     expect(shiftWeek("2026-11-02", -1)).toBe("2026-10-26");
     expect(shiftWeek("2026-12-28", 1)).toBe("2027-01-04");
   });
-
-  it("writes a short date without the browser locale", () => {
-    expect(shortDate("2026-11-02")).toBe("02 Nov");
-    expect(shortDate("2027-01-15")).toBe("15 Jan");
-  });
 });
 
 describe("clashNotes", () => {
@@ -100,8 +95,8 @@ describe("clashNotes", () => {
 
     const notes = clashNotes([{ kind: "TEACHER", first: side("a", "A", "08:00"), second: side("b", "B", "08:20") }]);
 
-    expect(notes.get("a")).toEqual(["Same teacher as Grade 5 B at 08:20-09:00"]);
-    expect(notes.get("b")).toEqual(["Same teacher as Grade 5 A at 08:00-09:00"]);
+    expect(notes.get("a")).toEqual(["Same teacher as Grade 5 B at 8:20 AM - 9:00 AM"]);
+    expect(notes.get("b")).toEqual(["Same teacher as Grade 5 A at 8:00 AM - 9:00 AM"]);
   });
 
   it("collects several clashes for one period", () => {
@@ -113,7 +108,7 @@ describe("clashNotes", () => {
     ]);
 
     expect(notes.get("a")).toHaveLength(2);
-    expect(notes.get("a")?.[0]).toBe("Same room as another class at 08:00-09:00");
+    expect(notes.get("a")?.[0]).toBe("Same room as another class at 8:00 AM - 9:00 AM");
   });
 });
 

@@ -123,13 +123,13 @@ describe("dateFormat", () => {
 
   it("formats dates from strings and Date objects identically", () => {
     expect(formatDate(iso)).toBe(formatDate(new Date(iso)));
-    expect(formatDate(iso)).toMatch(/2026/);
+    expect(formatDate(iso)).toBe("5 Mar 2026");
   });
 
   it("includes time components for date-time formats", () => {
     expect(formatDateTime(iso)).toMatch(/2026/);
-    expect(formatDateTime(iso)).toMatch(/\d{1,2}:\d{2}/);
-    expect(formatDateTimeLong(iso)).toMatch(/\d{2}:\d{2}:\d{2}/);
+    expect(formatDateTime(iso)).toBe("5 Mar 2026, 7:30 PM");
+    expect(formatDateTimeLong(iso)).toMatch(/7:30:45 PM/);
     expect(formatDateTimeLong(new Date(iso))).toBe(formatDateTimeLong(iso));
   });
 
