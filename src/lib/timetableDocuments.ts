@@ -154,3 +154,15 @@ export function clashNotes(clashes: TimetableClash[]): Map<string, string[]> {
   }
   return notes;
 }
+
+/** The weekday a `YYYY-MM-DD` date falls on. */
+export function weekdayOf(date: string): Weekday {
+  return ORDER[(new Date(`${date}T00:00:00.000Z`).getUTCDay() + 6) % 7];
+}
+
+/** A `YYYY-MM-DD` date moved by whole days. */
+export function addDays(date: string, days: number): string {
+  const moved = new Date(`${date}T00:00:00.000Z`);
+  moved.setUTCDate(moved.getUTCDate() + days);
+  return moved.toISOString().slice(0, 10);
+}

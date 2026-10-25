@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGrid, cellLines, clashNotes, shiftWeek, shortDate, type WeekEntry } from "./timetableDocuments";
+import { addDays, buildGrid, cellLines, clashNotes, shiftWeek, shortDate, weekdayOf, type WeekEntry } from "./timetableDocuments";
 
 const entry = (overrides: Partial<WeekEntry> = {}): WeekEntry => ({
   id: "e1",
@@ -114,5 +114,14 @@ describe("clashNotes", () => {
 
     expect(notes.get("a")).toHaveLength(2);
     expect(notes.get("a")?.[0]).toBe("Same room as another class at 08:00-09:00");
+  });
+});
+
+describe("weekdays", () => {
+  it("finds the weekday of a date, Monday first", () => {
+    expect(weekdayOf("2026-11-02")).toBe("MONDAY");
+    expect(weekdayOf("2026-11-08")).toBe("SUNDAY");
+    expect(weekdayOf("2026-11-04")).toBe("WEDNESDAY");
+    expect(addDays("2026-11-30", 1)).toBe("2026-12-01");
   });
 });
