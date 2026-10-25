@@ -10,6 +10,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
@@ -50,6 +52,7 @@ export default function FinanceSettingsCard({ institutionId, setting, onSaved }:
   const currency = typeof stored?.currencyLabel === "string" && stored.currencyLabel.trim() ? stored.currencyLabel : DEFAULT_CURRENCY;
   const instructions = typeof stored?.voucherInstructions === "string" ? stored.voucherInstructions : "";
   const contact = typeof stored?.voucherContact === "string" ? stored.voucherContact : "";
+  const autoFines = stored?.autoCalculateFines === true;
 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -57,12 +60,14 @@ export default function FinanceSettingsCard({ institutionId, setting, onSaved }:
   const [draftCurrency, setDraftCurrency] = useState(currency);
   const [draftInstructions, setDraftInstructions] = useState(instructions);
   const [draftContact, setDraftContact] = useState(contact);
+  const [draftAutoFines, setDraftAutoFines] = useState(autoFines);
 
   const openEdit = () => {
     setDraftDay(String(dueDay));
     setDraftCurrency(currency);
     setDraftInstructions(instructions);
     setDraftContact(contact);
+    setDraftAutoFines(autoFines);
     setOpen(true);
   };
 
@@ -83,6 +88,7 @@ export default function FinanceSettingsCard({ institutionId, setting, onSaved }:
                 currencyLabel: draftCurrency.trim(),
                 voucherInstructions: draftInstructions.trim(),
                 voucherContact: draftContact.trim(),
+                autoCalculateFines: draftAutoFines,
               },
               description: "How fee vouchers are issued and printed.",
             },
@@ -113,6 +119,9 @@ export default function FinanceSettingsCard({ institutionId, setting, onSaved }:
               ? `${instructionLines.length} instruction${instructionLines.length === 1 ? "" : "s"} printed on every voucher`
               : "No instructions are printed on vouchers yet."}
             {contact ? ` · Footer: ${contact}` : ""}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+            {autoFines ? "Attendance fines are calculated automatically on the 1st of each month." : "Attendance fines are calculated only when someone presses Calculate fines."}
           </Typography>
         </CardContent>
       </Card>
@@ -153,6 +162,14 @@ export default function FinanceSettingsCard({ institutionId, setting, onSaved }:
               helperText={`One instruction per line, such as how to pay and what a late payment costs. ${draftInstructions.length}/${MAX_INSTRUCTIONS}`}
               slotProps={{ htmlInput: { maxLength: MAX_INSTRUCTIONS } }}
             />
+            <FormControlLabel
+              control={<Switch checked={draftAutoFines} onChange={(e) => setDraftAutoFines(e.target.checked)} />}
+              label="Calculate attendance fines automatically"
+              slotProps={{ typography: { variant: "body2" } }}
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ mt: -2 }}>
+              On the 1st of each month, last month&apos;s fines are calculated for every campus. It never changes a fine entered by hand, a paid fine, or a month whose vouchers are already issued, so it is best left on when vouchers are generated after the month ends.
+            </Typography>
             <TextField
               label="Footer line"
               size="small"

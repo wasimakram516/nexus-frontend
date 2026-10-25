@@ -70,10 +70,49 @@ describe("FinanceSettingsCard", () => {
             currencyLabel: "Rs.",
             voucherInstructions: "Pay at the bank.",
             voucherContact: "info@school.test",
+            autoCalculateFines: false,
           },
         }),
       ],
     });
+  });
+
+  it("shows whether attendance fines are calculated automatically", () => {
+    const { unmount } = render(
+      <MessageProvider>
+        <FinanceSettingsCard institutionId="inst-1" setting={undefined} />
+      </MessageProvider>,
+    );
+    expect(screen.getByText(/calculated only when someone presses Calculate fines/)).toBeInTheDocument();
+    unmount();
+
+    renderCard({ autoCalculateFines: true });
+    expect(screen.getByText(/calculated automatically on the 1st of each month/)).toBeInTheDocument();
+  });
+
+  it("switches automatic fines on and saves it", async () => {
+    const user = userEvent.setup();
+    const onSaved = renderCard(undefined);
+
+    await user.click(screen.getByRole("button", { name: "Edit voucher settings" }));
+    const toggle = screen.getByRole("switch", { name: "Calculate attendance fines automatically" });
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    expect(platformService.updateSettings).toHaveBeenCalledWith("inst-1", {
+      settings: [expect.objectContaining({ value: expect.objectContaining({ autoCalculateFines: true }) })],
+    });
+  });
+
+  it("opens with the stored automatic fines choice", async () => {
+    const user = userEvent.setup();
+    renderCard({ autoCalculateFines: true });
+
+    await user.click(screen.getByRole("button", { name: "Edit voucher settings" }));
+
+    expect(screen.getByRole("switch", { name: "Calculate attendance fines automatically" })).toBeChecked();
   });
 
   it("blocks saving a bad due day or an empty currency", async () => {
