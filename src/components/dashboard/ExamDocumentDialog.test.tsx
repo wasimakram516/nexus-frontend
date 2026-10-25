@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import ExamDocumentDialog, { DocumentExamRef, ExamDocumentKind } from "./ExamDocumentDialog";
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), showMessage: vi.fn() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), showMessage: vi.fn(), download: vi.fn() }));
+vi.mock("@/lib/downloadFile", () => ({ downloadFile: mocks.download }));
 
 vi.mock("@/lib/axios", () => ({ default: { get: mocks.get } }));
 vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: mocks.showMessage }) }));
@@ -18,7 +19,7 @@ const sections = [
   { id: "sec-a", name: "A", classId: "class-1" },
   { id: "sec-x", name: "Elsewhere", classId: "class-9" },
 ];
-const examInfo = { id: "exam-1", name: "First Term", examType: "REGULAR", className: "Grade 5", termName: "Term 1", academicYearName: "2026-27" };
+const examInfo = { id: "exam-1", name: "First Term", examType: "REGULAR", className: "Grade 5", termName: "Term 1", academicYearName: "2026-27", customValues: [{ label: "Venue", value: "Main Hall" }] };
 const student = (name: string) => ({ id: name, name, regNo: `R-${name}`, picture: null, className: "Grade 5", sectionName: "A" });
 const card = (name: string) => ({ student: student(name), exam: examInfo, papers: [] });
 
@@ -93,6 +94,57 @@ describe("ExamDocumentDialog", () => {
 
     expect(await screen.findByText("Sara")).toBeInTheDocument();
     expect(mocks.get).toHaveBeenCalledWith("/examinations/students/s-sara/academic-years/year-1/report-card");
+  });
+
+  it("prints the custom values the institution chose to show on the exam", async () => {
+    renderDialog("datesheet");
+
+    expect(await screen.findByText("Venue:")).toBeInTheDocument();
+    expect(screen.getByText("Main Hall", { exact: false })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["datesheet", undefined, "/examinations/exams/exam-1/datesheet/pdf", undefined],
+    ["admit-cards", undefined, "/examinations/exams/exam-1/admit-cards/pdf", undefined],
+    ["admit-card", "s-ayesha", "/examinations/exams/exam-1/students/s-ayesha/admit-card/pdf", undefined],
+    ["report-cards", undefined, "/examinations/academic-years/year-1/report-cards/pdf", { classId: "class-1" }],
+    ["report-card", "s-sara", "/examinations/students/s-sara/academic-years/year-1/report-card/pdf", undefined],
+  ] as const)("downloads the %s as a PDF from its own route", async (kind, studentId, path, params) => {
+    renderDialog(kind, studentId);
+    fireEvent.click(await screen.findByRole("button", { name: "Download PDF" }));
+
+    await waitFor(() => expect(mocks.download).toHaveBeenCalledWith(path, params, expect.stringMatching(/\.pdf$/)));
+  });
+
+  it("downloads only the chosen section's cards", async () => {
+    renderDialog("admit-cards");
+    await screen.findByText("Ayesha");
+    fireEvent.mouseDown(screen.getByLabelText("Section"));
+    fireEvent.click(screen.getByRole("option", { name: "A" }));
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("/examinations/exams/exam-1/admit-cards", { params: { sectionId: "sec-a" } }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Download PDF" }));
+
+    await waitFor(() =>
+      expect(mocks.download).toHaveBeenLastCalledWith("/examinations/exams/exam-1/admit-cards/pdf", { sectionId: "sec-a" }, "admit-cards.pdf"),
+    );
+  });
+
+  it("tells the person when the PDF cannot be downloaded", async () => {
+    mocks.download.mockRejectedValue(Object.assign(new Error("x"), { response: { data: { message: "No access." } } }));
+    renderDialog("datesheet");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Download PDF" }));
+
+    await waitFor(() => expect(mocks.showMessage).toHaveBeenCalledWith("No access.", "error"));
+  });
+
+  it("offers no PDF while the document could not be loaded", async () => {
+    mocks.get.mockRejectedValue({ response: { data: { message: "Nope" } }, message: "Nope" });
+    renderDialog("datesheet");
+
+    await screen.findByRole("alert");
+    expect(screen.queryByRole("button", { name: "Download PDF" })).not.toBeInTheDocument();
   });
 
   it("explains an empty selection", async () => {

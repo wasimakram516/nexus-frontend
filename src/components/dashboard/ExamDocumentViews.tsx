@@ -50,6 +50,20 @@ function PapersTable({ papers }: { papers: DatesheetPaper[] }) {
   );
 }
 
+/** The custom values the institution chose to print, as plain labelled lines. */
+function PrintedValues({ values }: { values?: Array<{ label: string; value: string }> }) {
+  if (!values || values.length === 0) return null;
+  return (
+    <Box sx={{ mt: 0.5, mb: 1 }}>
+      {values.map((field) => (
+        <Typography key={field.label} variant="body2" sx={{ color: "#111" }}>
+          <strong>{field.label}:</strong> {field.value}
+        </Typography>
+      ))}
+    </Box>
+  );
+}
+
 function ExamTitle({ exam }: { exam: DatesheetData["exam"] }) {
   return (
     <Box sx={{ mb: 2 }}>
@@ -57,6 +71,7 @@ function ExamTitle({ exam }: { exam: DatesheetData["exam"] }) {
       <Typography variant="body2" sx={{ color: "#444" }}>
         {`${exam.className} · ${exam.termName} · ${exam.academicYearName}`}
       </Typography>
+      <PrintedValues values={exam.customValues} />
     </Box>
   );
 }
@@ -122,6 +137,7 @@ export function ReportCardView({ card, meta }: { card: ReportCardData; meta: Pri
       {card.terms.map((term) => (
         <Box key={term.exam.id} sx={{ mb: 3 }}>
           <Typography sx={{ fontWeight: 700, color: "#111", mb: 0.5 }}>{`${term.term.name} · ${term.exam.name}`}</Typography>
+          <PrintedValues values={term.exam.customValues} />
           <Table size="small" sx={{ border: "1px solid #999" }}>
             <TableHead>
               <TableRow>

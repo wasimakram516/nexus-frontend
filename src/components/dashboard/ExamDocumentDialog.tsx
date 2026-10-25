@@ -6,6 +6,7 @@ import PrintSheet from "@/components/shared/PrintSheet";
 import { AdmitCardView, DatesheetView, ReportCardView } from "@/components/dashboard/ExamDocumentViews";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
+import { downloadFile } from "@/lib/downloadFile";
 import { AdmitCardData, DatesheetData, PrintMeta, ReportCardData } from "@/lib/examDocuments";
 import { examinationsService } from "@/services/examinations.service";
 
@@ -58,6 +59,32 @@ export default function ExamDocumentDialog({ kind, exam, studentId, sections = [
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** The PDF of what is on screen, from the server route that matches the document. */
+  const downloadPdf = async () => {
+    if (!kind || !exam) return;
+    const section = sectionId || undefined;
+    try {
+      if (kind === "datesheet") {
+        await downloadFile(`/examinations/exams/${exam.id}/datesheet/pdf`, undefined, "datesheet.pdf");
+      } else if (kind === "admit-cards") {
+        await downloadFile(`/examinations/exams/${exam.id}/admit-cards/pdf`, section ? { sectionId: section } : undefined, "admit-cards.pdf");
+      } else if (kind === "admit-card" && studentId) {
+        await downloadFile(`/examinations/exams/${exam.id}/students/${studentId}/admit-card/pdf`, undefined, "admit-card.pdf");
+      } else if (kind === "report-cards" && exam.classId) {
+        await downloadFile(
+          `/examinations/academic-years/${exam.academicYearId}/report-cards/pdf`,
+          { classId: exam.classId, ...(section ? { sectionId: section } : {}) },
+          "report-cards.pdf",
+        );
+      } else if (kind === "report-card" && studentId) {
+        await downloadFile(`/examinations/students/${studentId}/academic-years/${exam.academicYearId}/report-card/pdf`, undefined, "report-card.pdf");
+      }
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } }; message?: string }).response?.data?.message ?? (err as Error).message;
+      showMessage(message || "The PDF could not be downloaded.", "error");
+    }
+  };
+
   const classSections = sections.filter((section) => section.classId === exam?.classId);
   const wholeClass = kind === "admit-cards" || kind === "report-cards";
 
@@ -132,7 +159,15 @@ export default function ExamDocumentDialog({ kind, exam, studentId, sections = [
   ) : undefined;
 
   return (
-    <PrintSheet open title={`${TITLES[kind]}: ${exam.name}`} loading={loading} error={error} onClose={onClose} controls={controls}>
+    <PrintSheet
+      open
+      title={`${TITLES[kind]}: ${exam.name}`}
+      loading={loading}
+      error={error}
+      onClose={onClose}
+      controls={controls}
+      onDownloadPdf={loaded ? downloadPdf : undefined}
+    >
       {loaded?.kind === "datesheet" && <DatesheetView data={loaded.data} />}
       {loaded?.kind === "admit-cards" &&
         (loaded.cards.length === 0 ? (

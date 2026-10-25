@@ -28,6 +28,8 @@ export interface DocumentExam {
   className: string;
   termName: string;
   academicYearName: string;
+  /** Custom field values the institution chose to show on the printed documents. */
+  customValues?: Array<{ label: string; value: string }>;
 }
 
 export interface DatesheetData {
@@ -84,7 +86,7 @@ export interface Outcome {
 
 export interface ReportCardTerm {
   term: { id: string; name: string; weight: number };
-  exam: { id: string; name: string };
+  exam: { id: string; name: string; customValues?: Array<{ label: string; value: string }> };
   outcome: Outcome;
   positionInClass: number | null;
   classSize: number;
