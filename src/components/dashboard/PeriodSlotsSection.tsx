@@ -26,6 +26,7 @@ import {
   Typography,
 } from "@mui/material";
 import Add from "@mui/icons-material/Add";
+import ContentCopy from "@mui/icons-material/ContentCopy";
 import Delete from "@mui/icons-material/Delete";
 import Print from "@mui/icons-material/Print";
 import WarningAmber from "@mui/icons-material/WarningAmber";
@@ -33,6 +34,7 @@ import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
 import DataTableCard from "@/components/shared/DataTableCard";
 import PrintSheet from "@/components/shared/PrintSheet";
+import DuplicatePeriodsDialog from "@/components/dashboard/DuplicatePeriodsDialog";
 import SubstitutionsPanel from "@/components/dashboard/SubstitutionsPanel";
 import TimetableWeekTable from "@/components/dashboard/TimetableWeekTable";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
@@ -178,6 +180,8 @@ export default function PeriodSlotsSection({
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<SlotFormState>(emptySlotForm());
   const [confirmDelete, setConfirmDelete] = useState<PeriodSlot | null>(null);
+  /** Periods being copied onto other days, and what to call them in the dialog. */
+  const [copying, setCopying] = useState<{ slots: PeriodSlot[]; subject: string } | null>(null);
   const [clashes, setClashes] = useState<TimetableClash[]>([]);
   const [rooms, setRooms] = useState<string[]>([]);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -536,7 +540,23 @@ export default function PeriodSlotsSection({
                 <TableRow>
                   <TableHeaderCell>Period</TableHeaderCell>
                   {DAYS_OF_WEEK.map((day) => (
-                    <TableHeaderCell key={day} align="center">{DAY_LABELS[day]}</TableHeaderCell>
+                    <TableHeaderCell key={day} align="center">
+                      {DAY_LABELS[day]}
+                      {canManage && weekSlots.some((slot) => slot.dayOfWeek === day) && (
+                        <Tooltip title={`Copy ${DAY_LABELS[day]} to other days`}>
+                          <IconButton
+                            size="small"
+                            aria-label={`Copy ${DAY_LABELS[day]} to other days`}
+                            onClick={() =>
+                              setCopying({ slots: weekSlots.filter((slot) => slot.dayOfWeek === day), subject: DAY_LABELS[day] })
+                            }
+                            sx={{ ml: 0.5 }}
+                          >
+                            <ContentCopy sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableHeaderCell>
                   ))}
                 </TableRow>
               </TableHead>
@@ -589,7 +609,7 @@ export default function PeriodSlotsSection({
                                   : undefined,
                               }}
                             >
-                              <Typography variant="body2" sx={{ fontWeight: 600, pr: canManage ? 3 : 0 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, pr: canManage ? 6 : 0 }}>
                                 {slot.name}
                               </Typography>
                               <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
@@ -615,6 +635,21 @@ export default function PeriodSlotsSection({
                                   <Typography variant="caption" color="error" sx={{ display: "block", fontWeight: 600 }}>
                                     Clash
                                   </Typography>
+                                </Tooltip>
+                              )}
+                              {canManage && (
+                                <Tooltip title="Copy to other days">
+                                  <IconButton
+                                    size="small"
+                                    aria-label={`Copy ${slot.name} to other days`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setCopying({ slots: [slot], subject: slot.name });
+                                    }}
+                                    sx={{ position: "absolute", top: 2, right: 26 }}
+                                  >
+                                    <ContentCopy fontSize="inherit" />
+                                  </IconButton>
                                 </Tooltip>
                               )}
                               {canManage && (
@@ -702,6 +737,13 @@ export default function PeriodSlotsSection({
           </Box>
         )}
       </PrintSheet>
+
+      <DuplicatePeriodsDialog
+        sources={copying?.slots ?? null}
+        subject={copying?.subject ?? ""}
+        onClose={() => setCopying(null)}
+        onDone={() => refreshAfterChange(true)}
+      />
 
       <ConfirmDialog
         open={!!confirmDelete}

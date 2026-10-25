@@ -15,6 +15,7 @@ vi.mock("@/services/timetable.service", () => ({
     deletePeriodSlot: vi.fn(),
     getSectionWeek: vi.fn(),
     swapPeriodSlots: vi.fn(),
+    duplicatePeriodSlots: vi.fn(),
     getClashes: vi.fn(),
     getRooms: vi.fn(),
     getSubstitutions: vi.fn(),
@@ -484,6 +485,54 @@ describe("PeriodSlotsSection", () => {
 
     expect(await screen.findByText("Week of 2 Nov 2026 to 8 Nov 2026")).toBeInTheDocument();
     expect(timetableService.getTeacherSchedule).toHaveBeenCalledWith("teacher-1");
+  });
+
+  it("copies one period onto other days from its copy button", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);
+    vi.mocked(timetableService.duplicatePeriodSlots).mockResolvedValue({
+      data: { message: "2 period slots copied.", data: { created: 2, skipped: [] } },
+    } as never);
+    const { onReload } = renderSection();
+    await pickClassAndSection(user);
+
+    await user.click(await screen.findByRole("button", { name: "Copy Period One to other days" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("checkbox", { name: "Tuesday" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Thursday" }));
+    await user.click(within(dialog).getByRole("button", { name: "Copy" }));
+
+    expect(timetableService.duplicatePeriodSlots).toHaveBeenCalledWith(["slot-1"], ["TUESDAY", "THURSDAY"]);
+    await waitFor(() => expect(onReload).toHaveBeenCalled());
+  });
+
+  it("copies every period of a day from the day's header", async () => {
+    const user = userEvent.setup();
+    const second = { ...secondSlot, id: "slot-3", periodNumber: 2, dayOfWeek: "MONDAY" as const };
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot, second, { ...secondSlot, dayOfWeek: "WEDNESDAY" as const }] } } as never);
+    vi.mocked(timetableService.duplicatePeriodSlots).mockResolvedValue({
+      data: { message: "ok", data: { created: 2, skipped: [] } },
+    } as never);
+    renderSection();
+    await pickClassAndSection(user);
+
+    await user.click(await screen.findByRole("button", { name: "Copy Mon to other days" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("checkbox", { name: "Friday" }));
+    await user.click(within(dialog).getByRole("button", { name: "Copy" }));
+
+    expect(timetableService.duplicatePeriodSlots).toHaveBeenCalledWith(["slot-1", "slot-3"], ["FRIDAY"]);
+  });
+
+  it("offers no copy buttons without permission to manage", async () => {
+    const user = userEvent.setup();
+    vi.mocked(timetableService.getSectionWeek).mockResolvedValue({ data: { data: [sampleSlot] } } as never);
+    renderSection(false);
+    await pickClassAndSection(user);
+
+    await screen.findByTestId("slot-cell-1-MONDAY");
+
+    expect(screen.queryByRole("button", { name: /to other days/ })).not.toBeInTheDocument();
   });
 
   it("hides add/delete affordances when canManage is false", async () => {

@@ -26,6 +26,9 @@ export const timetableService = {
   // Exchange the day, period and times of two periods in one step.
   swapPeriodSlots: (firstId: string, secondId: string) =>
     apiClient.post("/timetable/period-slots/swap", { firstId, secondId }),
+  // Copy periods onto other days; the reply says how many were made and which were skipped.
+  duplicatePeriodSlots: (sourceIds: string[], targetDays: string[]) =>
+    apiClient.post("/timetable/period-slots/duplicate", { sourceIds, targetDays }),
   // Existing teacher or room clashes on a campus.
   getClashes: (campusId: string) =>
     apiClient.get("/timetable/period-slots/clashes", { params: { campusId } }),
@@ -46,11 +49,19 @@ export const timetableService = {
     apiClient.get(`/timetable/section/${sectionId}/schedule`, { params: { date } }),
   getTeacherSchedule: (staffProfileId: string, date?: string) =>
     apiClient.get(`/timetable/teacher/${staffProfileId}/schedule`, { params: { date } }),
+  getClassSchedule: (classId: string, date?: string) =>
+    apiClient.get(`/timetable/class/${classId}/schedule`, { params: { date } }),
+  getCampusSchedule: (campusId: string, date?: string) =>
+    apiClient.get(`/timetable/campus/${campusId}/schedule`, { params: { date } }),
   getMySchedule: (date?: string) => apiClient.get("/timetable/for-me", { params: { date } }),
 
   downloadSectionPdf: (sectionId: string, date?: string) =>
     downloadFile(`/timetable/section/${sectionId}/pdf`, { date }, "timetable.pdf"),
   downloadTeacherPdf: (staffProfileId: string, date?: string) =>
     downloadFile(`/timetable/teacher/${staffProfileId}/pdf`, { date }, "timetable.pdf"),
+  downloadClassPdf: (classId: string, date?: string) =>
+    downloadFile(`/timetable/class/${classId}/pdf`, { date }, "timetable.pdf"),
+  downloadCampusPdf: (campusId: string, date?: string) =>
+    downloadFile(`/timetable/campus/${campusId}/pdf`, { date }, "timetable.pdf"),
   downloadMyPdf: (date?: string) => downloadFile("/timetable/for-me/pdf", { date }, "my-timetable.pdf"),
 };
