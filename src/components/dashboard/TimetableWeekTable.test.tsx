@@ -33,11 +33,11 @@ describe("TimetableWeekTable", () => {
     render(<TimetableWeekTable group={group("SECTION", [entry()])} />);
 
     expect(screen.getByText("Monday")).toBeInTheDocument();
-    expect(screen.getByText("02 Nov")).toBeInTheDocument();
+    expect(screen.getByText("2 Nov 2026")).toBeInTheDocument();
     expect(screen.getByText("Maths")).toBeInTheDocument();
     expect(screen.getByText("Teacher One")).toBeInTheDocument();
     expect(screen.getByText("Lab 1")).toBeInTheDocument();
-    expect(screen.getByText("08:00 - 08:40")).toBeInTheDocument();
+    expect(screen.getByText("8:00 AM - 8:40 AM")).toBeInTheDocument();
   });
 
   it("marks a covered period, naming the substitute", () => {

@@ -52,7 +52,7 @@ describe("SubstitutionsPanel", () => {
 
     expect(await screen.findByText("Sick leave")).toBeInTheDocument();
     expect(screen.getByText("Teacher Two")).toBeInTheDocument();
-    expect(screen.getByText("Monday 02 Nov")).toBeInTheDocument();
+    expect(screen.getByText("Monday 2 Nov 2026")).toBeInTheDocument();
     expect(timetableService.getSubstitutions).toHaveBeenCalledWith(expect.objectContaining({ campusId: "campus-1", sectionId: "sec-1" }));
   });
 
@@ -111,7 +111,7 @@ describe("SubstitutionsPanel", () => {
     const user = userEvent.setup();
     renderPanel();
 
-    await user.click(await screen.findByRole("button", { name: "Cancel cover on 02 Nov" }));
+    await user.click(await screen.findByRole("button", { name: "Cancel cover on 2 Nov 2026" }));
     const dialog = await screen.findByRole("dialog");
     expect(timetableService.cancelSubstitution).not.toHaveBeenCalled();
     await user.click(within(dialog).getByRole("button", { name: "Cancel Cover" }));

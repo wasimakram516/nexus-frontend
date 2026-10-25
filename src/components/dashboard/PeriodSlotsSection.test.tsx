@@ -134,7 +134,7 @@ describe("PeriodSlotsSection", () => {
     // Period 1 / Monday holds "Period One" with its subject and teacher.
     const mondayPeriod1 = await screen.findByTestId("slot-cell-1-MONDAY");
     expect(within(mondayPeriod1).getByText("Period One")).toBeInTheDocument();
-    expect(within(mondayPeriod1).getByText("08:00–08:40")).toBeInTheDocument();
+    expect(within(mondayPeriod1).getByText("8:00 AM - 8:40 AM")).toBeInTheDocument();
     expect(within(mondayPeriod1).getByText("Math")).toBeInTheDocument();
     expect(within(mondayPeriod1).getByText("Jane Teacher")).toBeInTheDocument();
 
@@ -462,7 +462,7 @@ describe("PeriodSlotsSection", () => {
     await user.click(await screen.findByRole("button", { name: /print \/ pdf/i }));
 
     expect(await screen.findByText("Class 1, section A")).toBeInTheDocument();
-    expect(screen.getByText("Week of 2026-11-02 to 2026-11-08")).toBeInTheDocument();
+    expect(screen.getByText("Week of 2 Nov 2026 to 8 Nov 2026")).toBeInTheDocument();
     expect(timetableService.getSectionSchedule).toHaveBeenCalledWith("section-1");
   });
 
@@ -482,7 +482,7 @@ describe("PeriodSlotsSection", () => {
     await user.click(screen.getByLabelText("Timetable of"));
     await user.click(await screen.findByRole("option", { name: "Jane Teacher" }));
 
-    expect(await screen.findByText("Week of 2026-11-02 to 2026-11-08")).toBeInTheDocument();
+    expect(await screen.findByText("Week of 2 Nov 2026 to 8 Nov 2026")).toBeInTheDocument();
     expect(timetableService.getTeacherSchedule).toHaveBeenCalledWith("teacher-1");
   });
 

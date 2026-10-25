@@ -61,7 +61,7 @@ describe("MyTimetableManager", () => {
     expect(await screen.findByText("Ayesha")).toBeInTheDocument();
     expect(screen.getByText("Bilal")).toBeInTheDocument();
     expect(screen.getByText("Maths")).toBeInTheDocument();
-    expect(screen.getByText("02 Nov to 08 Nov")).toBeInTheDocument();
+    expect(screen.getByText("2 Nov 2026 to 8 Nov 2026")).toBeInTheDocument();
   });
 
   it("says so when there is no timetable", async () => {

@@ -81,7 +81,7 @@ describe("MyExamsManager", () => {
 
     expect(await screen.findByText("First Term")).toBeInTheDocument();
     const maths = screen.getByText("Maths").closest("tr")!;
-    expect(within(maths).getByText("09:00 – 11:00")).toBeInTheDocument();
+    expect(within(maths).getByText("9:00 AM - 11:00 AM")).toBeInTheDocument();
     expect(within(screen.getByText("Art").closest("tr")!).getByText("To be announced")).toBeInTheDocument();
   });
 

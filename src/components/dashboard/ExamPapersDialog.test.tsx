@@ -79,7 +79,7 @@ describe("ExamPapersDialog", () => {
     const row = await rowOf("Maths");
     expect(within(row).getByText("100")).toBeInTheDocument();
     expect(within(row).getByText("40")).toBeInTheDocument();
-    expect(within(row).getByText("09:00–11:00")).toBeInTheDocument();
+    expect(within(row).getByText("9:00 AM - 11:00 AM")).toBeInTheDocument();
     expect(within(row).getByText("A-1")).toBeInTheDocument();
     expect(mocks.get).toHaveBeenCalledWith("/examinations/exam-subjects", { params: { examId: "exam-1" } });
   });

@@ -45,7 +45,7 @@ describe("DatesheetView", () => {
     expect(screen.getByText("Datesheet")).toBeInTheDocument();
     expect(screen.getByText("Grade 5 · Term 1 · 2026-27")).toBeInTheDocument();
     const row = screen.getByText("Maths").closest("tr")!;
-    expect(within(row).getByText("09:00 – 11:00")).toBeInTheDocument();
+    expect(within(row).getByText("9:00 AM - 11:00 AM")).toBeInTheDocument();
     expect(within(row).getByText("A-1")).toBeInTheDocument();
   });
 
