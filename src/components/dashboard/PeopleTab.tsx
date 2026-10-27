@@ -46,12 +46,14 @@ import PersonRemove from "@mui/icons-material/PersonRemove";
 import Search from "@mui/icons-material/Search";
 import TrendingUp from "@mui/icons-material/TrendingUp";
 import UploadFile from "@mui/icons-material/UploadFile";
+import Badge from "@mui/icons-material/Badge";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import PromotionWizard from "@/components/dashboard/PromotionWizard";
+import StudentIdCardsDialog from "@/components/dashboard/StudentIdCardsDialog";
 import StudentImportDialog from "@/components/dashboard/StudentImportDialog";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
@@ -291,6 +293,7 @@ export default function PeopleTab({
   // Bulk promotion wizard
   const [promotionWizardOpen, setPromotionWizardOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [idCardsOpen, setIdCardsOpen] = useState(false);
 
   const userMap = useMemo(
     () => users.reduce<Record<string, UserLite>>((acc, u) => ((acc[u.id] = u), acc), {}),
@@ -1420,6 +1423,11 @@ export default function PeopleTab({
         {canManage && (
           <Box sx={{ display: "flex", gap: 1.5 }}>
             {kind === "students" && (
+              <Button variant="outlined" startIcon={<Badge />} onClick={() => setIdCardsOpen(true)}>
+                ID Cards
+              </Button>
+            )}
+            {kind === "students" && (
               <Button variant="outlined" startIcon={<UploadFile />} onClick={() => setImportOpen(true)}>
                 Import Students
               </Button>
@@ -2039,6 +2047,16 @@ export default function PeopleTab({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {kind === "students" && (
+        <StudentIdCardsDialog
+          open={idCardsOpen}
+          onClose={() => setIdCardsOpen(false)}
+          campuses={campuses}
+          classes={classes}
+          sections={sections}
+        />
+      )}
 
       {kind === "students" && (
         <StudentImportDialog

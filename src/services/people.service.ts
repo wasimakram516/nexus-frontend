@@ -15,6 +15,9 @@ export const peopleService = {
     apiClient.post("/people/students/import/preview", payload),
   importStudents: (payload: Record<string, unknown>) =>
     apiClient.post("/people/students/import", payload),
+  // Student ID cards to print: a campus, a class or section, or one student.
+  getIdCards: (params: Record<string, unknown>) =>
+    apiClient.get("/people/students/id-cards", { params }),
   // Advisory only — still fully validated for uniqueness on actual create.
   getNextRegNo: (campusId?: string) =>
     apiClient.get("/people/students/next-reg-no", { params: { campusId } }),
