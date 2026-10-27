@@ -10,6 +10,11 @@ export const peopleService = {
   updateStudent: (studentId: string, payload: Record<string, unknown>) =>
     apiClient.patch(`/people/students/${studentId}`, payload),
   deleteStudent: (studentId: string) => apiClient.delete(`/people/students/${studentId}`),
+  // Bulk import: every line is checked first (nothing saved), then saved a few at a time.
+  previewStudentImport: (payload: Record<string, unknown>) =>
+    apiClient.post("/people/students/import/preview", payload),
+  importStudents: (payload: Record<string, unknown>) =>
+    apiClient.post("/people/students/import", payload),
   // Advisory only — still fully validated for uniqueness on actual create.
   getNextRegNo: (campusId?: string) =>
     apiClient.get("/people/students/next-reg-no", { params: { campusId } }),
