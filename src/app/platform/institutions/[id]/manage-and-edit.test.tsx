@@ -59,6 +59,7 @@ vi.mock("@/components/dashboard/AttendanceManager", () => ({ default: ({ institu
 vi.mock("@/components/dashboard/CustomFieldsManager", () => ({ default: ({ institutionId }: { institutionId: string }) => <div>customfields-manager {institutionId}</div> }));
 vi.mock("@/components/dashboard/FinanceManager", () => ({ default: ({ institutionId }: { institutionId: string }) => <div>finance-manager {institutionId}</div> }));
 vi.mock("@/components/dashboard/NoticesManager", () => ({ default: ({ institutionId }: { institutionId: string }) => <div>notices-manager {institutionId}</div> }));
+vi.mock("@/components/dashboard/ReportsManager", () => ({ default: ({ institutionId }: { institutionId: string }) => <div>reports-manager {institutionId}</div> }));
 vi.mock("@/components/dashboard/PeopleManager", () => ({ default: ({ institutionId }: { institutionId: string }) => <div>people-manager {institutionId}</div> }));
 vi.mock("@/components/dashboard/UsersManager", () => ({ default: ({ institutionId }: { institutionId: string }) => <div>users-manager {institutionId}</div> }));
 
@@ -124,6 +125,7 @@ describe("Manage module page", () => {
     ["users", "users-manager uuid-1"],
     ["custom-fields", "customfields-manager uuid-1"],
     ["notices", "notices-manager uuid-1"],
+    ["reports", "reports-manager uuid-1"],
   ])("renders the %s manager scoped to the resolved institution UUID", async (module, text) => {
     mocks.params = { id: "green-school", module };
     render(<ModulePage />);
@@ -131,10 +133,10 @@ describe("Manage module page", () => {
   });
 
   it("shows a coming-soon card for modules without a manager", async () => {
-    mocks.params = { id: "green-school", module: "reports" };
+    mocks.params = { id: "green-school", module: "documents" };
     render(<ModulePage />);
     expect(await screen.findByText(/coming soon/)).toBeInTheDocument();
-    expect(screen.getByText("Reports")).toBeInTheDocument();
+    expect(screen.getByText("Documents")).toBeInTheDocument();
   });
 
   it("handles unknown modules gracefully", async () => {

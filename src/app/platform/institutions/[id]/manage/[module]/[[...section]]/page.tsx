@@ -30,6 +30,7 @@ import ExaminationsManager from "@/components/dashboard/ExaminationsManager";
 import FinanceManager from "@/components/dashboard/FinanceManager";
 import NoticesManager from "@/components/dashboard/NoticesManager";
 import PeopleManager from "@/components/dashboard/PeopleManager";
+import ReportsManager from "@/components/dashboard/ReportsManager";
 import UsersManager from "@/components/dashboard/UsersManager";
 
 import { MODULE_ACCENTS, DEFAULT_MODULE_ACCENT } from "@/theme/tokens";
@@ -41,14 +42,14 @@ const MODULE_META: Record<string, { label: string; description: string; icon: Re
   finance:         { label: "Finance",       description: "Fees, vouchers, salaries, payroll, and payments.",            icon: <AccountBalance sx={{ fontSize: 40 }} />,    accent: MODULE_ACCENTS.finance },
   users:           { label: "Users",         description: "Staff user accounts, roles, and campus assignments.",         icon: <ManageAccounts sx={{ fontSize: 40 }} />,    accent: MODULE_ACCENTS.users },
   "custom-fields": { label: "Custom Fields", description: "Institution-specific fields on built-in records.",            icon: <Tune sx={{ fontSize: 40 }} />,              accent: MODULE_ACCENTS.customFields },
-  reports:         { label: "Reports",       description: "Analytics, insights, trends, and data exports.",              icon: <QueryStats sx={{ fontSize: 40 }} />,        accent: DEFAULT_MODULE_ACCENT },
+  reports:         { label: "Reports",       description: "Compare campuses, and see attendance and fees, as tables, spreadsheets and PDFs.",              icon: <QueryStats sx={{ fontSize: 40 }} />,        accent: DEFAULT_MODULE_ACCENT },
   examinations:    { label: "Examinations",  description: "Exam scheduling, grading, and result sheets.",               icon: <AutoStories sx={{ fontSize: 40 }} />,       accent: MODULE_ACCENTS.examinations },
   documents:       { label: "Documents",     description: "Institution documents, templates, and file management.",      icon: <Description sx={{ fontSize: 40 }} />,       accent: MODULE_ACCENTS.documents },
   realtime:        { label: "Real-time",     description: "Live notifications, socket events, and activity feeds.",      icon: <Forum sx={{ fontSize: 40 }} />,             accent: MODULE_ACCENTS.realtime },
   notices:         { label: "Notices",       description: "Announcements with audience targeting, publish windows, and attachments.", icon: <Campaign sx={{ fontSize: 40 }} />, accent: MODULE_ACCENTS.notices },
 };
 
-const IMPLEMENTED = new Set(["campuses", "people", "academics", "attendance", "finance", "users", "custom-fields", "notices", "examinations"]);
+const IMPLEMENTED = new Set(["campuses", "people", "academics", "attendance", "finance", "users", "custom-fields", "notices", "examinations", "reports"]);
 
 export default function ModulePage() {
   const { id: slugOrId, module } = useParams<{ id: string; module: string }>();
@@ -100,6 +101,8 @@ export default function ModulePage() {
         return <NoticesManager institutionId={institutionId} />;
       case "examinations":
         return <ExaminationsManager institutionId={institutionId} />;
+      case "reports":
+        return <ReportsManager institutionId={institutionId} />;
       default:
         return null;
     }
