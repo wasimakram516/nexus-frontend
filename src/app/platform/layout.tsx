@@ -34,6 +34,7 @@ import Close from "@mui/icons-material/Close";
 import ProfileDialog from "@/components/shared/ProfileDialog";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
+import { useForcePasswordChange } from "@/hooks/useForcePasswordChange";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { useNewInquiryCount } from "@/hooks/useNewInquiryCount";
@@ -53,6 +54,7 @@ const navItems = [
 ];
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
+  useForcePasswordChange();
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();

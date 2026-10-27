@@ -15,6 +15,8 @@ export interface LoginResponse {
     role: string;
     institutionId: string | null;
     sessionId: string;
+    /** True when someone else set the account up and its password must be replaced. */
+    mustChangePassword?: boolean;
   };
 }
 
@@ -71,6 +73,14 @@ export const authService = {
     apiClient.post<{ data: SignupResponse }>("/platform/signup", payload),
 
   logout: () => apiClient.post("/auth/logout"),
+
+  /** Asks for a reset link; the answer is the same whether or not the account exists. */
+  forgotPassword: (identifier: string) => apiClient.post("/auth/forgot-password", { identifier }),
+
+  resetPassword: (token: string, password: string) => apiClient.post("/auth/reset-password", { token, password }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiClient.post("/auth/change-password", { currentPassword, newPassword }),
 
   refresh: () => apiClient.post<{ data: { accessToken: string } }>("/auth/refresh"),
 

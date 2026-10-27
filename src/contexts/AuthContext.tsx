@@ -16,6 +16,8 @@ export interface AuthUser {
   role: UserRole;
   institutionId: string | null;
   sessionId: string;
+  /** The account was set up for this person, who must choose their own password first. */
+  mustChangePassword?: boolean;
 }
 
 interface AuthContextValue {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const protectedRoutes = ["/dashboard", "/platform"];
+const protectedRoutes = ["/dashboard", "/platform", "/change-password"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -16,5 +16,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/platform/:path*"],
+  matcher: ["/dashboard/:path*", "/platform/:path*", "/change-password"],
 };

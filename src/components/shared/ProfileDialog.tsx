@@ -36,7 +36,7 @@ export default function ProfileDialog({ open, onClose }: ProfileDialogProps) {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", currentPassword: "" });
 
   useEffect(() => {
     if (!open) return;
@@ -46,7 +46,7 @@ export default function ProfileDialog({ open, onClose }: ProfileDialogProps) {
       setLoading(true);
       const { data } = await apiHandler<Profile>(() => usersService.getMe(), { showMessage, silent: true });
       if (cancelled) return;
-      setForm({ name: data?.name ?? "", email: data?.email ?? "", password: "" });
+      setForm({ name: data?.name ?? "", email: data?.email ?? "", password: "", currentPassword: "" });
       setLoading(false);
     };
 
@@ -61,7 +61,10 @@ export default function ProfileDialog({ open, onClose }: ProfileDialogProps) {
     const payload: Record<string, unknown> = {};
     if (form.name) payload.name = form.name;
     if (form.email) payload.email = form.email;
-    if (form.password) payload.password = form.password;
+    if (form.password) {
+      payload.password = form.password;
+      payload.currentPassword = form.currentPassword;
+    }
 
     const { data, success } = await apiHandler<Profile>(
       () => usersService.updateMe(payload),
@@ -92,6 +95,17 @@ export default function ProfileDialog({ open, onClose }: ProfileDialogProps) {
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField
+                label="Current Password"
+                type="password"
+                value={form.currentPassword}
+                onChange={(e) => setForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                fullWidth
+                helperText="Only needed to set a new password."
+                slotProps={{ htmlInput: { autoComplete: "current-password" } }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField
                 label="New Password"
                 type="password"
                 value={form.password}
@@ -114,7 +128,7 @@ export default function ProfileDialog({ open, onClose }: ProfileDialogProps) {
         <Button
           variant="contained"
           onClick={handleSave}
-          disabled={saving || loading || !form.name || !form.email || (form.password.length > 0 && form.password.length < 8)}
+          disabled={saving || loading || !form.name || !form.email || (form.password.length > 0 && (form.password.length < 8 || !form.currentPassword))}
         >
           {saving ? <CircularProgress size={16} color="inherit" /> : "Save Changes"}
         </Button>

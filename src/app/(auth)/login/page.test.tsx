@@ -139,4 +139,32 @@ describe("LoginPage (form pattern)", () => {
     expect(await screen.findByText("Invalid credentials")).toBeInTheDocument();
     expect(replace).not.toHaveBeenCalled();
   });
+
+  it("sends someone whose account was set up for them to choose their own password first", async () => {
+    const user = userEvent.setup();
+    vi.mocked(authService.login).mockResolvedValue({
+      data: {
+        message: "Welcome back!",
+        data: {
+          accessToken: "token-9",
+          user: { id: "u9", email: "new@school.edu", name: "New Staff", role: "STAFF", institutionId: "inst-1", sessionId: "sess-9", mustChangePassword: true },
+        },
+      },
+    } as never);
+
+    renderLoginPage();
+    await user.type(screen.getByLabelText(/email.*registration.*phone/i), "new@school.edu");
+    await user.type(screen.getByLabelText(/^password/i), "given-pass-1");
+    await user.click(screen.getByRole("button", { name: "Sign In" }));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/change-password"));
+    expect(replace).not.toHaveBeenCalledWith("/dashboard");
+    expect(JSON.parse(sessionStorage.getItem("nexus-user") as string).mustChangePassword).toBe(true);
+  });
+
+  it("links to the forgotten password page", () => {
+    renderLoginPage();
+
+    expect(screen.getByRole("link", { name: "Forgot password?" })).toHaveAttribute("href", "/forgot-password");
+  });
 });

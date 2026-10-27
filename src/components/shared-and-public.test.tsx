@@ -57,16 +57,21 @@ describe("ProfileDialog", () => {
     expect(mocks.setAuth).toHaveBeenCalledWith(expect.objectContaining({ name: "New Name", email: "new@x.io", role: "STAFF" }), "tok");
   });
 
-  it("includes a new password only when provided and enforces the 8 character minimum", async () => {
+  it("includes a new password only when provided, with the current one, and enforces the 8 character minimum", async () => {
     render(<ProfileDialog open onClose={() => {}} />);
     const password = await screen.findByLabelText("New Password");
+    const current = screen.getByLabelText("Current Password");
     const save = screen.getByRole("button", { name: "Save Changes" });
     fireEvent.change(password, { target: { value: "short" } });
     expect(save).toBeDisabled();
     fireEvent.change(password, { target: { value: "longenough" } });
+    expect(save).toBeDisabled();
+    fireEvent.change(current, { target: { value: "old-password" } });
     expect(save).toBeEnabled();
     fireEvent.click(save);
-    await waitFor(() => expect(mocks.updateMe).toHaveBeenCalledWith({ name: "Old Name", email: "old@x.io", password: "longenough" }));
+    await waitFor(() =>
+      expect(mocks.updateMe).toHaveBeenCalledWith({ name: "Old Name", email: "old@x.io", password: "longenough", currentPassword: "old-password" })
+    );
   });
 
   it("blocks saving when name or email is cleared", async () => {

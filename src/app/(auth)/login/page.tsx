@@ -59,12 +59,14 @@ export default function LoginPage() {
           role: data.user.role as never,
           institutionId: data.user.institutionId,
           sessionId: data.user.sessionId,
+          mustChangePassword: Boolean(data.user.mustChangePassword),
         },
         data.accessToken
       );
       const maxAge = 7 * 24 * 60 * 60;
       document.cookie = `isAuthenticated=1; path=/; max-age=${maxAge}; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
-      router.replace(data.user.role === "SUPERADMIN" ? "/platform" : "/dashboard");
+      if (data.user.mustChangePassword) router.replace("/change-password");
+      else router.replace(data.user.role === "SUPERADMIN" ? "/platform" : "/dashboard");
     }
     setLoading(false);
   };
@@ -181,6 +183,11 @@ export default function LoginPage() {
                 },
               }}
             />
+            <Box sx={{ textAlign: "right", mt: -1 }}>
+              <Box component={Link} href="/forgot-password" sx={{ color: "primary.main", textDecoration: "none", fontSize: 14, fontWeight: 600 }}>
+                Forgot password?
+              </Box>
+            </Box>
             <Button
               type="submit"
               variant="contained"

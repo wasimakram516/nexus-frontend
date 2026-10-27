@@ -48,6 +48,7 @@ import ThemeToggle from "@/components/shared/ThemeToggle";
 import NoticeBell from "@/components/dashboard/NoticeBell";
 import TrialBanner from "@/components/dashboard/TrialBanner";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { useForcePasswordChange } from "@/hooks/useForcePasswordChange";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
 import {
@@ -100,6 +101,7 @@ const navItems: NavItem[] = [
 ];
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
+  useForcePasswordChange();
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
