@@ -581,7 +581,7 @@ describe("PeopleTab (students)", () => {
     await user.type(within(dialog).getByLabelText(/Left Reason/), "Relocating");
 
     await user.click(within(dialog).getByRole("button", { name: "Withdraw Student" }));
-    expect(await within(dialog).findByText(/PKR 5,000/, {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(await within(dialog).findByText(/Rs. 5,000/, {}, { timeout: 5000 })).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: "Withdraw Anyway" }));
 

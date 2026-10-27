@@ -53,6 +53,7 @@ import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
 import PromotionWizard from "@/components/dashboard/PromotionWizard";
+import { useCurrencyLabel } from "@/hooks/useCurrencyLabel";
 import StudentIdCardsDialog from "@/components/dashboard/StudentIdCardsDialog";
 import StudentImportDialog from "@/components/dashboard/StudentImportDialog";
 import { useConfirm } from "@/contexts/ConfirmContext";
@@ -207,6 +208,7 @@ export default function PeopleTab({
   canManage = true,
 }: PeopleTabProps) {
   const { showMessage } = useMessage();
+  const currency = useCurrencyLabel(institutionId);
   const confirm = useConfirm();
   const cfg = KIND_CONFIG[kind];
   const custom = useCustomFieldForm(kind === "students" ? "student" : kind === "staff" ? "staff_profile" : "guardian", institutionId);
@@ -2007,7 +2009,7 @@ export default function PeopleTab({
         <DialogContent sx={{ pt: "16px !important" }}>
           {withdrawOutstanding !== null && (
             <Alert severity="warning" sx={{ mb: 2.5 }}>
-              This student has PKR {withdrawOutstanding.toLocaleString()} in outstanding dues.
+              This student has {currency} {withdrawOutstanding.toLocaleString()} in outstanding dues.
               Submit again to withdraw anyway.
             </Alert>
           )}

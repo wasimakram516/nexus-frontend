@@ -45,6 +45,7 @@ import ResourceSection, { FieldDef, Option } from "@/components/dashboard/Resour
 import { slugify, useSectionCrumb, useModuleSection } from "@/lib/urlSection";
 import { useMessage } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
+import { useCurrencyLabel } from "@/hooks/useCurrencyLabel";
 import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
 import { fetchAllUsers, UserLite } from "@/lib/users";
@@ -74,6 +75,7 @@ const STAFF_ROLES = ["ADMIN", "STAFF"];
 export default function FinanceManager({ institutionId }: FinanceManagerProps) {
   const { showMessage } = useMessage();
   const runtime = useOptionalRuntimeConfig();
+  const currency = useCurrencyLabel(institutionId);
   // Platform console (institutionId set) is superadmin — always full access.
   const canManage = institutionId ? true : (runtime?.canManageModule("FINANCE") ?? true);
 
@@ -348,7 +350,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
           title="Salary Adjustments" subtitle="One-off bonuses and deductions." rows={adjustments} loading={loading}
           columns={[userCol, monthCol,
             { key: "adjustmentType", label: "Type", render: (r) => <Chip label={String(r.adjustmentType)} size="small" color={r.adjustmentType === "BONUS" ? "success" : "warning"} /> },
-            { key: "amount", label: "Amount" }, { key: "remarks", label: "Remarks" }, campusCol, createdCol]}
+            { key: "amount", label: `Amount (${currency})` }, { key: "remarks", label: "Remarks" }, campusCol, createdCol]}
           fields={[
             { key: "userId", label: "Staff Member", type: "select", options: staffOptions, required: true },
             { key: "salaryId", label: "Salary Record", type: "select", options: salaryOptions, required: true },
@@ -473,7 +475,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
           title="Student Discounts" subtitle="Sibling, merit, need-based and staff-child discounts." rows={discounts} loading={loading}
           columns={[studentCol,
             { key: "discountType", label: "Type", render: (r) => <Chip label={String(r.discountType)} size="small" /> },
-            { key: "discountAmount", label: "Amount" }, { key: "remarks", label: "Remarks" }, createdCol]}
+            { key: "discountAmount", label: `Amount (${currency})` }, { key: "remarks", label: "Remarks" }, createdCol]}
           fields={[
             { key: "studentId", label: "Student", type: "select", options: studentOptions, required: true },
             { key: "discountType", label: "Type", type: "select", options: ["SIBLING", "MERIT", "NEED_BASED", "STAFF_CHILD"].map((d) => ({ value: d, label: d })), required: true, cols: 6 },
@@ -519,7 +521,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
         <ResourceSection
           customFieldEntity="student_fine" institutionId={institutionId}
           title="Student Fines" subtitle="Monthly fines applied to students." rows={fines} loading={loading}
-          columns={[studentCol, monthCol, { key: "totalFineAmount", label: "Amount" },
+          columns={[studentCol, monthCol, { key: "totalFineAmount", label: `Amount (${currency})` },
             { key: "fineReason", label: "Reason" },
             { key: "status", label: "Status", render: (r) => <Chip label={String(r.status ?? "PENDING")} size="small" color={r.status === "PAID" ? "success" : "warning"} /> },
             campusCol]}
@@ -561,9 +563,9 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
           customFieldEntity="fee_voucher" institutionId={institutionId}
           title="Fee Vouchers" subtitle="Monthly fee vouchers issued to students." rows={vouchers} loading={loading}
           columns={[studentCol, monthCol,
-            { key: "finalAmountDue", label: "Total", render: (r: FeeVoucherRecord) => String(r.finalAmountDue) },
-            { key: "totalPaid", label: "Paid", render: (r: FeeVoucherRecord) => String(r.totalPaid ?? "—") },
-            { key: "remainingBalance", label: "Remaining", render: (r: FeeVoucherRecord) => String(r.remainingBalance ?? "—") },
+            { key: "finalAmountDue", label: `Total (${currency})`, render: (r: FeeVoucherRecord) => String(r.finalAmountDue) },
+            { key: "totalPaid", label: `Paid (${currency})`, render: (r: FeeVoucherRecord) => String(r.totalPaid ?? "—") },
+            { key: "remainingBalance", label: `Remaining (${currency})`, render: (r: FeeVoucherRecord) => String(r.remainingBalance ?? "—") },
             ...(vouchers.some((voucher) => Number(voucher.overpaymentAmount ?? 0) > 0) ? [{ key: "overpaymentAmount", label: "Overpaid", render: (r: FeeVoucherRecord) => String(r.overpaymentAmount ?? "0.00") }] : []),
             { key: "dueDate", label: "Due", render: (r) => formatDate(String(r.dueDate ?? "")) },
             { key: "status", label: "Status", render: (r) => (r.status ? <Chip label={String(r.status)} size="small" color={r.status === "PAID" ? "success" : "warning"} /> : "—") }]}
@@ -660,7 +662,7 @@ export default function FinanceManager({ institutionId }: FinanceManagerProps) {
                 const voucher = vouchers.find((v) => v.id === r.voucherId);
                 return voucher ? `${studentName(voucher.studentId)} · ${voucher.month}/${voucher.year}` : "—";
               } },
-            monthCol, { key: "paidAmount", label: "Paid" },
+            monthCol, { key: "paidAmount", label: `Paid (${currency})` },
             { key: "paymentMethod", label: "Method", render: (r) => <Chip label={String(r.paymentMethod)} size="small" /> },
             { key: "paymentDate", label: "Date", render: (r) => formatDate(String(r.paymentDate ?? "")) }]}
           fields={[
