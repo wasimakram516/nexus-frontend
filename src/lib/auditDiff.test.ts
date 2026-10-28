@@ -33,6 +33,11 @@ describe("formatAuditValue", () => {
     expect(formatAuditValue("ACTIVE").text).toBe("Active");
   });
 
+  it("shows the name of a referenced record instead of its id", () => {
+    const id = "4f25b912-60f8-4382-a02e-03b8a4c62f52";
+    expect(formatAuditValue(id, { [id]: "Naeem Akhtar" })).toEqual({ text: "Naeem Akhtar" });
+  });
+
   it("counts lists and summarises objects instead of dumping JSON", () => {
     expect(formatAuditValue([{ a: 1 }, { a: 2 }]).text).toBe("2 items");
     expect(formatAuditValue({ theme: "default", logoUrl: null }).text).toBe(
@@ -42,12 +47,12 @@ describe("formatAuditValue", () => {
 });
 
 describe("buildDiffRows", () => {
-  it("hides bookkeeping fields and sorts by label", () => {
+  it("hides bookkeeping fields, keeps who changed it, and sorts by label", () => {
     const rows = buildDiffRows(
-      { id: "x", updatedAt: "a", name: "A", city: "L" },
-      { id: "x", updatedAt: "b", name: "B", city: "L" },
+      { id: "x", updatedAt: "a", updatedBy: null, name: "A", city: "L" },
+      { id: "x", updatedAt: "b", updatedBy: "u1", name: "B", city: "L" },
     );
-    expect(rows.map((r) => r.key)).toEqual(["city", "name"]);
+    expect(rows.map((r) => r.key)).toEqual(["city", "name", "updatedBy"]);
     expect(rows.find((r) => r.key === "name")?.changed).toBe(true);
     expect(rows.find((r) => r.key === "city")?.changed).toBe(false);
   });

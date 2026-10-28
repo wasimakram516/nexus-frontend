@@ -11,14 +11,10 @@ export interface DiffRow {
 }
 
 /** Bookkeeping columns that say nothing a school administrator needs to read. */
-const HIDDEN_KEYS = new Set([
-  "id",
-  "createdAt",
-  "createdBy",
-  "updatedAt",
-  "updatedBy",
-  "institutionId",
-]);
+const HIDDEN_KEYS = new Set(["id", "createdAt", "updatedAt", "institutionId"]);
+
+/** Display names for the records a snapshot points to, by id. */
+export type ReferenceNames = Record<string, string>;
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -46,9 +42,10 @@ export function humanizeKey(key: string): string {
  * and a count for lists.
  *
  * @param {unknown} value - The raw snapshot value.
+ * @param {ReferenceNames} [names] - Names of the records the snapshot points to.
  * @returns {{ text: string, title?: string }} The text, and the raw value when it was shortened.
  */
-export function formatAuditValue(value: unknown): {
+export function formatAuditValue(value: unknown, names?: ReferenceNames): {
   text: string;
   title?: string;
 } {
@@ -62,10 +59,11 @@ export function formatAuditValue(value: unknown): {
   if (isNested(value)) {
     const pairs = Object.entries(value as Record<string, unknown>)
       .filter(([, v]) => !isNested(v))
-      .map(([k, v]) => `${humanizeKey(k)}: ${formatAuditValue(v).text}`);
+      .map(([k, v]) => `${humanizeKey(k)}: ${formatAuditValue(v, names).text}`);
     return { text: pairs.join(", ") || "Details" };
   }
   const text = String(value);
+  if (names?.[text]) return { text: names[text] };
   if (ISO_DATE.test(text)) return { text: formatDateTime(text) };
   if (UUID.test(text)) return { text: `Ref …${text.slice(-6)}`, title: text };
   if (ENUM.test(text)) {

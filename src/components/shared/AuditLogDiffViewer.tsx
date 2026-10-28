@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import Close from "@mui/icons-material/Close";
 import { formatDateTimeLong } from "@/lib/dateFormat";
-import { buildDiffRows, formatAuditValue } from "@/lib/auditDiff";
+import { buildDiffRows, formatAuditValue, ReferenceNames } from "@/lib/auditDiff";
 
 export interface AuditLogDiffTarget {
   id: string;
@@ -21,11 +21,13 @@ export interface AuditLogDiffTarget {
 
 interface Props {
   log: AuditLogDiffTarget | null;
+  /** Names of the records the snapshots point to, by id. */
+  references?: ReferenceNames;
   onClose: () => void;
 }
 
-function Cell({ value }: { value: unknown }) {
-  const { text, title } = formatAuditValue(value);
+function Cell({ value, names }: { value: unknown; names?: ReferenceNames }) {
+  const { text, title } = formatAuditValue(value, names);
   const node = <span>{text}</span>;
   return title ? <Tooltip title={title}>{node}</Tooltip> : node;
 }
@@ -37,7 +39,7 @@ function Cell({ value }: { value: unknown }) {
  * delete — the row no longer exists), or neither (bulk operations and
  * models the auto-audit extension doesn't cover yet, e.g. User/Campus).
  */
-export default function AuditLogDiffViewer({ log, onClose }: Props) {
+export default function AuditLogDiffViewer({ log, references, onClose }: Props) {
   const [showUnchanged, setShowUnchanged] = useState(false);
   if (!log) return null;
 
@@ -109,10 +111,10 @@ export default function AuditLogDiffViewer({ log, onClose }: Props) {
                         )}
                       </TableCell>
                       <TableCell sx={{ fontSize: 13, wordBreak: "break-word" }}>
-                        {hasBefore ? <Cell value={row.before} /> : "—"}
+                        {hasBefore ? <Cell value={row.before} names={references} /> : "—"}
                       </TableCell>
                       <TableCell sx={{ fontSize: 13, wordBreak: "break-word" }}>
-                        {hasAfter ? <Cell value={row.after} /> : "—"}
+                        {hasAfter ? <Cell value={row.after} names={references} /> : "—"}
                       </TableCell>
                     </TableRow>
                   ))}

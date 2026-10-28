@@ -21,6 +21,7 @@ interface AuditLog extends AuditLogDiffTarget {
 
 interface PaginatedResponse {
   items: AuditLog[];
+  references?: Record<string, string>;
   total: number;
 }
 
@@ -70,6 +71,7 @@ export default function AuditLogActivity({ showInstitutionColumn = false }: Prop
   const [toDate, setToDate] = useState("");
 
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [references, setReferences] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,6 +89,7 @@ export default function AuditLogActivity({ showInstitutionColumn = false }: Prop
       { showMessage, silent: true }
     );
     setLogs(data?.items ?? []);
+    setReferences(data?.references ?? {});
     setTotal(data?.total ?? 0);
     setLoading(false);
   }, [page, limit, search, action, entity, fromDate, toDate, showMessage]);
@@ -259,7 +262,7 @@ export default function AuditLogActivity({ showInstitutionColumn = false }: Prop
         )}
       </DataTableCard>
 
-      <AuditLogDiffViewer log={selectedLog} onClose={() => setSelectedLog(null)} />
+      <AuditLogDiffViewer log={selectedLog} references={references} onClose={() => setSelectedLog(null)} />
     </>
   );
 }
