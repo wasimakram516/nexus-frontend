@@ -75,7 +75,7 @@ export default function PlatformOverviewPage() {
       <Box sx={{ px: 4, py: 3, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "background.paper" }}>
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 700 }}>Platform Overview</Typography>
-          <Typography variant="body2" color="text.secondary">Superadmin console â€” manage institutions, plans, and platform settings.</Typography>
+          <Typography variant="body2" color="text.secondary">Superadmin console — manage institutions, plans, and platform settings.</Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           {newInquiries > 0 && (
@@ -156,7 +156,7 @@ export default function PlatformOverviewPage() {
                   </Box>
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>{inst.name}</Typography>
-                    <Typography variant="caption" color="text.secondary">{inst.slug} Â· {inst.deploymentMode?.replace("_", " ")}</Typography>
+                    <Typography variant="caption" color="text.secondary">{inst.slug} · {inst.deploymentMode?.replace("_", " ")}</Typography>
                   </Box>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

@@ -249,10 +249,10 @@ export default function NewInstitutionWizard() {
       steps.push({
         label: success ? `Admin account created (${data.adminEmail})` : "Admin account",
         status: success ? "success" : "failed",
-        hint: success ? "Share the credentials securely." : "Create one from Manage â†’ Users.",
+        hint: success ? "Share the credentials securely." : "Create one from Manage → Users.",
       });
     } else {
-      steps.push({ label: "Admin account", status: "skipped", hint: "Add one from Manage â†’ Users so someone can sign in." });
+      steps.push({ label: "Admin account", status: "skipped", hint: "Add one from Manage → Users so someone can sign in." });
     }
 
     // 6 — First campus (optional)
@@ -271,7 +271,7 @@ export default function NewInstitutionWizard() {
         }),
         { showMessage, silent: true }
       );
-      steps.push({ label: `Campus "${data.campusName}" created`, status: success ? "success" : "failed", hint: success ? undefined : "Add it from Manage â†’ Campuses." });
+      steps.push({ label: `Campus "${data.campusName}" created`, status: success ? "success" : "failed", hint: success ? undefined : "Add it from Manage → Campuses." });
     } else {
       steps.push({ label: "First campus", status: "skipped", hint: "Campuses are required before adding people or classes." });
     }
