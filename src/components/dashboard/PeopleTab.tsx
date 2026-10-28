@@ -62,6 +62,9 @@ import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
 import { UserLite } from "@/lib/users";
 import AccessRoleSelect, { AccessRoleOption } from "@/components/shared/AccessRoleSelect";
+import PhoneInput from "@/components/shared/PhoneInput";
+import { useDefaultCountry } from "@/hooks/useDefaultCountry";
+import { isValidPhone } from "@/lib/phone";
 import { authService } from "@/services/auth.service";
 import { peopleService } from "@/services/people.service";
 import { rolesService } from "@/services/roles.service";
@@ -211,6 +214,7 @@ export default function PeopleTab({
 }: PeopleTabProps) {
   const { showMessage } = useMessage();
   const currency = useCurrencyLabel(institutionId);
+  const defaultCountry = useDefaultCountry(institutionId);
   const confirm = useConfirm();
   const cfg = KIND_CONFIG[kind];
   const custom = useCustomFieldForm(kind === "students" ? "student" : kind === "staff" ? "staff_profile" : "guardian", institutionId);
@@ -905,8 +909,12 @@ export default function PeopleTab({
     void contactCustom.load("create");
   };
 
+  const phoneProblem = (value: string, required: boolean) =>
+    !value ? (required ? "Phone is required." : undefined) : isValidPhone(value, defaultCountry) ? undefined : "Enter a valid phone number.";
+  const contactPhonesValid =
+    !phoneProblem(contactForm.phone1, true) && !phoneProblem(contactForm.phone2, false) && !phoneProblem(contactForm.whatsapp, false);
   const contactValid =
-    !contactCustom.loading && !contactCustom.error && !contactCustom.missingRequired && Boolean(contactForm.phone1);
+    !contactCustom.loading && !contactCustom.error && !contactCustom.missingRequired && contactPhonesValid;
 
   const handleSaveContact = async () => {
     setContactAttempted(true);
@@ -1963,26 +1971,27 @@ export default function PeopleTab({
         <DialogContent sx={{ pt: "16px !important" }}>
           <Grid container spacing={2.5}>
             <Grid size={{ xs: 12 }}>
-              <TextField
+              <PhoneInput
                 label="Phone" required value={contactForm.phone1}
-                onChange={(e) => setContactForm((p) => ({ ...p, phone1: e.target.value }))}
-                fullWidth
-                error={contactAttempted && !contactForm.phone1}
-                helperText={contactAttempted && !contactForm.phone1 ? "Phone is required." : undefined}
+                onChange={(phone1) => setContactForm((p) => ({ ...p, phone1 }))}
+                defaultCountry={defaultCountry}
+                {...(contactAttempted && phoneProblem(contactForm.phone1, true) ? { error: true, helperText: phoneProblem(contactForm.phone1, true) } : {})}
               />
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <TextField
+              <PhoneInput
                 label="Alternate Phone" value={contactForm.phone2}
-                onChange={(e) => setContactForm((p) => ({ ...p, phone2: e.target.value }))}
-                fullWidth
+                onChange={(phone2) => setContactForm((p) => ({ ...p, phone2 }))}
+                defaultCountry={defaultCountry}
+                {...(contactAttempted && phoneProblem(contactForm.phone2, false) ? { error: true, helperText: phoneProblem(contactForm.phone2, false) } : {})}
               />
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <TextField
+              <PhoneInput
                 label="WhatsApp" value={contactForm.whatsapp}
-                onChange={(e) => setContactForm((p) => ({ ...p, whatsapp: e.target.value }))}
-                fullWidth
+                onChange={(whatsapp) => setContactForm((p) => ({ ...p, whatsapp }))}
+                defaultCountry={defaultCountry}
+                {...(contactAttempted && phoneProblem(contactForm.whatsapp, false) ? { error: true, helperText: phoneProblem(contactForm.whatsapp, false) } : {})}
               />
             </Grid>
             <Grid size={{ xs: 12 }}>

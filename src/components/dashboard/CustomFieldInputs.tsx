@@ -10,6 +10,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import PhoneInput from "@/components/shared/PhoneInput";
 import type { CustomFieldDefinition } from "@/services/customFields.service";
 import { uploadFile, type UploadResult } from "@/lib/upload";
 
@@ -176,10 +177,23 @@ export default function CustomFieldInputs({ definitions, values, onChange, disab
           />
         );
       }
+      if (definition.inputType === "PHONE") {
+        return (
+          <PhoneInput
+            key={definition.id}
+            label={definition.label}
+            required={definition.isRequired}
+            helperText={definition.helpText ?? undefined}
+            disabled={disabled}
+            value={typeof value === "string" ? value : ""}
+            onChange={(next) => onChange(definition.fieldKey, next === "" ? null : next)}
+          />
+        );
+      }
       const multiple = definition.inputType === "MULTI_SELECT" || definition.inputType === "CHECKBOX";
       const boolean = definition.inputType === "BOOLEAN";
       const select = multiple || boolean || definition.inputType === "SELECT" || definition.inputType === "RADIO";
-      const type = definition.inputType === "NUMBER" ? "number" : definition.inputType === "DATE" ? "date" : definition.inputType === "DATETIME" ? "datetime-local" : definition.inputType === "EMAIL" ? "email" : definition.inputType === "PHONE" ? "tel" : definition.inputType === "URL" ? "url" : "text";
+      const type = definition.inputType === "NUMBER" ? "number" : definition.inputType === "DATE" ? "date" : definition.inputType === "DATETIME" ? "datetime-local" : definition.inputType === "EMAIL" ? "email" : definition.inputType === "URL" ? "url" : "text";
       return <TextField key={definition.id} label={definition.label} required={definition.isRequired}
         placeholder={definition.placeholder} helperText={definition.helpText} disabled={disabled}
         value={multiple ? Array.isArray(value) ? value : [] : value ?? ""}

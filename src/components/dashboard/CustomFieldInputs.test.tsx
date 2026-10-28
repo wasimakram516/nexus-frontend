@@ -5,6 +5,7 @@ import type { CustomFieldDefinition } from "@/services/customFields.service";
 
 const mocks = vi.hoisted(() => ({ uploadFile: vi.fn() }));
 vi.mock("@/lib/upload", () => ({ uploadFile: mocks.uploadFile }));
+vi.mock("@/contexts/RuntimeConfigContext", () => ({ useOptionalRuntimeConfig: () => ({ config: { defaultCountry: "AE" } }) }));
 
 const textDefinition: CustomFieldDefinition = {
   id: "def-text",
@@ -36,6 +37,16 @@ beforeEach(() => {
 });
 
 describe("CustomFieldInputs", () => {
+  it("renders a phone field as a country picker and number, starting on the school's country", () => {
+    const onChange = vi.fn();
+    render(<CustomFieldInputs definitions={[{ id: "def-phone", fieldKey: "emergency", label: "Emergency phone", inputType: "PHONE", isRequired: false }]} values={{}} onChange={onChange} />);
+
+    expect(screen.getByRole("combobox", { name: /country code/i })).toHaveTextContent("+971");
+    fireEvent.change(screen.getByLabelText("Emergency phone"), { target: { value: "50 123 4567" } });
+    expect(onChange).toHaveBeenLastCalledWith("emergency", "+971501234567");
+    fireEvent.change(screen.getByLabelText("Emergency phone"), { target: { value: "" } });
+    expect(onChange).toHaveBeenLastCalledWith("emergency", null);
+  });
   it("displays a saved external URL in a read-only file field", () => {
     render(<CustomFieldInputs definitions={[fileDefinition]} values={{ report: "https://example.com/report.pdf" }} onChange={vi.fn()} disabled />);
     expect(screen.getByRole("link", { name: "https://example.com/report.pdf" })).toHaveAttribute("href", "https://example.com/report.pdf");

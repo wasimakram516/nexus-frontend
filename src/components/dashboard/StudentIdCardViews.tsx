@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
+import { formatPhone } from "@/lib/phone";
 import { PrintPage } from "@/components/shared/PrintSheet";
 import { formatDate } from "@/lib/dateFormat";
 import type { PrintMeta } from "@/lib/examDocuments";
@@ -86,7 +87,7 @@ export function IdCardFace({ card, meta }: { card: IdCard; meta: PrintMeta }) {
           <Line label="Reg No" value={card.regNo} />
           <Line label="Class" value={`${card.className}${card.sectionName ? `, ${card.sectionName}` : ""}`} />
           <Line label="Born" value={formatDate(card.dob)} />
-          {card.guardianPhone && <Line label="Guardian" value={card.guardianPhone} />}
+          {card.guardianPhone && <Line label="Guardian" value={formatPhone(card.guardianPhone)} />}
           {card.customValues.map((item) => (
             <Line key={item.label} label={item.label} value={item.value} />
           ))}

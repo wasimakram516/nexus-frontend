@@ -132,7 +132,7 @@ it("adds a contact for a student with its required additional fields", async () 
     expect(peopleService.createContact).toHaveBeenCalledWith({
       personId: "student-1",
       personType: "STUDENT",
-      phone1: "0300-1234567",
+      phone1: "+923001234567",
       customFields: { NOTE: "Emergency contact" },
     })
   );
