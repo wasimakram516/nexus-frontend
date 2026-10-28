@@ -3,6 +3,8 @@
 import { Box, Card, CardContent, Grid, MenuItem, TextField, Tooltip, Typography } from "@mui/material";
 import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import { WizardData } from "@/app/platform/institutions/new/page";
+import CountrySelect from "@/components/shared/CountrySelect";
+import PhoneInput from "@/components/shared/PhoneInput";
 import TimezonePicker from "@/components/shared/TimezonePicker";
 import { toSlug } from "@/lib/slugify";
 
@@ -122,11 +124,19 @@ export default function StepBasicInfo({ data, update }: Props) {
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
+                  <CountrySelect
+                    label="Default country"
+                    value={data.defaultCountry}
+                    onChange={(defaultCountry) => update({ defaultCountry })}
+                    helperText="Phone numbers for this school start on this country. Any other country can still be chosen."
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <PhoneInput
                     label="Contact Phone"
                     value={data.contactPhone}
-                    onChange={(e) => update({ contactPhone: e.target.value })}
-                    fullWidth
+                    onChange={(contactPhone) => update({ contactPhone })}
+                    defaultCountry={data.defaultCountry}
                   />
                 </Grid>
                 <Grid size={{ xs: 12 }}>

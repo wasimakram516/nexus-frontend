@@ -20,7 +20,7 @@ import InstitutionOverviewTab from "./InstitutionOverviewTab";
 
 const institution = {
   id: "inst-1", name: "Green School", slug: "green-school", status: "ACTIVE", deploymentMode: "SHARED_HOSTED",
-  primaryDomain: "green.edu", contactEmail: "hi@green.edu", contactPhone: "0300", notes: "VIP client",
+  primaryDomain: "green.edu", contactEmail: "hi@green.edu", contactPhone: "+923001234567", defaultCountry: "PK", notes: "VIP client",
   createdAt: "2026-01-05T10:00:00Z",
 };
 
@@ -129,9 +129,42 @@ describe("InstitutionOverviewTab", () => {
     fireEvent.click(save);
     await waitFor(() => expect(mocks.updateInstitution).toHaveBeenCalledWith("inst-1", {
       name: "Green Two", slug: "new-slug", status: "ACTIVE", deploymentMode: "SHARED_HOSTED",
-      primaryDomain: "green.edu", contactEmail: "hi@green.edu", contactPhone: undefined, notes: "VIP client",
+      primaryDomain: "green.edu", contactEmail: "hi@green.edu", contactPhone: undefined, notes: "VIP client", defaultCountry: "PK",
     }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
+  });
+
+  it("shows the contact phone laid out and the school's default country", async () => {
+    render(<InstitutionOverviewTab institution={institution} runtimeConfig={null} />);
+    await screen.findByText(/No admin accounts yet/);
+
+    expect(screen.getByText("+92 300 1234567")).toBeInTheDocument();
+    expect(screen.getByText("Pakistan")).toBeInTheDocument();
+  });
+
+  it("saves a new default country, and an international contact phone in full", async () => {
+    render(<InstitutionOverviewTab institution={institution} runtimeConfig={null} />);
+    await screen.findByText(/No admin accounts yet/);
+    fireEvent.click(screen.getByRole("button", { name: /^Edit$/ }));
+
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: /default country/i }));
+    fireEvent.click(await screen.findByRole("option", { name: /United Arab Emirates/ }));
+    fireEvent.change(screen.getByLabelText("Contact Phone"), { target: { value: "+971 50 123 4567" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(mocks.updateInstitution).toHaveBeenCalledWith("inst-1", expect.objectContaining({
+      defaultCountry: "AE", contactPhone: "+971501234567",
+    })));
+  });
+
+  it("will not save a contact phone that cannot be right", async () => {
+    render(<InstitutionOverviewTab institution={institution} runtimeConfig={null} />);
+    await screen.findByText(/No admin accounts yet/);
+    fireEvent.click(screen.getByRole("button", { name: /^Edit$/ }));
+
+    fireEvent.change(screen.getByLabelText("Contact Phone"), { target: { value: "300" } });
+
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
   it("asks before putting a school on hold, and saves nothing when declined", async () => {

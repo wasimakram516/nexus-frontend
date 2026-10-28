@@ -37,7 +37,11 @@ import { authService } from "@/services/auth.service";
 import { usersService } from "@/services/users.service";
 import { platformService } from "@/services/platform.service";
 import RecordMetadataPopover from "@/components/shared/RecordMetadataPopover";
+import CountrySelect from "@/components/shared/CountrySelect";
+import PhoneInput from "@/components/shared/PhoneInput";
 import TimezonePicker from "@/components/shared/TimezonePicker";
+import { getCountry } from "@/lib/countries";
+import { formatPhone, isValidPhone } from "@/lib/phone";
 
 interface Props {
   institution: Record<string, unknown>;
@@ -87,7 +91,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "", slug: "", status: "", deploymentMode: "",
-    primaryDomain: "", contactEmail: "", contactPhone: "", notes: "", timezone: "",
+    primaryDomain: "", contactEmail: "", contactPhone: "", notes: "", timezone: "", defaultCountry: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -102,6 +106,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
       contactPhone: String(institution.contactPhone ?? ""),
       notes: String(institution.notes ?? ""),
       timezone: String(institution.timezone ?? ""),
+      defaultCountry: String(institution.defaultCountry ?? "PK"),
     });
     setEditOpen(true);
   };
@@ -109,7 +114,8 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
   const ef = (key: keyof typeof editForm, value: string) =>
     setEditForm((prev) => ({ ...prev, [key]: value }));
 
-  const canSave = !saving && editForm.name.trim() !== "" && /^[a-z0-9-]+$/.test(editForm.slug.trim());
+  const phoneOk = !editForm.contactPhone || isValidPhone(editForm.contactPhone, editForm.defaultCountry);
+  const canSave = !saving && phoneOk && editForm.name.trim() !== "" && /^[a-z0-9-]+$/.test(editForm.slug.trim());
 
   const handleSave = async () => {
     // An INACTIVE school is locked out at sign-in and on every request.
@@ -136,6 +142,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
           contactPhone: editForm.contactPhone.trim() || undefined,
           notes: editForm.notes.trim() || undefined,
           timezone: editForm.timezone || undefined,
+          defaultCountry: editForm.defaultCountry || undefined,
         }),
       { showMessage, successMessage: "Institution details saved." }
     );
@@ -209,7 +216,8 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
             <InfoRow icon={<Domain fontSize="small" />} label="Slug" value={String(institution.slug ?? "")} />
             <InfoRow icon={<Domain fontSize="small" />} label="Primary Domain" value={String(institution.primaryDomain ?? "")} />
             <InfoRow icon={<Email fontSize="small" />} label="Contact Email" value={String(institution.contactEmail ?? "")} />
-            <InfoRow icon={<Phone fontSize="small" />} label="Contact Phone" value={String(institution.contactPhone ?? "")} />
+            <InfoRow icon={<Phone fontSize="small" />} label="Contact Phone" value={formatPhone(String(institution.contactPhone ?? ""))} />
+            <InfoRow icon={<Domain fontSize="small" />} label="Default Country" value={getCountry(String(institution.defaultCountry ?? "PK"))?.name ?? "—"} />
             <InfoRow icon={<CalendarToday fontSize="small" />} label="Created" value={institution.createdAt ? formatDateTime(String(institution.createdAt)) : "—"} />
           </CardContent>
         </Card>
@@ -368,8 +376,17 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField label="Contact Email" type="email" size="small" fullWidth value={editForm.contactEmail} onChange={(e) => ef("contactEmail", e.target.value)} />
             </Grid>
+            <Grid size={{ xs: 12 }}>
+              <CountrySelect
+                label="Default country"
+                size="small"
+                value={editForm.defaultCountry}
+                onChange={(iso) => ef("defaultCountry", iso)}
+                helperText="Phone numbers for this school start on this country, so a local number needs no code. Any other country can still be chosen."
+              />
+            </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Contact Phone" size="small" fullWidth value={editForm.contactPhone} onChange={(e) => ef("contactPhone", e.target.value)} />
+              <PhoneInput label="Contact Phone" size="small" value={editForm.contactPhone} onChange={(v) => ef("contactPhone", v)} defaultCountry={editForm.defaultCountry} />
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField label="Notes" size="small" fullWidth multiline minRows={2} value={editForm.notes} onChange={(e) => ef("notes", e.target.value)} />

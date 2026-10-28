@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getCountry } from "@/lib/countries";
+import { formatPhone } from "@/lib/phone";
 import { Box, Button, Card, CardContent, Chip, CircularProgress, Divider, Grid, Typography } from "@mui/material";
 import ArrowBack from "@mui/icons-material/ArrowBack";
 import Check from "@mui/icons-material/Check";
@@ -68,7 +70,8 @@ export default function StepReview({ data, onSubmit, onCancel, onBack, submittin
               <ReviewRow label="Status" value={data.status} />
               <ReviewRow label="Deployment Mode" value={data.deploymentMode.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())} />
               <ReviewRow label="Contact Email" value={data.contactEmail} />
-              <ReviewRow label="Contact Phone" value={data.contactPhone} />
+              <ReviewRow label="Contact Phone" value={formatPhone(data.contactPhone)} />
+              <ReviewRow label="Default Country" value={getCountry(data.defaultCountry)?.name ?? ""} />
               <ReviewRow label="Primary Domain" value={data.primaryDomain} />
             </CardContent>
           </Card>

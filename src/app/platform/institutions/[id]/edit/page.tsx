@@ -11,7 +11,7 @@ import ArrowForward from "@mui/icons-material/ArrowForward";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
-import { WizardData } from "@/app/platform/institutions/new/page";
+import { WizardData, basicInfoPhoneOk } from "@/app/platform/institutions/new/page";
 import { buildBrandingColorPayload, loadColorOverrides } from "@/lib/branding";
 
 import StepBasicInfo from "@/components/platform/wizard/StepBasicInfo";
@@ -48,7 +48,7 @@ function deepUnwrapSetting(value: unknown, depth = 0): string {
 
 const defaultData: WizardData = {
   name: "", slug: "", status: "ACTIVE", deploymentMode: "SHARED_HOSTED",
-  contactEmail: "", contactPhone: "", primaryDomain: "", notes: "", timezone: "",
+  contactEmail: "", contactPhone: "", primaryDomain: "", notes: "", timezone: "", defaultCountry: "PK",
   adminName: "", adminEmail: "", adminPassword: "", skipAdmin: true,
   planId: "", planName: "", billingCycle: "MONTHLY", agreedPrice: "", currency: "PKR", setupFee: "",
   displayName: "", logoUrl: "",
@@ -112,6 +112,7 @@ export default function EditInstitutionWizard() {
         primaryDomain: String(inst?.primaryDomain ?? ""),
         notes: String(inst?.notes ?? ""),
         timezone: String(inst?.timezone ?? ""),
+        defaultCountry: String(inst?.defaultCountry ?? "PK"),
         adminName: "", adminEmail: "", adminPassword: "", skipAdmin: true,
         planId: String(sub?.planId ?? ""),
         planName: String(sub?.planName ?? ""),
@@ -158,6 +159,7 @@ export default function EditInstitutionWizard() {
         primaryDomain: data.primaryDomain || null,
         notes: data.notes || null,
         ...(data.timezone && { timezone: data.timezone }),
+        ...(data.defaultCountry && { defaultCountry: data.defaultCountry }),
       }),
       { showMessage, silent: true }
     );
@@ -291,7 +293,7 @@ export default function EditInstitutionWizard() {
                 Cancel
               </Button>
             </Box>
-            <Button endIcon={<ArrowForward />} onClick={next} variant="contained" disabled={!data.name || !data.slug}>
+            <Button endIcon={<ArrowForward />} onClick={next} variant="contained" disabled={!data.name || !data.slug || !basicInfoPhoneOk(data)}>
               Continue
             </Button>
           </Box>

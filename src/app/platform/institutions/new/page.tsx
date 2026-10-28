@@ -22,6 +22,7 @@ import { platformService } from "@/services/platform.service";
 import { campusesService } from "@/services/campuses.service";
 
 import StepBasicInfo from "@/components/platform/wizard/StepBasicInfo";
+import { isValidPhone } from "@/lib/phone";
 import StepAdmin from "@/components/platform/wizard/StepAdmin";
 import StepPlan from "@/components/platform/wizard/StepPlan";
 import StepBranding from "@/components/platform/wizard/StepBranding";
@@ -43,6 +44,11 @@ const STEPS = [
   "Review & Create",
 ];
 
+/** Whether the contact phone, when one is given, is a real number. */
+export function basicInfoPhoneOk(data: Pick<WizardData, "contactPhone" | "defaultCountry">): boolean {
+  return !data.contactPhone || isValidPhone(data.contactPhone, data.defaultCountry);
+}
+
 export interface WizardData {
   // Step 1
   name: string;
@@ -55,6 +61,8 @@ export interface WizardData {
   notes: string;
   /** IANA zone the school's dates and times are written in. */
   timezone: string;
+  /** Country (ISO code) the school's phone numbers usually belong to. */
+  defaultCountry: string;
   // Step 2 — admin account
   adminName: string;
   adminEmail: string;
@@ -91,7 +99,7 @@ export interface WizardData {
 
 const defaultData: WizardData = {
   name: "", slug: "", status: "ACTIVE", deploymentMode: "SHARED_HOSTED",
-  contactEmail: "", contactPhone: "", primaryDomain: "", notes: "", timezone: "",
+  contactEmail: "", contactPhone: "", primaryDomain: "", notes: "", timezone: "", defaultCountry: "PK",
   adminName: "", adminEmail: "", adminPassword: "", skipAdmin: false,
   planId: "", planName: "", billingCycle: "MONTHLY", agreedPrice: "", currency: "PKR", setupFee: "",
   displayName: "", logoUrl: "",
@@ -178,6 +186,7 @@ export default function NewInstitutionWizard() {
       ...(data.primaryDomain && { primaryDomain: data.primaryDomain }),
       ...(data.notes && { notes: data.notes }),
       ...(data.timezone && { timezone: data.timezone }),
+      ...(data.defaultCountry && { defaultCountry: data.defaultCountry }),
       ...(data.planId && { planId: data.planId }),
     };
 
@@ -391,7 +400,7 @@ export default function NewInstitutionWizard() {
               onClick={next}
               variant="contained"
               disabled={
-                (step === 0 && (!data.name || !data.slug)) ||
+                (step === 0 && (!data.name || !data.slug || !basicInfoPhoneOk(data))) ||
                 (step === 1 && !adminStepValid)
               }
             >

@@ -68,7 +68,7 @@ import ModulePage from "./manage/[module]/[[...section]]/page";
 import EditInstitutionWizard from "./edit/page";
 
 const ok = (data: unknown = {}) => Promise.resolve({ data: { data, message: "ok" } });
-const inst = { id: "uuid-1", name: "Green School", slug: "green-school", status: "ACTIVE", deploymentMode: "SHARED_HOSTED", contactEmail: "hi@g.io", contactPhone: "0300", notes: "n" };
+const inst = { id: "uuid-1", name: "Green School", slug: "green-school", status: "ACTIVE", deploymentMode: "SHARED_HOSTED", contactEmail: "hi@g.io", contactPhone: "+923001234567", notes: "n", defaultCountry: "AE" };
 const runtime = {
   modules: { PEOPLE: { enabled: true }, FINANCE: { enabled: false }, TIMETABLE: { enabled: true } },
   subscription: { status: "TRIAL", planId: "plan-1", planName: "Starter" },
@@ -185,7 +185,7 @@ describe("EditInstitutionWizard", () => {
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/platform/institutions/green-school"));
     expect(mocks.updateInstitution).toHaveBeenCalledWith("uuid-1", {
       name: "Renamed", slug: "green-school", status: "ACTIVE", deploymentMode: "SHARED_HOSTED",
-      contactEmail: null, contactPhone: "0300", primaryDomain: null, notes: "n",
+      contactEmail: null, contactPhone: "+923001234567", primaryDomain: null, notes: "n", defaultCountry: "AE",
     });
     expect(mocks.updateSubscription).toHaveBeenCalledWith("uuid-1", { planId: "plan-1", billingCycle: "MONTHLY", currency: "PKR" });
     expect(mocks.updateBranding).toHaveBeenCalledWith("uuid-1", expect.objectContaining({ displayName: "Green", logoUrl: null, theme: "ocean", colorOverrides: { light: { "primary.main": "#123456" } }, primaryColorLight: null, accentColorDark: null }));
