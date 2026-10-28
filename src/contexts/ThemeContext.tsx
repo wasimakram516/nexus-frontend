@@ -10,6 +10,8 @@ type ThemeMode = "dark" | "light";
 interface ThemeContextValue {
   mode: ThemeMode;
   toggleTheme: () => void;
+  /** Uses the school's chosen mode, unless this person already picked one themselves. */
+  applyDefaultMode: (preferred: string | null | undefined) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -38,12 +40,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const applyDefaultMode = useCallback((preferred: string | null | undefined) => {
+    if (preferred !== "dark" && preferred !== "light") return;
+    if (localStorage.getItem("nexus-theme")) return;
+    setMode(preferred);
+  }, []);
+
   const activeTheme = mounted
     ? mode === "dark" ? darkTheme : lightTheme
     : lightTheme;
 
   return (
-    <ThemeContext.Provider value={{ mode, toggleTheme }}>
+    <ThemeContext.Provider value={{ mode, toggleTheme, applyDefaultMode }}>
       <MuiThemeProvider theme={activeTheme}>
         <CssBaseline />
         {children}
@@ -56,4 +64,9 @@ export function useThemeMode() {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error("useThemeMode must be used within ThemeProvider");
   return ctx;
+}
+
+/** Like useThemeMode, but null outside a ThemeProvider, for screens that also render without one. */
+export function useOptionalThemeMode() {
+  return useContext(ThemeContext);
 }

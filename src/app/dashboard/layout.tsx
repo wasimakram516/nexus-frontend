@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Avatar,
@@ -52,6 +52,7 @@ import TrialBanner from "@/components/dashboard/TrialBanner";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { useForcePasswordChange } from "@/hooks/useForcePasswordChange";
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { useOptionalThemeMode } from "@/contexts/ThemeContext";
 import { useMessage } from "@/contexts/MessageContext";
 import {
   ModuleKey,
@@ -117,6 +118,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobileLayout();
   const [mobileOpen, setMobileOpen] = useState(false);
   const outerTheme = useTheme();
+  const themeMode = useOptionalThemeMode();
+  const schoolTheme = config?.branding?.theme;
+  const applyDefaultMode = themeMode?.applyDefaultMode;
+  useEffect(() => {
+    applyDefaultMode?.(schoolTheme);
+  }, [applyDefaultMode, schoolTheme]);
 
   // Institution branding tints the dashboard. Which mode's colors apply follows whichever
   // theme mode is active. Per-token overrides win over the legacy flat color columns, and
