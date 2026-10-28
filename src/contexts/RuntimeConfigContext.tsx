@@ -45,6 +45,8 @@ export interface RuntimeConfig {
   institutionId: string;
   /** The school's IANA timezone; dates and times are written in it. */
   timezone?: string;
+  /** The country (ISO code, such as "PK") the school's phone numbers usually belong to. */
+  defaultCountry?: string;
   branding: {
     displayName: string | null;
     logoUrl: string | null;
