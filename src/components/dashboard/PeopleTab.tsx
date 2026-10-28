@@ -61,8 +61,10 @@ import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
 import { UserLite } from "@/lib/users";
+import AccessRoleSelect, { AccessRoleOption } from "@/components/shared/AccessRoleSelect";
 import { authService } from "@/services/auth.service";
 import { peopleService } from "@/services/people.service";
+import { rolesService } from "@/services/roles.service";
 
 export type PersonKind = "students" | "staff" | "guardians";
 
@@ -235,6 +237,8 @@ export default function PeopleTab({
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [account, setAccount] = useState(emptyAccount);
+  const [accessRoles, setAccessRoles] = useState<AccessRoleOption[]>([]);
+  const [accessRoleId, setAccessRoleId] = useState("");
   const [profile, setProfile] = useState(emptyProfile);
   const [confirmDelete, setConfirmDelete] = useState<PersonRecord | null>(null);
 
@@ -357,6 +361,15 @@ export default function PeopleTab({
   const setA = (key: keyof typeof emptyAccount, value: string) =>
     setAccount((prev) => ({ ...prev, [key]: value }));
 
+  // Only an administrator can list roles, so anyone else simply gets no picker.
+  const loadAccessRoles = async () => {
+    const { data } = await apiHandler<AccessRoleOption[]>(
+      () => rolesService.list(institutionId),
+      { showMessage, silent: true }
+    );
+    setAccessRoles(Array.isArray(data) ? data : []);
+  };
+
   const openCreate = () => {
     void custom.load("create");
     if (kind === "students") {
@@ -365,6 +378,8 @@ export default function PeopleTab({
     if (kind !== "staff") void guardianLinkCustom.load("create");
     setEditing(null);
     setAccount(emptyAccount);
+    setAccessRoleId("");
+    void loadAccessRoles();
     setProfile({ ...emptyProfile, campusId: campuses.length === 1 ? campuses[0].id : "" });
     setPendingGuardians([]);
     setNewGuardian({ name: "", email: "", relation: "FATHER" });
@@ -556,6 +571,7 @@ export default function PeopleTab({
               password: account.password,
               role: cfg.role,
               ...(institutionId && { institutionId }),
+              ...(accessRoleId && { roleId: accessRoleId }),
             }),
           { showMessage, silent: true }
         );
@@ -1032,6 +1048,12 @@ export default function PeopleTab({
                 ),
               },
             }}
+          />
+          <AccessRoleSelect
+            roles={accessRoles}
+            value={accessRoleId}
+            onChange={setAccessRoleId}
+            isStaff={kind === "staff"}
           />
         </>
       )}

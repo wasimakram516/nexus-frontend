@@ -40,6 +40,7 @@ import { PermissionAction, PermissionCatalogFeature } from "@/contexts/RuntimeCo
 import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
 import { authService } from "@/services/auth.service";
+import AccessRoleSelect from "@/components/shared/AccessRoleSelect";
 import { rolesService } from "@/services/roles.service";
 import { usersService } from "@/services/users.service";
 
@@ -79,6 +80,9 @@ interface UsersManagerProps {
 
 const ADMIN_CREATABLE_ROLES = ["STAFF", "STUDENT", "GUARDIAN"];
 const SUPERADMIN_CREATABLE_ROLES = ["ADMIN", ...ADMIN_CREATABLE_ROLES];
+
+/** Admin-level accounts already have full access, so they take no access role. */
+const isAdminLevel = (role: string) => role === "ADMIN" || role === "SUPERADMIN";
 const STATUSES = ["ACTIVE", "RESIGNED", "SUSPENDED"];
 /** Roles that can be assigned a custom Role + overrides; ADMIN/SUPERADMIN always have full access. */
 const CONFIGURABLE_ROLES = new Set(["STAFF", "STUDENT", "GUARDIAN"]);
@@ -132,7 +136,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
   const [moduleLabels, setModuleLabels] = useState<Record<string, string>>({});
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "", email: "", password: "", role: "STAFF" });
+  const [createForm, setCreateForm] = useState({ name: "", email: "", password: "", role: "STAFF", roleId: "" });
   const [creating, setCreating] = useState(false);
 
   const [editing, setEditing] = useState<UserRow | null>(null);
@@ -203,7 +207,11 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
     const { success } = await apiHandler(
       () =>
         authService.register({
-          ...createForm,
+          name: createForm.name,
+          email: createForm.email,
+          password: createForm.password,
+          role: createForm.role,
+          ...(createForm.roleId && !isAdminLevel(createForm.role) && { roleId: createForm.roleId }),
           ...(institutionId && { institutionId }),
         }),
       { showMessage, successMessage: "User account created." }
@@ -211,7 +219,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
     setCreating(false);
     if (success) {
       setCreateOpen(false);
-      setCreateForm({ name: "", email: "", password: "", role: "STAFF" });
+      setCreateForm({ name: "", email: "", password: "", role: "STAFF", roleId: "" });
       load();
     }
   };
@@ -516,6 +524,16 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
                 {creatableRoles.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
               </TextField>
             </Grid>
+            {!isAdminLevel(createForm.role) && (
+              <Grid size={{ xs: 12 }}>
+                <AccessRoleSelect
+                  roles={roles}
+                  value={createForm.roleId}
+                  onChange={(roleId) => setCreateForm((p) => ({ ...p, roleId }))}
+                  isStaff={createForm.role === "STAFF"}
+                />
+              </Grid>
+            )}
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>

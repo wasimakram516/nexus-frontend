@@ -6,6 +6,7 @@ import { ConfirmProvider } from "@/contexts/ConfirmContext";
 import { MessageProvider } from "@/contexts/MessageContext";
 import { academicsService } from "@/services/academics.service";
 import { authService } from "@/services/auth.service";
+import { rolesService } from "@/services/roles.service";
 import { peopleService } from "@/services/people.service";
 import PeopleTab, { PersonRecord } from "./PeopleTab";
 
@@ -57,6 +58,7 @@ vi.mock("@/services/auth.service", () => ({
   },
 }));
 
+vi.mock("@/services/roles.service", () => ({ rolesService: { list: vi.fn() } }));
 vi.mock("@/services/customFields.service", () => ({ customFieldsService: { getFormDefinitions: vi.fn() } }));
 
 const campuses = [{ id: "campus-1", name: "Main Campus" }];
@@ -359,6 +361,36 @@ describe("PeopleTab (staff)", () => {
     vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({ data: { data: [] } } as never);
     vi.mocked(peopleService.createStaffProfile).mockReset();
     vi.mocked(authService.register).mockReset();
+    vi.mocked(rolesService.list).mockResolvedValue({ data: { data: [{ id: "role-1", name: "Front Desk" }] } } as never);
+  });
+
+  it("creates the account with the access role picked in the add dialog", async () => {
+    const user = userEvent.setup();
+    vi.mocked(authService.register).mockResolvedValue({ data: { data: { id: "user-1" } } } as never);
+    vi.mocked(peopleService.createStaffProfile).mockResolvedValue({
+      data: { message: "Staff Member created.", data: { id: "staff-1" } },
+    } as never);
+    renderStaffTab();
+
+    await user.click(screen.getByRole("button", { name: "Add Staff Member" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.type(within(dialog).getByLabelText(/Full Name/), "Jane Doe");
+    await user.type(within(dialog).getByLabelText(/Email Address/), "jane@school.edu");
+    await user.type(within(dialog).getByLabelText(/Password/), "StrongPass123");
+    await user.click(within(dialog).getByRole("combobox", { name: /access role/i }));
+    await user.click(await screen.findByRole("option", { name: "Front Desk" }));
+    await user.click(within(dialog).getByRole("button", { name: "Continue" }));
+    await user.click(within(dialog).getByLabelText(/Gender/));
+    await user.click(await screen.findByRole("option", { name: "MALE" }));
+    await user.type(within(dialog).getByLabelText(/Designation/), "Front Desk Officer");
+    await user.click(within(dialog).getByLabelText(/Employment Type/));
+    await user.click(await screen.findByRole("option", { name: "TEACHING" }));
+    await user.type(within(dialog).getByLabelText(/Joining Date/), "2026-01-15");
+    await user.click(within(dialog).getByRole("button", { name: "Create Staff Member" }));
+
+    expect(authService.register).toHaveBeenCalledWith(
+      expect.objectContaining({ email: "jane@school.edu", role: "STAFF", roleId: "role-1" })
+    );
   });
 
   it("blocks staff creation until employmentType, designation, and joiningDate are filled in", async () => {

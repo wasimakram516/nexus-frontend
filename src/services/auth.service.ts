@@ -26,6 +26,8 @@ export interface RegisterPayload {
   password: string;
   role: string;
   institutionId?: string;
+  /** Institution-defined role that gives the account its permissions. */
+  roleId?: string;
 }
 
 export interface RegisteredUser {

@@ -3,6 +3,7 @@ import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MessageProvider } from "@/contexts/MessageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { authService } from "@/services/auth.service";
 import { customFieldsService } from "@/services/customFields.service";
 import { rolesService } from "@/services/roles.service";
 import { usersService } from "@/services/users.service";
@@ -75,6 +76,32 @@ describe("UsersManager", () => {
     vi.mocked(rolesService.getCatalog).mockResolvedValue({ data: { data: [] } } as never);
     vi.mocked(rolesService.getModuleCatalog).mockResolvedValue({ data: { data: [] } } as never);
     vi.mocked(customFieldsService.getFormDefinitions).mockResolvedValue({ data: { data: [] } } as never);
+  });
+
+  it("sends the chosen access role when a staff account is created", async () => {
+    vi.mocked(rolesService.list).mockResolvedValue({ data: { data: [{ id: "role-1", name: "Front Desk" }] } } as never);
+    vi.mocked(authService.register).mockResolvedValue({ data: { data: { id: "new-1" } } } as never);
+    const user = userEvent.setup();
+    renderManager();
+
+    await user.click(await screen.findByRole("button", { name: /add user/i }));
+    const dialog = await screen.findByRole("dialog");
+    await user.type(within(dialog).getByLabelText(/full name/i), "Fatima Desk");
+    await user.type(within(dialog).getByLabelText(/^email/i), "fatima@test.com");
+    await user.type(within(dialog).getByLabelText(/^password/i), "password-1");
+    await user.click(within(dialog).getByRole("combobox", { name: /access role/i }));
+    await user.click(await screen.findByRole("option", { name: "Front Desk" }));
+    await user.click(within(dialog).getByRole("button", { name: /create user/i }));
+
+    await waitFor(() =>
+      expect(authService.register).toHaveBeenCalledWith({
+        name: "Fatima Desk",
+        email: "fatima@test.com",
+        password: "password-1",
+        role: "STAFF",
+        roleId: "role-1",
+      })
+    );
   });
 
   it("renders the users table", async () => {
