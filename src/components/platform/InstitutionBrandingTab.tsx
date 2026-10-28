@@ -18,6 +18,8 @@ interface Props {
   institutionId: string;
   runtimeConfig: Record<string, unknown> | null;
   onSaved?: () => void;
+  /** How the change is sent; defaults to the platform console's. A school's own administrator passes theirs. */
+  save?: (payload: Record<string, unknown>) => ReturnType<typeof platformService.updateBranding>;
 }
 
 interface BrandingForm {
@@ -70,7 +72,7 @@ function readForm(branding: SavedBranding | null): BrandingForm {
   };
 }
 
-export default function InstitutionBrandingTab({ institutionId, runtimeConfig, onSaved }: Props) {
+export default function InstitutionBrandingTab({ institutionId, runtimeConfig, onSaved, save }: Props) {
   const { showMessage } = useMessage();
   const branding = runtimeConfig?.branding as SavedBranding | null;
   const current = useMemo(() => readForm(branding), [branding]);
@@ -88,12 +90,15 @@ export default function InstitutionBrandingTab({ institutionId, runtimeConfig, o
   const handleSave = async () => {
     setSaving(true);
     const { success } = await apiHandler(
-      () => platformService.updateBranding(institutionId, {
-        displayName: form.displayName,
-        logoUrl: form.logoUrl || null,
-        theme: form.theme,
-        ...buildBrandingColorPayload(form.colorOverrides),
-      }),
+      () => {
+        const payload = {
+          displayName: form.displayName,
+          logoUrl: form.logoUrl || null,
+          theme: form.theme,
+          ...buildBrandingColorPayload(form.colorOverrides),
+        };
+        return save ? save(payload) : platformService.updateBranding(institutionId, payload);
+      },
       { showMessage, successMessage: "Branding updated successfully" },
     );
     setSaving(false);

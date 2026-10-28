@@ -23,6 +23,9 @@ export const platformService = {
     apiClient.patch(`/platform/institutions/${id}`, payload),
   updateBranding: (id: string, payload: Record<string, unknown>) =>
     apiClient.put(`/platform/institutions/${id}/branding`, payload),
+  // An institution administrator changing their own school's branding.
+  updateMyBranding: (payload: Record<string, unknown>) =>
+    apiClient.put("/platform/me/branding", payload),
   updateSettings: (id: string, payload: Record<string, unknown>) =>
     apiClient.put(`/platform/institutions/${id}/settings`, payload),
   updateEntitlements: (id: string, payload: Record<string, unknown>) =>

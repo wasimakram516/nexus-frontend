@@ -31,6 +31,7 @@ import ChevronRight from "@mui/icons-material/ChevronRight";
 import Dashboard from "@mui/icons-material/Dashboard";
 import Groups from "@mui/icons-material/Groups";
 import Language from "@mui/icons-material/Language";
+import Palette from "@mui/icons-material/Palette";
 import QueryStats from "@mui/icons-material/QueryStats";
 import Logout from "@mui/icons-material/Logout";
 import ManageAccounts from "@mui/icons-material/ManageAccounts";
@@ -92,6 +93,7 @@ const navItems: NavItem[] = [
   { label: "My Timetable",  href: "/dashboard/my-timetable",  icon: <CalendarMonth />, requiresModule: "TIMETABLE", roles: ["STUDENT", "GUARDIAN", "STAFF"] },
   { label: "My Fees",       href: "/dashboard/my-fees",       icon: <AccountBalance />, requiresModule: "FINANCE", roles: ["STUDENT", "GUARDIAN"] },
   { label: "Reports",       href: "/dashboard/reports",       icon: <QueryStats />,     module: "REPORTING", roles: ["ADMIN"] },
+  { label: "Branding",      href: "/dashboard/branding",      icon: <Palette />,       roles: ["ADMIN"] },
   { label: "Campuses",      href: "/dashboard/campuses",      icon: <Business />,       roles: ["ADMIN"] },
   { label: "Users",         href: "/dashboard/users",         icon: <ManageAccounts />, roles: ["ADMIN"] },
   { label: "Roles",         href: "/dashboard/roles",         icon: <Shield />,         roles: ["ADMIN"] },

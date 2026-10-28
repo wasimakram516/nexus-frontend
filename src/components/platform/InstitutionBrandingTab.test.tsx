@@ -42,6 +42,20 @@ describe("InstitutionBrandingTab", () => {
     expect(screen.getByRole("button", { name: "Dark" })).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("saves through the route it is given, such as a school administrator's own, instead of the platform console's", async () => {
+    const save = vi.fn(() => Promise.resolve({ data: { data: {}, message: "ok" } }));
+    const onSaved = vi.fn();
+    render(<InstitutionBrandingTab institutionId="i1" runtimeConfig={runtime} onSaved={onSaved} save={save as never} />);
+    fireEvent.click(screen.getByRole("button", { name: /Edit/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Display Name"), { target: { value: "Own Name" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ displayName: "Own Name" })));
+    expect(mocks.updateBranding).not.toHaveBeenCalled();
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+  });
+
   it("saves the edited branding form", async () => {
     const onSaved = vi.fn();
     render(<InstitutionBrandingTab institutionId="i1" runtimeConfig={runtime} onSaved={onSaved} />);

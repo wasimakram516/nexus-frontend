@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Button, Chip, IconButton, TextField, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, IconButton, TextField, Tooltip, Typography } from "@mui/material";
 import Refresh from "@mui/icons-material/Refresh";
 import Undo from "@mui/icons-material/Undo";
 import {
@@ -14,6 +14,7 @@ import {
   type ColorMode,
   type ColorOverrides,
 } from "@/theme/branding-tokens";
+import { findContrastIssues } from "@/theme/contrast";
 
 interface BrandingColorEditorProps {
   mode: ColorMode;
@@ -92,6 +93,7 @@ function ColorRow({ def, mode, custom, onSet }: ColorRowProps) {
 export default function BrandingColorEditor({ mode, value, onChange }: BrandingColorEditorProps) {
   const overrides = value[mode] ?? {};
   const total = countOverrides(value);
+  const contrastIssues = findContrastIssues(mode, value);
 
   return (
     <Box>
@@ -107,6 +109,17 @@ export default function BrandingColorEditor({ mode, value, onChange }: BrandingC
         Every field starts at the Nexus theme color. Change only what this institution needs; the rest keeps following Nexus.
         {total > 0 ? ` ${total} custom color${total === 1 ? "" : "s"} set across light and dark.` : ""}
       </Typography>
+
+      {contrastIssues.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 2.5 }}>
+          Some of these colors may be hard to read, especially for people with weaker eyesight:
+          <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+            {contrastIssues.map((issue) => (
+              <li key={issue.message}>{issue.message}</li>
+            ))}
+          </Box>
+        </Alert>
+      )}
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
         {BRANDING_COLOR_GROUPS.map((group) => (
