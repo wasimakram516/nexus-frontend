@@ -135,7 +135,8 @@ export default function StepBasicInfo({ data, update }: Props) {
                   <PhoneInput
                     label="Contact Phone"
                     value={data.contactPhone}
-                    onChange={(contactPhone) => update({ contactPhone })}
+                    country={data.contactPhoneCountry}
+                    onChange={(contactPhone, contactPhoneCountry) => update({ contactPhone, contactPhoneCountry })}
                     defaultCountry={data.defaultCountry}
                   />
                 </Grid>

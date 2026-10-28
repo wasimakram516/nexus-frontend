@@ -22,7 +22,7 @@ import { platformService } from "@/services/platform.service";
 import { campusesService } from "@/services/campuses.service";
 
 import StepBasicInfo from "@/components/platform/wizard/StepBasicInfo";
-import { isValidPhone } from "@/lib/phone";
+import { isValidPhoneForCountry } from "@/lib/phone";
 import StepAdmin from "@/components/platform/wizard/StepAdmin";
 import StepPlan from "@/components/platform/wizard/StepPlan";
 import StepBranding from "@/components/platform/wizard/StepBranding";
@@ -45,8 +45,8 @@ const STEPS = [
 ];
 
 /** Whether the contact phone, when one is given, is a real number. */
-export function basicInfoPhoneOk(data: Pick<WizardData, "contactPhone" | "defaultCountry">): boolean {
-  return !data.contactPhone || isValidPhone(data.contactPhone, data.defaultCountry);
+export function basicInfoPhoneOk(data: Pick<WizardData, "contactPhone" | "contactPhoneCountry" | "defaultCountry">): boolean {
+  return !data.contactPhone || isValidPhoneForCountry(data.contactPhone, data.contactPhoneCountry || data.defaultCountry);
 }
 
 export interface WizardData {
@@ -57,6 +57,8 @@ export interface WizardData {
   deploymentMode: string;
   contactEmail: string;
   contactPhone: string;
+  /** Country the contact phone was entered for. */
+  contactPhoneCountry: string;
   primaryDomain: string;
   notes: string;
   /** IANA zone the school's dates and times are written in. */
@@ -99,7 +101,7 @@ export interface WizardData {
 
 const defaultData: WizardData = {
   name: "", slug: "", status: "ACTIVE", deploymentMode: "SHARED_HOSTED",
-  contactEmail: "", contactPhone: "", primaryDomain: "", notes: "", timezone: "", defaultCountry: "PK",
+  contactEmail: "", contactPhone: "", contactPhoneCountry: "", primaryDomain: "", notes: "", timezone: "", defaultCountry: "PK",
   adminName: "", adminEmail: "", adminPassword: "", skipAdmin: false,
   planId: "", planName: "", billingCycle: "MONTHLY", agreedPrice: "", currency: "PKR", setupFee: "",
   displayName: "", logoUrl: "",
@@ -182,7 +184,7 @@ export default function NewInstitutionWizard() {
       name: data.name, slug: data.slug, status: data.status,
       deploymentMode: data.deploymentMode,
       ...(data.contactEmail && { contactEmail: data.contactEmail }),
-      ...(data.contactPhone && { contactPhone: data.contactPhone }),
+      ...(data.contactPhone && { contactPhone: data.contactPhone, contactPhoneCountry: data.contactPhoneCountry || data.defaultCountry }),
       ...(data.primaryDomain && { primaryDomain: data.primaryDomain }),
       ...(data.notes && { notes: data.notes }),
       ...(data.timezone && { timezone: data.timezone }),

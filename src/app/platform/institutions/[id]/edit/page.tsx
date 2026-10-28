@@ -48,7 +48,7 @@ function deepUnwrapSetting(value: unknown, depth = 0): string {
 
 const defaultData: WizardData = {
   name: "", slug: "", status: "ACTIVE", deploymentMode: "SHARED_HOSTED",
-  contactEmail: "", contactPhone: "", primaryDomain: "", notes: "", timezone: "", defaultCountry: "PK",
+  contactEmail: "", contactPhone: "", contactPhoneCountry: "", primaryDomain: "", notes: "", timezone: "", defaultCountry: "PK",
   adminName: "", adminEmail: "", adminPassword: "", skipAdmin: true,
   planId: "", planName: "", billingCycle: "MONTHLY", agreedPrice: "", currency: "PKR", setupFee: "",
   displayName: "", logoUrl: "",
@@ -109,6 +109,7 @@ export default function EditInstitutionWizard() {
         deploymentMode: String(inst?.deploymentMode ?? "SHARED_HOSTED"),
         contactEmail: String(inst?.contactEmail ?? ""),
         contactPhone: String(inst?.contactPhone ?? ""),
+        contactPhoneCountry: String(inst?.contactPhoneCountry ?? ""),
         primaryDomain: String(inst?.primaryDomain ?? ""),
         notes: String(inst?.notes ?? ""),
         timezone: String(inst?.timezone ?? ""),
@@ -156,6 +157,7 @@ export default function EditInstitutionWizard() {
         deploymentMode: data.deploymentMode,
         contactEmail: data.contactEmail || null,
         contactPhone: data.contactPhone || null,
+        ...(data.contactPhone && { contactPhoneCountry: data.contactPhoneCountry || data.defaultCountry }),
         primaryDomain: data.primaryDomain || null,
         notes: data.notes || null,
         ...(data.timezone && { timezone: data.timezone }),

@@ -34,7 +34,7 @@ const ok = (data: unknown = {}) => Promise.resolve({ data: { data, message: "ok"
 
 const base: WizardData = {
   name: "Green School", slug: "green-school", status: "ACTIVE", deploymentMode: "DEDICATED_HOSTED",
-  contactEmail: "hi@g.io", contactPhone: "", primaryDomain: "green.edu", notes: "", timezone: "Asia/Karachi", defaultCountry: "PK",
+  contactEmail: "hi@g.io", contactPhone: "", contactPhoneCountry: "", primaryDomain: "green.edu", notes: "", timezone: "Asia/Karachi", defaultCountry: "PK",
   adminName: "", adminEmail: "", adminPassword: "", skipAdmin: false,
   planId: "p", planName: "Starter", billingCycle: "MONTHLY", agreedPrice: "5000", currency: "PKR", setupFee: "",
   displayName: "Green", logoUrl: "",
@@ -89,7 +89,7 @@ describe("StepBasicInfo", () => {
     fireEvent.change(screen.getByLabelText("Contact Phone"), { target: { value: "0300 1234567" } });
     fireEvent.change(screen.getByLabelText("Primary Domain"), { target: { value: "x.edu" } });
     fireEvent.change(screen.getByLabelText("Notes"), { target: { value: "vip" } });
-    expect(latest).toMatchObject({ contactPhone: "+923001234567", primaryDomain: "x.edu", notes: "vip" });
+    expect(latest).toMatchObject({ contactPhone: "+923001234567", contactPhoneCountry: "PK", primaryDomain: "x.edu", notes: "vip" });
     fireEvent.mouseDown(screen.getAllByRole("combobox")[0]);
     fireEvent.click(await screen.findByRole("option", { name: "INACTIVE" }));
     expect(latest.status).toBe("INACTIVE");

@@ -41,7 +41,7 @@ import CountrySelect from "@/components/shared/CountrySelect";
 import PhoneInput from "@/components/shared/PhoneInput";
 import TimezonePicker from "@/components/shared/TimezonePicker";
 import { getCountry } from "@/lib/countries";
-import { formatPhone, isValidPhone } from "@/lib/phone";
+import { formatPhone, isValidPhoneForCountry } from "@/lib/phone";
 
 interface Props {
   institution: Record<string, unknown>;
@@ -91,7 +91,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "", slug: "", status: "", deploymentMode: "",
-    primaryDomain: "", contactEmail: "", contactPhone: "", notes: "", timezone: "", defaultCountry: "",
+    primaryDomain: "", contactEmail: "", contactPhone: "", contactPhoneCountry: "", notes: "", timezone: "", defaultCountry: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -104,6 +104,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
       primaryDomain: String(institution.primaryDomain ?? ""),
       contactEmail: String(institution.contactEmail ?? ""),
       contactPhone: String(institution.contactPhone ?? ""),
+      contactPhoneCountry: String(institution.contactPhoneCountry ?? ""),
       notes: String(institution.notes ?? ""),
       timezone: String(institution.timezone ?? ""),
       defaultCountry: String(institution.defaultCountry ?? "PK"),
@@ -114,7 +115,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
   const ef = (key: keyof typeof editForm, value: string) =>
     setEditForm((prev) => ({ ...prev, [key]: value }));
 
-  const phoneOk = !editForm.contactPhone || isValidPhone(editForm.contactPhone, editForm.defaultCountry);
+  const phoneOk = !editForm.contactPhone || isValidPhoneForCountry(editForm.contactPhone, editForm.contactPhoneCountry || editForm.defaultCountry);
   const canSave = !saving && phoneOk && editForm.name.trim() !== "" && /^[a-z0-9-]+$/.test(editForm.slug.trim());
 
   const handleSave = async () => {
@@ -140,6 +141,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
           primaryDomain: editForm.primaryDomain.trim() || undefined,
           contactEmail: editForm.contactEmail.trim() || undefined,
           contactPhone: editForm.contactPhone.trim() || undefined,
+          ...(editForm.contactPhone.trim() && { contactPhoneCountry: editForm.contactPhoneCountry || editForm.defaultCountry || undefined }),
           notes: editForm.notes.trim() || undefined,
           timezone: editForm.timezone || undefined,
           defaultCountry: editForm.defaultCountry || undefined,
@@ -386,7 +388,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <PhoneInput label="Contact Phone" size="small" value={editForm.contactPhone} onChange={(v) => ef("contactPhone", v)} defaultCountry={editForm.defaultCountry} />
+              <PhoneInput label="Contact Phone" size="small" value={editForm.contactPhone} country={editForm.contactPhoneCountry} onChange={(v, c) => setEditForm((prev) => ({ ...prev, contactPhone: v, contactPhoneCountry: c }))} defaultCountry={editForm.defaultCountry} />
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField label="Notes" size="small" fullWidth multiline minRows={2} value={editForm.notes} onChange={(e) => ef("notes", e.target.value)} />

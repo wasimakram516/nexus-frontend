@@ -133,6 +133,7 @@ it("adds a contact for a student with its required additional fields", async () 
       personId: "student-1",
       personType: "STUDENT",
       phone1: "+923001234567",
+      phone1Country: "PK",
       customFields: { NOTE: "Emergency contact" },
     })
   );

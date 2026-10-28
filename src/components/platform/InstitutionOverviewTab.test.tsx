@@ -20,7 +20,7 @@ import InstitutionOverviewTab from "./InstitutionOverviewTab";
 
 const institution = {
   id: "inst-1", name: "Green School", slug: "green-school", status: "ACTIVE", deploymentMode: "SHARED_HOSTED",
-  primaryDomain: "green.edu", contactEmail: "hi@green.edu", contactPhone: "+923001234567", defaultCountry: "PK", notes: "VIP client",
+  primaryDomain: "green.edu", contactEmail: "hi@green.edu", contactPhone: "+923001234567", contactPhoneCountry: "PK", defaultCountry: "PK", notes: "VIP client",
   createdAt: "2026-01-05T10:00:00Z",
 };
 
@@ -153,7 +153,7 @@ describe("InstitutionOverviewTab", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(mocks.updateInstitution).toHaveBeenCalledWith("inst-1", expect.objectContaining({
-      defaultCountry: "AE", contactPhone: "+971501234567",
+      defaultCountry: "AE", contactPhone: "+971501234567", contactPhoneCountry: "AE",
     })));
   });
 
