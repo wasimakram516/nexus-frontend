@@ -4,6 +4,7 @@ import { Box, Container, Typography } from "@mui/material";
 import ModuleGate from "@/components/dashboard/ModuleGate";
 import PeopleManager from "@/components/dashboard/PeopleManager";
 import ScreenGuide from "@/components/guide/ScreenGuide";
+import { ModuleBase } from "@/lib/urlSection";
 
 export default function PeoplePage() {
   return (
@@ -17,7 +18,9 @@ export default function PeoplePage() {
         </Box>
 
         <Container maxWidth="xl" sx={{ py: 3 }}>
-          <PeopleManager />
+          <ModuleBase path="/dashboard/people">
+            <PeopleManager />
+          </ModuleBase>
         </Container>
         <ScreenGuide screen="people" />
       </Box>

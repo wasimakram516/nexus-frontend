@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useModuleSection, useSectionCrumb } from "@/lib/urlSection";
 import {
   Alert,
   Autocomplete,
@@ -145,6 +146,9 @@ const MARK_ACTIONS: Array<{ status: string; label: string; short: string; color:
 
 const STAFF_ROLES = ["STAFF", "ADMIN"];
 
+/** What the breadcrumbs call each view of the module. */
+const ATTENDANCE_VIEW_LABELS = { register: "Daily Register", timeclock: "Time Clock" } as const;
+
 /** JS `Date#getDay()` index (0 = Sunday) to the backend's `DayOfWeek` enum. */
 const DAY_OF_WEEK_BY_INDEX: DayOfWeek[] = [
   "SUNDAY",
@@ -188,7 +192,12 @@ export default function AttendanceManager({ institutionId }: AttendanceManagerPr
   }, [runtime?.config]);
 
   // ---- hub navigation ----
-  const [activeView, setActiveView] = useState<"register" | "timeclock" | null>(null);
+  // The open view lives in the address bar, so a refresh stays on it.
+  const [viewSlug, setViewSlug] = useModuleSection();
+  const activeView: "register" | "timeclock" | null =
+    viewSlug === "register" || viewSlug === "timeclock" ? viewSlug : null;
+  const setActiveView = setViewSlug;
+  useSectionCrumb(activeView ? ATTENDANCE_VIEW_LABELS[activeView] : null);
 
   // ---- shared state ----
   const [date, setDate] = useState(today());

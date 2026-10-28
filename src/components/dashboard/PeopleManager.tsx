@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useModuleSection, useSectionCrumb } from "@/lib/urlSection";
 import {
   Box,
   Button,
@@ -17,7 +18,7 @@ import FamilyRestroom from "@mui/icons-material/FamilyRestroom";
 import Person from "@mui/icons-material/Person";
 import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
 import CampusRequiredNotice from "@/components/dashboard/CampusRequiredNotice";
-import PeopleTab, { NamedItem, PersonKind, PersonRecord } from "@/components/dashboard/PeopleTab";
+import PeopleTab, { NamedItem, PersonRecord } from "@/components/dashboard/PeopleTab";
 import { useMessage } from "@/contexts/MessageContext";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
@@ -41,8 +42,9 @@ export default function PeopleManager({ institutionId }: PeopleManagerProps) {
   // Platform console (institutionId set) is superadmin — always full access.
   const canManage = institutionId ? true : (runtime?.canManageModule("PEOPLE") ?? true);
 
-  // null = hub of person-type cards; otherwise the open section.
-  const [activeKind, setActiveKind] = useState<PersonKind | null>(null);
+  // null = hub of person-type cards; otherwise the open section. It lives in
+  // the address bar, so a refresh stays on Students, Staff or Guardians.
+  const [sectionSlug, setSectionSlug] = useModuleSection();
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<PersonRecord[]>([]);
   const [staff, setStaff] = useState<PersonRecord[]>([]);
@@ -138,6 +140,9 @@ export default function PeopleManager({ institutionId }: PeopleManagerProps) {
     },
   ];
 
+  const active = personSections.find((s) => s.kind === sectionSlug) ?? null;
+  useSectionCrumb(active?.label ?? null);
+
   if (!loading && campuses.length === 0) {
     return (
       <CampusRequiredNotice
@@ -147,15 +152,13 @@ export default function PeopleManager({ institutionId }: PeopleManagerProps) {
     );
   }
 
-  const active = personSections.find((s) => s.kind === activeKind) ?? null;
-
   if (active) {
     return (
       <>
         <Button
           startIcon={<ArrowBack />}
           color="inherit"
-          onClick={() => setActiveKind(null)}
+          onClick={() => setSectionSlug(null)}
           sx={{ mb: 2, color: "text.secondary" }}
         >
           All People
@@ -190,7 +193,7 @@ export default function PeopleManager({ institutionId }: PeopleManagerProps) {
               "&:hover": { boxShadow: 4, transform: "translateY(-2px)" },
             }}
           >
-            <CardActionArea onClick={() => setActiveKind(section.kind)} sx={{ height: "100%", alignItems: "stretch" }}>
+            <CardActionArea onClick={() => setSectionSlug(section.kind)} sx={{ height: "100%", alignItems: "stretch" }}>
               <CardContent sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
                 <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1.5 }}>
                   <Box

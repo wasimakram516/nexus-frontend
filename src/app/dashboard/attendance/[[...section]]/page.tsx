@@ -3,6 +3,7 @@
 import { Box, Container, Typography } from "@mui/material";
 import AttendanceManager from "@/components/dashboard/AttendanceManager";
 import ModuleGate from "@/components/dashboard/ModuleGate";
+import { ModuleBase } from "@/lib/urlSection";
 
 export default function AttendancePage() {
   return (
@@ -16,7 +17,9 @@ export default function AttendancePage() {
         </Box>
 
         <Container maxWidth="xl" sx={{ py: 3 }}>
-          <AttendanceManager />
+          <ModuleBase path="/dashboard/attendance">
+            <AttendanceManager />
+          </ModuleBase>
         </Container>
       </Box>
     </ModuleGate>
