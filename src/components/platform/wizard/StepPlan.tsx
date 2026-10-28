@@ -51,11 +51,11 @@ export default function StepPlan({ data, update }: Props) {
           {plans.map((plan) => {
             const selected = data.planId === plan.id;
             return (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={plan.id}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={plan.id} sx={{ display: "flex" }}>
                 <Card
                   onClick={() => selectPlan(plan)}
                   sx={{
-                    border: "2px solid", cursor: "pointer",
+                    width: "100%", border: "2px solid", cursor: "pointer",
                     borderColor: selected ? "primary.main" : "divider",
                     backgroundColor: selected ? "background.paper" : "background.default",
                     transition: "all 0.2s",

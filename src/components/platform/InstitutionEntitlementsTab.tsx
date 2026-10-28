@@ -89,8 +89,8 @@ export default function InstitutionEntitlementsTab({ institutionId, runtimeConfi
         {catalog.map((mod) => {
           const enabled = isEnabled(mod.key);
           return (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={mod.key}>
-              <Card sx={{ border: "1px solid", borderColor: enabled ? "primary.main" : "divider", opacity: enabled ? 1 : 0.6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={mod.key} sx={{ display: "flex" }}>
+              <Card sx={{ width: "100%", border: "1px solid", borderColor: enabled ? "primary.main" : "divider", opacity: enabled ? 1 : 0.6 }}>
                 <CardContent sx={{ p: 2.5 }}>
                   <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1 }}>
                     <Box sx={{ flex: 1 }}>
