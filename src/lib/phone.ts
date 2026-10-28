@@ -1,4 +1,5 @@
 import {
+  AsYouType,
   CountryCode,
   getExampleNumber,
   parsePhoneNumberFromString,
@@ -59,16 +60,24 @@ export function splitPhone(
 }
 
 /**
- * The form a number is kept in while someone is still typing it: the calling code plus whatever digits are there so far. Empty when there are no digits.
+ * The form a number is kept in, even while someone is still typing it: the
+ * calling code plus the digits. The country's own rules decide whether a
+ * leading zero is a dialling prefix to drop (Pakistan, the UK) or part of the
+ * number to keep (Italy), so no zero is ever dropped by guesswork. Empty when
+ * there are no digits.
  *
  * @param {CountryCode} country - The selected country.
  * @param {string} nationalText - What is in the number box.
  * @returns {string} "+<calling code><digits>", or "" for no digits.
  */
 export function joinPhone(country: CountryCode, nationalText: string): string {
-  const dial = getCountry(country)?.dialCode ?? "";
-  const digits = nationalText.replace(/\D/g, "").replace(/^0+/, "");
-  return digits ? `${dial}${digits}` : "";
+  const digits = nationalText.replace(/\D/g, "");
+  if (!digits) return "";
+  const typing = new AsYouType(country);
+  typing.input(nationalText);
+  const number = typing.getNumber();
+  if (number) return number.number;
+  return `${getCountry(country)?.dialCode ?? ""}${digits}`;
 }
 
 /**
@@ -83,9 +92,10 @@ export function formatPhone(value: string | null | undefined): string {
 
 /**
  * @param {string} country - A country code.
- * @returns {string | null} A sample mobile number of that country, as people write it locally, for a hint under the box.
+ * @returns {string | null} A sample mobile number of that country as typed after its calling code, with no leading trunk zero ("301 2345678"), for a hint under the box.
  */
 export function exampleNumber(country: string): string | null {
   const example = getExampleNumber(resolveCountry(country), examples);
-  return example ? example.formatNational() : null;
+  if (!example) return null;
+  return example.formatInternational().replace(`+${example.countryCallingCode}`, "").trim();
 }

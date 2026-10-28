@@ -48,6 +48,19 @@ describe("joinPhone", () => {
     expect(joinPhone("AE", "50-123-4567")).toBe("+971501234567");
   });
 
+  it("keeps a leading zero that is part of the number, as in Italy, and drops one that is only a dialling prefix", () => {
+    expect(joinPhone("IT", "06 1234 5678")).toBe("+390612345678");
+    expect(isValidPhone(joinPhone("IT", "06 1234 5678"))).toBe(true);
+    expect(joinPhone("GB", "07911 123456")).toBe("+447911123456");
+    expect(joinPhone("PK", "0301 2345678")).toBe("+923012345678");
+    expect(joinPhone("PK", "301 2345678")).toBe("+923012345678");
+  });
+
+  it("keeps a half-typed number in step so nothing is lost while typing", () => {
+    expect(joinPhone("PK", "0300")).toBe("+92300");
+    expect(joinPhone("AE", "5")).toBe("+9715");
+  });
+
   it("is empty when there are no digits yet", () => {
     expect(joinPhone("PK", "")).toBe("");
     expect(joinPhone("PK", "  ")).toBe("");
@@ -63,8 +76,11 @@ describe("formatPhone", () => {
 });
 
 describe("exampleNumber", () => {
-  it("gives a local-format sample for a country", () => {
-    expect(exampleNumber("PK")).toMatch(/^0?3/);
+  it("gives a sample to type after the calling code, without a leading zero", () => {
+    const sample = exampleNumber("PK");
+    expect(sample).toMatch(/^3\d{2} \d+/);
+    expect(sample?.startsWith("0")).toBe(false);
+    expect(exampleNumber("AE")).toMatch(/^5/);
   });
 });
 
