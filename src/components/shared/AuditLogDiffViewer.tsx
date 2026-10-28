@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import {
-  Box, Chip, Dialog, DialogContent, DialogTitle, IconButton, Table,
-  TableBody, TableCell, TableHead, TableRow, Typography,
+  alpha, Box, Button, Chip, Dialog, DialogContent, DialogTitle, IconButton,
+  Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography,
 } from "@mui/material";
 import Close from "@mui/icons-material/Close";
 import { formatDateTimeLong } from "@/lib/dateFormat";
+import { buildDiffRows, formatAuditValue } from "@/lib/auditDiff";
 
 export interface AuditLogDiffTarget {
   id: string;
@@ -22,41 +24,10 @@ interface Props {
   onClose: () => void;
 }
 
-function formatCellValue(value: unknown): string {
-  if (value === undefined) return "—";
-  if (value === null) return "null";
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
-}
-
-interface DiffRow {
-  key: string;
-  before: unknown;
-  after: unknown;
-  changed: boolean;
-}
-
-function buildDiffRows(
-  before: Record<string, unknown> | null | undefined,
-  after: Record<string, unknown> | null | undefined,
-): DiffRow[] {
-  const keys = new Set([
-    ...Object.keys(before ?? {}),
-    ...Object.keys(after ?? {}),
-  ]);
-
-  return Array.from(keys)
-    .sort()
-    .map((key) => {
-      const beforeValue = before?.[key];
-      const afterValue = after?.[key];
-      return {
-        key,
-        before: beforeValue,
-        after: afterValue,
-        changed: JSON.stringify(beforeValue) !== JSON.stringify(afterValue),
-      };
-    });
+function Cell({ value }: { value: unknown }) {
+  const { text, title } = formatAuditValue(value);
+  const node = <span>{text}</span>;
+  return title ? <Tooltip title={title}>{node}</Tooltip> : node;
 }
 
 /**
@@ -67,11 +38,14 @@ function buildDiffRows(
  * models the auto-audit extension doesn't cover yet, e.g. User/Campus).
  */
 export default function AuditLogDiffViewer({ log, onClose }: Props) {
+  const [showUnchanged, setShowUnchanged] = useState(false);
   if (!log) return null;
 
   const hasBefore = !!log.before;
   const hasAfter = !!log.after;
-  const rows = buildDiffRows(log.before, log.after);
+  const allRows = buildDiffRows(log.before, log.after);
+  const unchangedCount = allRows.filter((r) => !r.changed).length;
+  const rows = showUnchanged ? allRows : allRows.filter((r) => r.changed);
   const truncated =
     (log.before && "truncated" in log.before) ||
     (log.after && "truncated" in log.after);
@@ -103,36 +77,49 @@ export default function AuditLogDiffViewer({ log, onClose }: Props) {
             This snapshot was too large to store and was omitted.
           </Typography>
         ) : (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Field</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>{hasBefore ? "Before" : "—"}</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>{hasAfter ? "After" : "—"}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow
-                  key={row.key}
-                  sx={row.changed ? { backgroundColor: "warning.main", opacity: 0.9 } : undefined}
-                >
-                  <TableCell sx={{ fontFamily: "monospace", fontSize: 12 }}>
-                    {row.key}
-                    {row.changed && (
-                      <Chip label="changed" size="tiny" color="warning" sx={{ ml: 1 }} />
-                    )}
-                  </TableCell>
-                  <TableCell sx={{ fontFamily: "monospace", fontSize: 12, wordBreak: "break-all" }}>
-                    {hasBefore ? formatCellValue(row.before) : "—"}
-                  </TableCell>
-                  <TableCell sx={{ fontFamily: "monospace", fontSize: 12, wordBreak: "break-all" }}>
-                    {hasAfter ? formatCellValue(row.after) : "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <>
+            {unchangedCount > 0 && (
+              <Button size="small" onClick={() => setShowUnchanged((v) => !v)} sx={{ mb: 1 }}>
+                {showUnchanged ? "Hide unchanged fields" : `Show ${unchangedCount} unchanged fields`}
+              </Button>
+            )}
+            {rows.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: "center" }}>
+                No readable field changed in this entry.
+              </Typography>
+            ) : (
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>Field</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{hasBefore ? "Before" : "—"}</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{hasAfter ? "After" : "—"}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow
+                      key={row.key}
+                      sx={row.changed ? { backgroundColor: (t) => alpha(t.palette.warning.main, 0.14) } : undefined}
+                    >
+                      <TableCell sx={{ fontSize: 13, fontWeight: row.changed ? 600 : 400 }}>
+                        {row.label}
+                        {row.changed && (
+                          <Chip label="changed" size="tiny" color="warning" sx={{ ml: 1 }} />
+                        )}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: 13, wordBreak: "break-word" }}>
+                        {hasBefore ? <Cell value={row.before} /> : "—"}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: 13, wordBreak: "break-word" }}>
+                        {hasAfter ? <Cell value={row.after} /> : "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </>
         )}
       </DialogContent>
     </Dialog>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import AuditLogDiffViewer from "./AuditLogDiffViewer";
 
 describe("AuditLogDiffViewer", () => {
@@ -59,9 +59,37 @@ describe("AuditLogDiffViewer", () => {
 
     expect(screen.getByText("Old Name")).toBeInTheDocument();
     expect(screen.getByText("New Name")).toBeInTheDocument();
-    // classId is unchanged, appears once per column but not flagged "changed"
-    expect(screen.getAllByText("class-1")).toHaveLength(2);
+    // Only changed fields are listed until the user asks for the rest.
+    expect(screen.queryByText("class-1")).not.toBeInTheDocument();
     expect(screen.getByText("changed")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /show 1 unchanged fields/i }));
+    expect(screen.getAllByText("class-1")).toHaveLength(2);
+  });
+
+  it("shows readable labels and values instead of raw ids, dates and objects", () => {
+    render(
+      <AuditLogDiffViewer
+        log={{
+          id: "log-1",
+          action: "INSTITUTION_UPDATED",
+          entity: "Institution",
+          createdAt: "2026-07-18T10:00:00.000Z",
+          before: { contactEmail: "a@x.com", deploymentMode: "SHARED_HOSTED" },
+          after: {
+            contactEmail: "b@x.com",
+            deploymentMode: "SHARED_HOSTED",
+            branding: { theme: "default" },
+            entitlements: [{}, {}],
+          },
+        }}
+        onClose={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText("Contact email")).toBeInTheDocument();
+    expect(screen.queryByText("branding")).not.toBeInTheDocument();
+    expect(screen.queryByText("entitlements")).not.toBeInTheDocument();
   });
 
   it("shows only the after column for a create with no before snapshot", () => {
