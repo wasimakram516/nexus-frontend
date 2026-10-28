@@ -29,7 +29,7 @@ const longAgo = "2020-01-15T00:00:00Z";
 
 const institutions = [
   { id: "1", name: "Alpha School", slug: "alpha", status: "ACTIVE", deploymentMode: "SHARED_HOSTED", contactEmail: "a@alpha.io", createdAt: thisMonth },
-  { id: "2", name: "Beta College", slug: "beta", status: "INACTIVE", deploymentMode: "SELF_HOSTED", createdAt: longAgo },
+  { id: "2", name: "Beta College", slug: "beta", status: "INACTIVE", deploymentMode: "SELF_HOSTED", createdAt: longAgo, subscriptions: [{ status: "SUSPENDED" }, { status: "TRIAL" }] },
   { id: "3", name: "Gamma Academy", slug: "gamma", status: "INACTIVE", deploymentMode: "DEDICATED_HOSTED", contactEmail: "g@gamma.io", createdAt: longAgo },
 ];
 
@@ -47,6 +47,8 @@ describe("Platform overview page", () => {
     expect(statValue("Total Institutions")).toBe("3");
     expect(statValue("Active")).toBe("1");
     expect(statValue("Inactive")).toBe("2");
+    // Only the newest subscription counts, so an older suspended one does not.
+    expect(statValue("Billing suspended")).toBe("1");
     expect(Number(statValue("This Month"))).toBeGreaterThanOrEqual(1);
   });
 

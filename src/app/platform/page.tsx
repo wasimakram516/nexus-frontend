@@ -33,6 +33,8 @@ interface Institution {
   deploymentMode: string;
   contactEmail?: string;
   createdAt: string;
+  /** Newest first. */
+  subscriptions?: { status: string }[];
 }
 
 const statusColor: Record<string, "success" | "error" | "warning" | "default"> = {
@@ -63,6 +65,7 @@ export default function PlatformOverviewPage() {
     { label: "Total Institutions", value: institutions.length, icon: <AccountTree />, color: "primary.main" },
     { label: "Active", value: institutions.filter((i) => i.status === "ACTIVE").length, icon: <CheckCircle />, color: "success.main" },
     { label: "Inactive", value: institutions.filter((i) => i.status === "INACTIVE").length, icon: <PauseCircle />, color: "warning.main" },
+    { label: "Billing suspended", value: institutions.filter((i) => i.subscriptions?.[0]?.status === "SUSPENDED").length, icon: <PauseCircle />, color: "error.main" },
     { label: "This Month", value: institutions.filter((i) => new Date(i.createdAt).getMonth() === new Date().getMonth()).length, icon: <TrendingUp />, color: "info.main" },
   ];
 
@@ -90,7 +93,7 @@ export default function PlatformOverviewPage() {
         {/* Stats */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           {stats.map((stat) => (
-            <Grid size={{ xs: 6, md: 3 }} key={stat.label}>
+            <Grid size={{ xs: 6, md: "grow" }} key={stat.label}>
               <Card>
                 <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Box sx={{ width: 44, height: 44, borderRadius: 2, backgroundColor: `${stat.color}20`, display: "flex", alignItems: "center", justifyContent: "center", color: stat.color, flexShrink: 0 }}>
