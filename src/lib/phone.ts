@@ -40,20 +40,44 @@ export function isValidPhone(value: string | null | undefined, country?: string)
 }
 
 /**
+ * Whether a number is valid for the country that was chosen. Countries share
+ * calling codes (+1, +7, +44), so a number that is real somewhere is still
+ * refused when its digits belong to a different country than the one chosen.
+ *
+ * @param {string | null | undefined} value - A number, usually "+<calling code><digits>".
+ * @param {string} country - The country chosen for it.
+ * @returns {boolean} Whether it is a real number of that country.
+ */
+export function isValidPhoneForCountry(value: string | null | undefined, country: string): boolean {
+  if (!value || !value.trim()) return false;
+  const iso = resolveCountry(country);
+  const parsed = parsePhoneNumberFromString(value, iso);
+  if (!parsed?.isValid()) return false;
+  const sameCode = getCountry(iso)?.dialCode === `+${parsed.countryCallingCode}`;
+  return !sameCode || !parsed.country || parsed.country === iso;
+}
+
+/**
  * Splits a stored number into the country it belongs to and the part after the calling code, so it can fill a country picker and a number box.
  *
  * @param {string | null | undefined} value - A stored number.
  * @param {string} [fallbackCountry] - Used when the number is empty or its country cannot be read.
+ * @param {string | null} [savedCountry] - The country saved with the number. When its calling code matches, it wins, so a +1 number saved as Canada reopens as Canada.
  * @returns {{ country: CountryCode, national: string }} The country and the digits to show.
  */
 export function splitPhone(
   value: string | null | undefined,
   fallbackCountry?: string,
+  savedCountry?: string | null,
 ): { country: CountryCode; national: string } {
   const fallback = resolveCountry(fallbackCountry);
   if (!value || !value.trim()) return { country: fallback, national: "" };
   const { plus, digits } = stripToDigits(value);
   const parsed = parsePhoneNumberFromString(plus ? `+${digits.replace(/^00/, "")}` : value, fallback);
+  const saved = getCountry(savedCountry);
+  if (parsed && saved && saved.dialCode === `+${parsed.countryCallingCode}`) {
+    return { country: saved.iso, national: parsed.nationalNumber };
+  }
   if (parsed?.country) return { country: parsed.country, national: parsed.nationalNumber };
   if (parsed) return { country: fallback, national: parsed.nationalNumber };
   return { country: fallback, national: digits };

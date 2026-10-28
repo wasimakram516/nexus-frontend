@@ -7,15 +7,21 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import { useOptionalRuntimeConfig } from "@/contexts/RuntimeConfigContext";
 import { COUNTRIES, getCountry, resolveCountry, searchCountries } from "@/lib/countries";
-import { exampleNumber, isValidPhone, joinPhone, splitPhone } from "@/lib/phone";
+import { exampleNumber, isValidPhoneForCountry, joinPhone, splitPhone } from "@/lib/phone";
 import CountryFlag from "@/components/shared/CountryFlag";
 
 interface Props {
   label?: string;
   /** The number in international form ("+923001234567"), or an older stored number. Empty when there is none. */
   value: string;
-  /** Called with "+<calling code><digits>", or "" when the box is empty. Use `isValidPhone` to check it. */
-  onChange: (value: string) => void;
+  /**
+   * Called with "+<calling code><digits>" (or "" when the box is empty) and the
+   * country chosen for it. Keep both: the country matters for the countries
+   * that share a calling code. Use `isValidPhoneForCountry` to check them.
+   */
+  onChange: (value: string, country: string) => void;
+  /** The country saved with the number, so a shared calling code opens on the right one. */
+  country?: string | null;
   /** The country a school's numbers are usually in. Defaults to the signed-in school's setting. */
   defaultCountry?: string | null;
   required?: boolean;
@@ -35,13 +41,13 @@ interface Props {
  * pasted or typed with its own "+" or "00" prefix switches the country itself.
  */
 export default function PhoneInput({
-  label = "Phone number", value, onChange, defaultCountry, required, disabled, fullWidth = true,
+  label = "Phone number", value, onChange, country: savedCountry, defaultCountry, required, disabled, fullWidth = true,
   size = "medium", name, error, helperText,
 }: Props) {
   const runtime = useOptionalRuntimeConfig();
   const fallback = resolveCountry(defaultCountry ?? runtime?.config?.defaultCountry);
 
-  const initial = splitPhone(value, fallback);
+  const initial = splitPhone(value, fallback, savedCountry);
   const [country, setCountry] = useState(initial.country);
   const [national, setNational] = useState(initial.national);
   const [touched, setTouched] = useState(false);
@@ -53,7 +59,7 @@ export default function PhoneInput({
   if (value !== seenValue) {
     setSeenValue(value);
     if (value !== joinPhone(country, national)) {
-      const next = splitPhone(value, fallback);
+      const next = splitPhone(value, fallback, savedCountry);
       setCountry(next.country);
       setNational(next.national);
     }
@@ -61,7 +67,7 @@ export default function PhoneInput({
 
   const matches = useMemo(() => searchCountries(query, COUNTRIES), [query]);
   const joined = joinPhone(country, national);
-  const invalid = Boolean(joined) && !isValidPhone(joined);
+  const invalid = Boolean(joined) && !isValidPhoneForCountry(joined, country);
   const showError = error ?? (touched && invalid);
   const sample = exampleNumber(country);
 
@@ -71,17 +77,17 @@ export default function PhoneInput({
       const parsed = splitPhone(text, country);
       setCountry(parsed.country);
       setNational(parsed.national);
-      onChange(joinPhone(parsed.country, parsed.national));
+      onChange(joinPhone(parsed.country, parsed.national), parsed.country);
       return;
     }
     setNational(text);
-    onChange(joinPhone(country, text));
+    onChange(joinPhone(country, text), country);
   };
 
   const handleCountry = (iso: string) => {
     const next = resolveCountry(iso);
     setCountry(next);
-    onChange(joinPhone(next, national));
+    onChange(joinPhone(next, national), next);
   };
 
   return (

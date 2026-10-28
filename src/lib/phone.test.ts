@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { COUNTRIES, FALLBACK_COUNTRY, flagUrl, getCountry, resolveCountry, searchCountries } from "./countries";
-import { exampleNumber, formatPhone, isValidPhone, joinPhone, splitPhone, toE164 } from "./phone";
+import { exampleNumber, formatPhone, isValidPhone, isValidPhoneForCountry, joinPhone, splitPhone, toE164 } from "./phone";
 
 describe("toE164", () => {
   it.each([
@@ -39,6 +39,28 @@ describe("splitPhone", () => {
   it("uses the fallback country for an empty value", () => {
     expect(splitPhone("", "AE")).toEqual({ country: "AE", national: "" });
     expect(splitPhone(null)).toEqual({ country: FALLBACK_COUNTRY, national: "" });
+  });
+});
+
+describe("countries that share a calling code", () => {
+  it("accepts a number only for the country it belongs to", () => {
+    expect(isValidPhoneForCountry("+16045550123", "CA")).toBe(true);
+    expect(isValidPhoneForCountry("+16045550123", "US")).toBe(false);
+    expect(isValidPhoneForCountry("+12125550123", "US")).toBe(true);
+    expect(isValidPhoneForCountry("+12125550123", "CA")).toBe(false);
+  });
+
+  it("is not confused by a different calling code, or by an empty or wrong number", () => {
+    expect(isValidPhoneForCountry("+971501234567", "PK")).toBe(true);
+    expect(isValidPhoneForCountry("", "PK")).toBe(false);
+    expect(isValidPhoneForCountry("+92300", "PK")).toBe(false);
+  });
+
+  it("reopens a number on the country saved with it", () => {
+    expect(splitPhone("+16045550123", "PK", "CA")).toEqual({ country: "CA", national: "6045550123" });
+    expect(splitPhone("+16045550123", "PK")).toEqual({ country: "CA", national: "6045550123" });
+    // A saved country that cannot match the calling code is ignored.
+    expect(splitPhone("+971501234567", "PK", "PK")).toEqual({ country: "AE", national: "501234567" });
   });
 });
 
