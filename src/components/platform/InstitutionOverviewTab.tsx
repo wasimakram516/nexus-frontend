@@ -30,6 +30,7 @@ import Edit from "@mui/icons-material/Edit";
 import Email from "@mui/icons-material/Email";
 import PersonAdd from "@mui/icons-material/PersonAdd";
 import Phone from "@mui/icons-material/Phone";
+import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { authService } from "@/services/auth.service";
@@ -69,6 +70,7 @@ function InfoRow({ icon, label, value }: { icon: React.JSX.Element; label: strin
 
 export default function InstitutionOverviewTab({ institution, runtimeConfig, onSaved }: Props) {
   const { showMessage } = useMessage();
+  const confirm = useConfirm();
   const subscription = runtimeConfig?.subscription as Record<string, unknown> | null;
   const institutionId = String(institution.id ?? "");
 
@@ -110,6 +112,17 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
   const canSave = !saving && editForm.name.trim() !== "" && /^[a-z0-9-]+$/.test(editForm.slug.trim());
 
   const handleSave = async () => {
+    // A school that is not ACTIVE is locked out at sign-in and on every request.
+    if (editForm.status !== "ACTIVE" && editForm.status !== String(institution.status ?? "")) {
+      const confirmed = await confirm({
+        title: `Set this school to ${editForm.status}?`,
+        message:
+          "Everyone at this school, including administrators, will be signed out and blocked until the status is set back to Active. Billing is not changed.",
+        confirmLabel: "Apply",
+        confirmColor: "warning",
+      });
+      if (!confirmed) return;
+    }
     setSaving(true);
     const { success } = await apiHandler(
       () =>

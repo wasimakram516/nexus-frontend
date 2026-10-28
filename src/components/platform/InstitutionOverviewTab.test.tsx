@@ -6,8 +6,10 @@ const mocks = vi.hoisted(() => ({
   getAll: vi.fn(),
   register: vi.fn(),
   updateInstitution: vi.fn(),
+  confirm: vi.fn(),
 }));
 
+vi.mock("@/contexts/ConfirmContext", () => ({ useConfirm: () => mocks.confirm }));
 vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: mocks.showMessage }) }));
 vi.mock("@/services/users.service", () => ({ usersService: { getAll: mocks.getAll } }));
 vi.mock("@/services/auth.service", () => ({ authService: { register: mocks.register } }));
@@ -29,6 +31,7 @@ beforeEach(() => {
   mocks.getAll.mockImplementation(() => ok({ items: [] }));
   mocks.register.mockImplementation(() => ok());
   mocks.updateInstitution.mockImplementation(() => ok());
+  mocks.confirm.mockResolvedValue(true);
 });
 
 describe("InstitutionOverviewTab", () => {
@@ -129,6 +132,29 @@ describe("InstitutionOverviewTab", () => {
       primaryDomain: "green.edu", contactEmail: "hi@green.edu", contactPhone: undefined, notes: "VIP client",
     }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
+  });
+
+  it("asks before putting a school on hold, and saves nothing when declined", async () => {
+    mocks.confirm.mockResolvedValue(false);
+    render(<InstitutionOverviewTab institution={institution} runtimeConfig={null} />);
+    await screen.findByText(/No admin accounts yet/);
+    fireEvent.click(screen.getByRole("button", { name: /^Edit$/ }));
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Status/ }));
+    fireEvent.click(await screen.findByRole("option", { name: "SUSPENDED" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: "Set this school to SUSPENDED?" })));
+    expect(mocks.updateInstitution).not.toHaveBeenCalled();
+  });
+
+  it("does not ask when the status is left unchanged", async () => {
+    render(<InstitutionOverviewTab institution={institution} runtimeConfig={null} />);
+    await screen.findByText(/No admin accounts yet/);
+    fireEvent.click(screen.getByRole("button", { name: /^Edit$/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(mocks.updateInstitution).toHaveBeenCalled());
+    expect(mocks.confirm).not.toHaveBeenCalled();
   });
 
   it("does not close the edit dialog or call onSaved when saving fails", async () => {
