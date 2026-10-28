@@ -138,7 +138,7 @@ export default function ProfileDialog({ open, onClose }: ProfileDialogProps) {
           {saving ? <CircularProgress size={16} color="inherit" /> : "Save Changes"}
         </Button>
       </DialogActions>
-      <SessionsDialog open={sessionsOpen} onClose={() => setSessionsOpen(false)} />
+      {sessionsOpen && <SessionsDialog open onClose={() => setSessionsOpen(false)} />}
     </Dialog>
   );
 }

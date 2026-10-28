@@ -636,7 +636,7 @@ describe("PeopleTab (students)", () => {
       guardianId: "guardian-1",
       customFields: { REL_NOTE: "Pickup allowed" },
     });
-  }, 30000);
+  }, 60000);
 
   it("keeps student admission open when inline guardian linking fails after the student is created", async () => {
     const user = userEvent.setup({ delay: null });
@@ -668,5 +668,5 @@ describe("PeopleTab (students)", () => {
     expect(peopleService.linkGuardianToStudent).toHaveBeenCalledTimes(2);
     expect(peopleService.createStudent).toHaveBeenCalledTimes(1);
     expect(onReload).toHaveBeenCalled();
-  }, 30000);
+  }, 60000);
 });

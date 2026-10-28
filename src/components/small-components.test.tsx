@@ -162,7 +162,7 @@ describe("proxy (route protection)", () => {
   });
 
   it("matches only the protected areas", () => {
-    expect(proxyConfig.matcher).toEqual(["/dashboard/:path*", "/platform/:path*"]);
+    expect(proxyConfig.matcher).toEqual(["/dashboard/:path*", "/platform/:path*", "/change-password"]);
   });
 });
 
