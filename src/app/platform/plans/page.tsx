@@ -12,6 +12,7 @@ import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { platformService } from "@/services/platform.service";
 import { rolesService } from "@/services/roles.service";
+import { describeLimits, limitFieldsOf, limitProblem, limitsFromFields, NEW_PLAN_LIMITS, type LimitFields } from "@/lib/planLimits";
 
 const BILLING_CYCLES = ["MONTHLY", "QUARTERLY", "YEARLY", "CUSTOM"];
 const DEPLOYMENT_MODES = ["SHARED_HOSTED", "DEDICATED_HOSTED", "SELF_HOSTED"];
@@ -22,6 +23,13 @@ interface Plan {
   setupFee?: number; deploymentModes: string[]; defaultModules: string[];
   limits: Record<string, unknown>; isActive: boolean;
 }
+
+/** The limits a plan can set, in the order the form shows them. */
+const LIMIT_INPUTS: { key: keyof LimitFields; label: string }[] = [
+  { key: "maxCampuses", label: "Max campuses" },
+  { key: "maxStudents", label: "Max students" },
+  { key: "maxStaff", label: "Max staff" },
+];
 
 export default function PlansPage() {
   const { showMessage } = useMessage();
@@ -38,8 +46,12 @@ export default function PlansPage() {
   const [form, setForm] = useState({
     key: "", name: "", description: "", basePrice: "", currency: "PKR",
     billingCycle: "MONTHLY", setupFee: "", deploymentModes: [] as string[],
-    defaultModules: [] as string[], limits: '{"maxCampuses":1}', isActive: true,
+    defaultModules: [] as string[], isActive: true,
   });
+  // What the plan's limits looked like when opened for editing, so a setting this form
+  // does not show is saved back unchanged.
+  const [storedLimits, setStoredLimits] = useState<Record<string, unknown> | null>(null);
+  const [limitFields, setLimitFields] = useState<LimitFields>(NEW_PLAN_LIMITS);
 
   const load = useCallback(async () => {
     // Use public plans endpoint
@@ -64,13 +76,17 @@ export default function PlansPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ key: "", name: "", description: "", basePrice: "", currency: "PKR", billingCycle: "MONTHLY", setupFee: "", deploymentModes: [], defaultModules: [], limits: '{"maxCampuses":1}', isActive: true });
+    setForm({ key: "", name: "", description: "", basePrice: "", currency: "PKR", billingCycle: "MONTHLY", setupFee: "", deploymentModes: [], defaultModules: [], isActive: true });
+    setStoredLimits(null);
+    setLimitFields(NEW_PLAN_LIMITS);
     setDialogOpen(true);
   };
 
   const openEdit = (p: Plan) => {
     setEditing(p);
-    setForm({ key: p.key, name: p.name, description: p.description ?? "", basePrice: p.basePrice?.toString() ?? "", currency: p.currency, billingCycle: p.billingCycle, setupFee: p.setupFee?.toString() ?? "", deploymentModes: p.deploymentModes, defaultModules: p.defaultModules, limits: JSON.stringify(p.limits), isActive: p.isActive });
+    setForm({ key: p.key, name: p.name, description: p.description ?? "", basePrice: p.basePrice?.toString() ?? "", currency: p.currency, billingCycle: p.billingCycle, setupFee: p.setupFee?.toString() ?? "", deploymentModes: p.deploymentModes, defaultModules: p.defaultModules, isActive: p.isActive });
+    setStoredLimits(p.limits);
+    setLimitFields(limitFieldsOf(p.limits));
     setDialogOpen(true);
   };
 
@@ -79,15 +95,13 @@ export default function PlansPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    let limits = {};
-    try { limits = JSON.parse(form.limits); } catch { showMessage("Invalid JSON in limits.", "error"); setSaving(false); return; }
     const payload = {
       key: form.key, name: form.name, description: form.description,
       basePrice: form.basePrice ? Number(form.basePrice) : null,
       currency: form.currency, billingCycle: form.billingCycle,
       setupFee: form.setupFee ? Number(form.setupFee) : undefined,
       deploymentModes: form.deploymentModes, defaultModules: form.defaultModules,
-      limits, isActive: form.isActive,
+      limits: limitsFromFields(limitFields, storedLimits), isActive: form.isActive,
     };
     if (editing) {
       await apiHandler(() => platformService.updatePlan(editing.id, payload), { showMessage, successMessage: "Plan updated." });
@@ -156,7 +170,7 @@ export default function PlansPage() {
                     </Box>
 
                     <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-                      {plan.defaultModules.length} modules · Max {(plan.limits as { maxCampuses?: number | null })?.maxCampuses ?? "∞"} campuses
+                      {plan.defaultModules.length} modules · {describeLimits(plan.limits)}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -192,12 +206,23 @@ export default function PlansPage() {
                 ))}
               </Box>
             </Grid>
-            <Grid size={{ xs: 12 }}><TextField label="Limits (JSON)" value={form.limits} onChange={(e) => setForm((p) => ({ ...p, limits: e.target.value }))} fullWidth helperText='e.g. {"maxCampuses": 5}' /></Grid>
+            {LIMIT_INPUTS.map(({ key, label }) => (
+              <Grid key={key} size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  label={label}
+                  value={limitFields[key]}
+                  onChange={(e) => setLimitFields((p) => ({ ...p, [key]: e.target.value }))}
+                  error={Boolean(limitProblem(label, limitFields[key]))}
+                  helperText={limitProblem(label, limitFields[key]) ?? "Blank for no limit."}
+                  fullWidth
+                />
+              </Grid>
+            ))}
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saving || !form.name || !form.key}>
+          <Button variant="contained" onClick={handleSave} disabled={saving || !form.name || !form.key || LIMIT_INPUTS.some(({ key, label }) => Boolean(limitProblem(label, limitFields[key])))}>
             {saving ? <CircularProgress size={16} color="inherit" /> : editing ? "Save Changes" : "Create Plan"}
           </Button>
         </DialogActions>

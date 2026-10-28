@@ -17,7 +17,7 @@ import PlansPage from "./page";
 const ok = (data: unknown = {}) => Promise.resolve({ data: { data, message: "ok" } });
 
 const plans = [
-  { id: "p1", key: "starter", name: "Starter", description: "For small schools", basePrice: 5000, currency: "PKR", billingCycle: "MONTHLY", setupFee: 1000, deploymentModes: ["SHARED_HOSTED"], defaultModules: ["ACADEMICS"], limits: { maxCampuses: 1 }, isActive: true },
+  { id: "p1", key: "starter", name: "Starter", description: "For small schools", basePrice: 5000, currency: "PKR", billingCycle: "MONTHLY", setupFee: 1000, deploymentModes: ["SHARED_HOSTED"], defaultModules: ["ACADEMICS"], limits: { maxCampuses: 1, maxStaff: 20, seatGrace: 5 }, isActive: true },
   { id: "p2", key: "enterprise", name: "Enterprise", basePrice: null, currency: "PKR", billingCycle: "CUSTOM", deploymentModes: ["SELF_HOSTED", "DEDICATED_HOSTED"], defaultModules: [], limits: {}, isActive: false },
 ];
 
@@ -42,8 +42,8 @@ describe("Plans page", () => {
     expect(screen.getByText("Custom")).toBeInTheDocument();
     expect(screen.getByText("Active")).toBeInTheDocument();
     expect(screen.getByText("Inactive")).toBeInTheDocument();
-    expect(screen.getByText("1 modules · Max 1 campuses")).toBeInTheDocument();
-    expect(screen.getByText("0 modules · Max ∞ campuses")).toBeInTheDocument();
+    expect(screen.getByText("1 modules · 1 campuses · unlimited students · 20 staff")).toBeInTheDocument();
+    expect(screen.getByText("0 modules · unlimited campuses · unlimited students · unlimited staff")).toBeInTheDocument();
     expect(screen.getByText("SELF HOSTED")).toBeInTheDocument();
   });
 
@@ -61,26 +61,31 @@ describe("Plans page", () => {
     fireEvent.click(await within(dialog).findByText("FINANCE"));
     fireEvent.click(within(dialog).getByText("FINANCE")); // toggle back off
     fireEvent.click(within(dialog).getByText("ACADEMICS"));
-    fireEvent.change(within(dialog).getByLabelText(/Limits/), { target: { value: '{"maxCampuses":5}' } });
+    fireEvent.change(within(dialog).getByLabelText("Max campuses"), { target: { value: "5" } });
+    fireEvent.change(within(dialog).getByLabelText("Max students"), { target: { value: "800" } });
     expect(create).toBeEnabled();
     fireEvent.click(create);
     await waitFor(() => expect(mocks.createPlan).toHaveBeenCalledWith({
       key: "growth", name: "Growth", description: "", basePrice: 9000, currency: "PKR", billingCycle: "MONTHLY",
-      setupFee: undefined, deploymentModes: ["SHARED_HOSTED"], defaultModules: ["ACADEMICS"], limits: { maxCampuses: 5 }, isActive: true,
+      setupFee: undefined, deploymentModes: ["SHARED_HOSTED"], defaultModules: ["ACADEMICS"], limits: { maxCampuses: 5, maxStudents: 800, maxStaff: null }, isActive: true,
     }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
   });
 
-  it("rejects invalid limits JSON without calling the API", async () => {
+  it("starts a new plan at one campus with no other limit, and holds the button for a limit that is not a whole number", async () => {
     render(<PlansPage />);
     await screen.findByText("Starter");
     fireEvent.click(screen.getByRole("button", { name: /New Plan/ }));
     const dialog = await screen.findByRole("dialog");
     fireEvent.change(within(dialog).getByLabelText(/Plan Key/), { target: { value: "x" } });
     fireEvent.change(within(dialog).getByLabelText(/^Name/), { target: { value: "X" } });
-    fireEvent.change(within(dialog).getByLabelText(/Limits/), { target: { value: "{oops" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Create Plan" }));
-    await waitFor(() => expect(mocks.showMessage).toHaveBeenCalledWith("Invalid JSON in limits.", "error"));
+    expect(within(dialog).getByLabelText("Max campuses")).toHaveValue("1");
+    expect(within(dialog).getByLabelText("Max students")).toHaveValue("");
+
+    fireEvent.change(within(dialog).getByLabelText("Max students"), { target: { value: "ten" } });
+
+    expect(within(dialog).getByText("Max students must be a whole number of 1 or more, or blank for no limit.")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Create Plan" })).toBeDisabled();
     expect(mocks.createPlan).not.toHaveBeenCalled();
   });
 
@@ -94,7 +99,7 @@ describe("Plans page", () => {
     fireEvent.change(within(dialog).getByLabelText(/^Name/), { target: { value: "Starter Plus" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save Changes" }));
     await waitFor(() => expect(mocks.updatePlan).toHaveBeenCalledWith("p1", expect.objectContaining({
-      key: "starter", name: "Starter Plus", basePrice: 5000, setupFee: 1000, limits: { maxCampuses: 1 },
+      key: "starter", name: "Starter Plus", basePrice: 5000, setupFee: 1000, limits: { maxCampuses: 1, maxStudents: null, maxStaff: 20, seatGrace: 5 },
       deploymentModes: ["SHARED_HOSTED"], defaultModules: ["ACADEMICS"],
     })));
     expect(mocks.createPlan).not.toHaveBeenCalled();

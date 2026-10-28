@@ -46,6 +46,7 @@ import Close from "@mui/icons-material/Close";
 import ProfileDialog from "@/components/shared/ProfileDialog";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import NoticeBell from "@/components/dashboard/NoticeBell";
+import SubscriptionGate from "@/components/dashboard/SubscriptionGate";
 import TrialBanner from "@/components/dashboard/TrialBanner";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { useForcePasswordChange } from "@/hooks/useForcePasswordChange";
@@ -344,7 +345,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         </MobileTopBar>}
         <TrialBanner />
         <DashboardBreadcrumbs pathname={pathname} items={navItems} />
-        {children}
+        <SubscriptionGate>{children}</SubscriptionGate>
       </Box>
     </Box>
     </BrandThemeProvider>
