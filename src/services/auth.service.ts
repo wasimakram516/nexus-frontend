@@ -88,4 +88,7 @@ export const authService = {
 
   revokeSession: (sessionId: string) =>
     apiClient.post("/auth/sessions/revoke", { sessionId }),
+
+  /** Ends every sign-in, including the one making the request. */
+  revokeAllSessions: () => apiClient.post("/auth/sessions/revoke", {}),
 };

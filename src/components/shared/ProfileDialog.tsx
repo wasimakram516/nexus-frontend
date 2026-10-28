@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { usersService } from "@/services/users.service";
+import SessionsDialog from "@/components/shared/SessionsDialog";
 
 interface ProfileDialogProps {
   open: boolean;
@@ -36,6 +37,7 @@ export default function ProfileDialog({ open, onClose }: ProfileDialogProps) {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sessionsOpen, setSessionsOpen] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", currentPassword: "" });
 
   useEffect(() => {
@@ -116,6 +118,9 @@ export default function ProfileDialog({ open, onClose }: ProfileDialogProps) {
               />
             </Grid>
             <Grid size={{ xs: 12 }}>
+              <Button size="small" onClick={() => setSessionsOpen(true)}>Where I&apos;m signed in</Button>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="caption" color="text.disabled">
                 Signed in as {user?.role}. Role and access are managed by your administrator.
               </Typography>
@@ -133,6 +138,7 @@ export default function ProfileDialog({ open, onClose }: ProfileDialogProps) {
           {saving ? <CircularProgress size={16} color="inherit" /> : "Save Changes"}
         </Button>
       </DialogActions>
+      <SessionsDialog open={sessionsOpen} onClose={() => setSessionsOpen(false)} />
     </Dialog>
   );
 }
