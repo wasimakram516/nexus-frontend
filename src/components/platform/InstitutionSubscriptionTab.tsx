@@ -27,6 +27,8 @@ import { platformService } from "@/services/platform.service";
 interface Props {
   institutionId: string;
   runtimeConfig: Record<string, unknown> | null;
+  /** When it is not shared hosting, there is no subscription to bill. */
+  deploymentMode?: string;
   onSaved?: () => void;
 }
 
@@ -55,7 +57,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function InstitutionSubscriptionTab({ institutionId, runtimeConfig, onSaved }: Props) {
+export default function InstitutionSubscriptionTab({ institutionId, runtimeConfig, deploymentMode, onSaved }: Props) {
   const { showMessage } = useMessage();
   const subscription = runtimeConfig?.subscription as Record<string, unknown> | null;
 
@@ -135,6 +137,22 @@ export default function InstitutionSubscriptionTab({ institutionId, runtimeConfi
   const isTrial = subscription?.status === "TRIAL";
   const trialEndsAt = typeof subscription?.endsAt === "string" ? subscription.endsAt : null;
   const trialExpired = trialEndsAt ? new Date(trialEndsAt).getTime() < now : false;
+
+  // Dedicated and self-hosted institutions are not billed through Nexus: their
+  // modules are set when they are provisioned, so there is no subscription to edit.
+  if (deploymentMode && deploymentMode !== "SHARED_HOSTED") {
+    return (
+      <Card sx={{ maxWidth: 640 }}>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>Subscription</Typography>
+          <Typography variant="body2" color="text.secondary">
+            This institution is {deploymentMode.replace(/_/g, " ").toLowerCase()}, so it is not billed through Nexus and has no
+            subscription or trial. Its modules are set under Entitlements, and its limits under Settings.
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Grid container spacing={3}>

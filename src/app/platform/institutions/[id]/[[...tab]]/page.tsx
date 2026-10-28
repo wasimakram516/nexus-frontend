@@ -169,7 +169,7 @@ function InstitutionDetail() {
           {tab === 0 && <InstitutionOverviewTab institution={institution} runtimeConfig={runtimeConfig} onSaved={() => refresh(institutionId)} />}
           {tab === 1 && <InstitutionBrandingTab institutionId={institutionId} runtimeConfig={runtimeConfig} onSaved={() => refresh(institutionId)} />}
           {tab === 2 && <InstitutionEntitlementsTab institutionId={institutionId} runtimeConfig={runtimeConfig} onSaved={() => refresh(institutionId)} />}
-          {tab === 3 && <InstitutionSubscriptionTab institutionId={institutionId} runtimeConfig={runtimeConfig} onSaved={() => refresh(institutionId)} />}
+          {tab === 3 && <InstitutionSubscriptionTab institutionId={institutionId} runtimeConfig={runtimeConfig} deploymentMode={typeof institution?.deploymentMode === "string" ? institution.deploymentMode : undefined} onSaved={() => refresh(institutionId)} />}
           {tab === 4 && <InstitutionSettingsTab institutionId={institutionId} runtimeConfig={runtimeConfig} onSaved={() => refresh(institutionId)} />}
           {tab === 5 && <InstitutionPermissionsTab institutionId={institutionId} />}
         </Container>

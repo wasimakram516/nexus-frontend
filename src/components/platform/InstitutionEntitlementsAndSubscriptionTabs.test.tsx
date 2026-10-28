@@ -83,6 +83,16 @@ describe("InstitutionEntitlementsTab", () => {
 });
 
 describe("InstitutionSubscriptionTab", () => {
+  it("says there is no subscription to bill for a dedicated or self-hosted institution, and still shows shared hosting its own", async () => {
+    const { rerender } = render(<InstitutionSubscriptionTab institutionId="i1" runtimeConfig={null} deploymentMode="DEDICATED_HOSTED" />);
+
+    expect(screen.getByText(/not billed through Nexus/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Edit/ })).not.toBeInTheDocument();
+
+    rerender(<InstitutionSubscriptionTab institutionId="i1" runtimeConfig={null} deploymentMode="SHARED_HOSTED" />);
+    expect(screen.queryByText(/not billed through Nexus/)).not.toBeInTheDocument();
+  });
+
   const trial = {
     subscription: { status: "TRIAL", planId: "p1", planName: "Starter", startsAt: "2026-01-01T00:00:00Z", endsAt: "2999-01-01T00:00:00Z", autoRenew: false, agreedPrice: 5000, currency: "PKR", billingCycle: "MONTHLY", pricingNotes: "friends and family" },
   };
