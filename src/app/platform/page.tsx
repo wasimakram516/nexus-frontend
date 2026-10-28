@@ -93,9 +93,9 @@ export default function PlatformOverviewPage() {
         {/* Stats */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           {stats.map((stat) => (
-            <Grid size={{ xs: 6, md: "grow" }} key={stat.label}>
-              <Card>
-                <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Grid size={{ xs: 6, md: "grow" }} key={stat.label} sx={{ display: "flex" }}>
+              <Card sx={{ width: "100%" }}>
+                <CardContent sx={{ display: "flex", alignItems: "center", gap: 2, height: "100%" }}>
                   <Box sx={{ width: 44, height: 44, borderRadius: 2, backgroundColor: `${stat.color}20`, display: "flex", alignItems: "center", justifyContent: "center", color: stat.color, flexShrink: 0 }}>
                     {stat.icon}
                   </Box>
