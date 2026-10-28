@@ -140,10 +140,10 @@ describe("InstitutionOverviewTab", () => {
     await screen.findByText(/No admin accounts yet/);
     fireEvent.click(screen.getByRole("button", { name: /^Edit$/ }));
     fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Status/ }));
-    fireEvent.click(await screen.findByRole("option", { name: "SUSPENDED" }));
+    fireEvent.click(await screen.findByRole("option", { name: "INACTIVE" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
-    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: "Set this school to SUSPENDED?" })));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: "Set this school to INACTIVE?" })));
     expect(mocks.updateInstitution).not.toHaveBeenCalled();
   });
 

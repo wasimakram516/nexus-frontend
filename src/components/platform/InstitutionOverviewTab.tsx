@@ -45,7 +45,7 @@ interface Props {
   onSaved?: () => void;
 }
 
-const STATUSES = ["ACTIVE", "INACTIVE", "SUSPENDED"];
+const STATUSES = ["ACTIVE", "INACTIVE"];
 const DEPLOYMENT_MODES = ["SHARED_HOSTED", "DEDICATED_HOSTED", "SELF_HOSTED"];
 
 interface AdminUser {
@@ -112,7 +112,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
   const canSave = !saving && editForm.name.trim() !== "" && /^[a-z0-9-]+$/.test(editForm.slug.trim());
 
   const handleSave = async () => {
-    // A school that is not ACTIVE is locked out at sign-in and on every request.
+    // An INACTIVE school is locked out at sign-in and on every request.
     if (editForm.status !== "ACTIVE" && editForm.status !== String(institution.status ?? "")) {
       const confirmed = await confirm({
         title: `Set this school to ${editForm.status}?`,
@@ -262,7 +262,7 @@ export default function InstitutionOverviewTab({ institution, runtimeConfig, onS
           <CardContent sx={{ p: 3 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Deployment</Typography>
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              <Chip label={String(institution.status ?? "")} color={institution.status === "ACTIVE" ? "success" : institution.status === "SUSPENDED" ? "warning" : "default"} size="small" />
+              <Chip label={String(institution.status ?? "")} color={institution.status === "ACTIVE" ? "success" : "default"} size="small" />
               <Chip label={String(institution.deploymentMode ?? "").replace(/_/g, " ")} variant="outlined" size="small" />
             </Box>
           </CardContent>

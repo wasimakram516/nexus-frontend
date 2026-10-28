@@ -91,8 +91,8 @@ describe("StepBasicInfo", () => {
     fireEvent.change(screen.getByLabelText("Notes"), { target: { value: "vip" } });
     expect(latest).toMatchObject({ contactPhone: "0300", primaryDomain: "x.edu", notes: "vip" });
     fireEvent.mouseDown(screen.getAllByRole("combobox")[0]);
-    fireEvent.click(await screen.findByRole("option", { name: "SUSPENDED" }));
-    expect(latest.status).toBe("SUSPENDED");
+    fireEvent.click(await screen.findByRole("option", { name: "INACTIVE" }));
+    expect(latest.status).toBe("INACTIVE");
     fireEvent.mouseDown(screen.getAllByRole("combobox")[1]);
     fireEvent.click(await screen.findByRole("option", { name: /Self Hosted/ }));
     expect(latest.deploymentMode).toBe("SELF_HOSTED");

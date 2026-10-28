@@ -152,7 +152,7 @@ describe("PlatformLayout", () => {
 });
 
 describe("InstitutionDetailPage", () => {
-  const inst = { id: "uuid-1", name: "Green School", slug: "green-school", status: "SUSPENDED" };
+  const inst = { id: "uuid-1", name: "Green School", slug: "green-school", status: "INACTIVE" };
 
   beforeEach(() => {
     mocks.getInstitution.mockImplementation(() => ok(inst));
@@ -164,7 +164,7 @@ describe("InstitutionDetailPage", () => {
     expect(await screen.findByText("overview-tab Green School")).toBeInTheDocument();
     expect(mocks.getInstitution).toHaveBeenCalledWith("green-school");
     expect(mocks.getRuntimeConfig).toHaveBeenCalledWith("green-school");
-    expect(screen.getByText("SUSPENDED")).toBeInTheDocument();
+    expect(screen.getByText("INACTIVE")).toBeInTheDocument();
     expect(screen.getByText("green-school")).toBeInTheDocument();
   });
 

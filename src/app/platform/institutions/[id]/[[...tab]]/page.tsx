@@ -26,7 +26,7 @@ import InstitutionSettingsTab from "@/components/platform/InstitutionSettingsTab
 import InstitutionPermissionsTab from "@/components/platform/InstitutionPermissionsTab";
 
 const STATUS_COLOR: Record<string, "success" | "error" | "warning" | "default"> = {
-  ACTIVE: "success", INACTIVE: "default", SUSPENDED: "warning",
+  ACTIVE: "success", INACTIVE: "default",
 };
 
 const TABS = [

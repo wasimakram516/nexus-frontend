@@ -29,7 +29,7 @@ const longAgo = "2020-01-15T00:00:00Z";
 
 const institutions = [
   { id: "1", name: "Alpha School", slug: "alpha", status: "ACTIVE", deploymentMode: "SHARED_HOSTED", contactEmail: "a@alpha.io", createdAt: thisMonth },
-  { id: "2", name: "Beta College", slug: "beta", status: "SUSPENDED", deploymentMode: "SELF_HOSTED", createdAt: longAgo },
+  { id: "2", name: "Beta College", slug: "beta", status: "INACTIVE", deploymentMode: "SELF_HOSTED", createdAt: longAgo },
   { id: "3", name: "Gamma Academy", slug: "gamma", status: "INACTIVE", deploymentMode: "DEDICATED_HOSTED", contactEmail: "g@gamma.io", createdAt: longAgo },
 ];
 
@@ -46,7 +46,7 @@ describe("Platform overview page", () => {
     const statValue = (label: string) => screen.getByText(label).parentElement!.querySelector("h4")!.textContent;
     expect(statValue("Total Institutions")).toBe("3");
     expect(statValue("Active")).toBe("1");
-    expect(statValue("Suspended")).toBe("1");
+    expect(statValue("Inactive")).toBe("2");
     expect(Number(statValue("This Month"))).toBeGreaterThanOrEqual(1);
   });
 
@@ -107,8 +107,8 @@ describe("Institutions list page", () => {
     await screen.findByText("Alpha School");
     expect(mocks.getInstitutions).toHaveBeenLastCalledWith({});
     fireEvent.mouseDown(screen.getByRole("combobox"));
-    fireEvent.click(await screen.findByRole("option", { name: "SUSPENDED" }));
-    await waitFor(() => expect(mocks.getInstitutions).toHaveBeenLastCalledWith({ status: "SUSPENDED" }));
+    fireEvent.click(await screen.findByRole("option", { name: "INACTIVE" }));
+    await waitFor(() => expect(mocks.getInstitutions).toHaveBeenLastCalledWith({ status: "INACTIVE" }));
   });
 
   it("navigates by slug from the row and from the arrow button without double-firing", async () => {

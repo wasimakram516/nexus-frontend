@@ -38,7 +38,6 @@ interface Institution {
 const statusColor: Record<string, "success" | "error" | "warning" | "default"> = {
   ACTIVE: "success",
   INACTIVE: "default",
-  SUSPENDED: "warning",
 };
 
 export default function PlatformOverviewPage() {
@@ -63,7 +62,7 @@ export default function PlatformOverviewPage() {
   const stats = [
     { label: "Total Institutions", value: institutions.length, icon: <AccountTree />, color: "primary.main" },
     { label: "Active", value: institutions.filter((i) => i.status === "ACTIVE").length, icon: <CheckCircle />, color: "success.main" },
-    { label: "Suspended", value: institutions.filter((i) => i.status === "SUSPENDED").length, icon: <PauseCircle />, color: "warning.main" },
+    { label: "Inactive", value: institutions.filter((i) => i.status === "INACTIVE").length, icon: <PauseCircle />, color: "warning.main" },
     { label: "This Month", value: institutions.filter((i) => new Date(i.createdAt).getMonth() === new Date().getMonth()).length, icon: <TrendingUp />, color: "info.main" },
   ];
 

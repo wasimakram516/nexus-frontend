@@ -25,7 +25,7 @@ const DEPLOYMENT_MODES = [
     tooltip: "Institution hosts Nexus on their own infrastructure. Wisemen Soft provides the software; the client manages the servers. Required by enterprise clients with data residency requirements.",
   },
 ];
-const STATUSES = ["ACTIVE", "INACTIVE", "SUSPENDED"];
+const STATUSES = ["ACTIVE", "INACTIVE"];
 
 export default function StepBasicInfo({ data, update }: Props) {
   const handleName = (name: string) => {

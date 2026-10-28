@@ -44,10 +44,9 @@ interface Institution {
 const statusColor: Record<string, "success" | "error" | "warning" | "default"> = {
   ACTIVE: "success",
   INACTIVE: "default",
-  SUSPENDED: "warning",
 };
 
-const STATUS_OPTIONS = ["ALL", "ACTIVE", "INACTIVE", "SUSPENDED"];
+const STATUS_OPTIONS = ["ALL", "ACTIVE", "INACTIVE"];
 
 export default function InstitutionsPage() {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
