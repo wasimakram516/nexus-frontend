@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => ({
   peopleTabProps: vi.fn(),
 }));
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard/people", useRouter: () => ({ push: mocks.push }) }));
 vi.mock("next/link", () => ({ default: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a> }));
 vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: mocks.showMessage }) }));
 vi.mock("@/contexts/RuntimeConfigContext", () => ({
@@ -85,6 +85,18 @@ describe("RolesManager", () => {
     expect(mocks.list).toHaveBeenCalledWith("inst-9");
     expect(screen.getByText("2 permissions granted")).toBeInTheDocument();
     expect(screen.getByText("0 permissions granted")).toBeInTheDocument();
+  });
+
+  it("says how many users hold each role and warns before deleting one that is in use", async () => {
+    mocks.list.mockImplementation(() => ok([
+      { id: "a", name: "In Use", permissions: {}, userCount: 3 },
+      { id: "b", name: "Spare", permissions: {}, userCount: 0 },
+    ]));
+    render(<RolesManager />);
+    expect(await screen.findByText("Assigned to 3 users")).toBeInTheDocument();
+    expect(screen.getByText("Not assigned to anyone yet")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByTestId("DeleteIcon")[0].closest("button")!);
+    expect(await screen.findByText(/3 users hold it and will have no access/)).toBeInTheDocument();
   });
 
   it("shows an empty state, and a single grant reads as singular", async () => {

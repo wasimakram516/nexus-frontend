@@ -20,6 +20,8 @@ interface Role {
   name: string;
   description?: string | null;
   permissions: PermissionMatrixValue;
+  /** How many active accounts hold this role. */
+  userCount?: number;
 }
 
 interface RolesManagerProps {
@@ -141,6 +143,11 @@ export default function RolesManager({ institutionId }: RolesManagerProps) {
                   <Typography variant="caption" color="text.disabled" sx={{ display: "block" }}>
                     {countGrants(role.permissions)} permission{countGrants(role.permissions) !== 1 ? "s" : ""} granted
                   </Typography>
+                  {role.userCount !== undefined && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                      {role.userCount === 0 ? "Not assigned to anyone yet" : `Assigned to ${role.userCount} user${role.userCount !== 1 ? "s" : ""}`}
+                    </Typography>
+                  )}
                 </Box>
                 <Box sx={{ display: "flex", gap: 0.5 }}>
                   <Tooltip title="Edit"><IconButton size="small" onClick={() => openEdit(role)}><Edit fontSize="small" /></IconButton></Tooltip>
@@ -155,7 +162,11 @@ export default function RolesManager({ institutionId }: RolesManagerProps) {
       <ConfirmDialog
         open={!!confirmDelete}
         title="Delete Role"
-        message={`Delete "${confirmDelete?.name}"? Users assigned to it will have no access until reassigned.`}
+        message={
+          confirmDelete?.userCount
+            ? `Delete "${confirmDelete.name}"? ${confirmDelete.userCount} user${confirmDelete.userCount !== 1 ? "s" : ""} hold${confirmDelete.userCount === 1 ? "s" : ""} it and will have no access until reassigned.`
+            : `Delete "${confirmDelete?.name}"? Users assigned to it will have no access until reassigned.`
+        }
         confirmLabel="Delete"
         confirmColor="error"
         onConfirm={handleDelete}
