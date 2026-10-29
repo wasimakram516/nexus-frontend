@@ -9,7 +9,7 @@ import type { ReportTable } from "@/lib/reports";
 import ReportsManager from "./ReportsManager";
 
 vi.mock("@/services/reports.service", () => ({
-  reportsService: { get: vi.fn(), download: vi.fn() },
+  reportsService: { get: vi.fn(), download: vi.fn(), examOptions: vi.fn() },
 }));
 vi.mock("@/services/campuses.service", () => ({ campusesService: { getAll: vi.fn() } }));
 vi.mock("@/services/academics.service", () => ({
@@ -83,6 +83,50 @@ describe("ReportsManager", () => {
     vi.mocked(academicsService.getClasses).mockResolvedValue({ data: { data: classes } } as never);
     vi.mocked(academicsService.getSections).mockResolvedValue({ data: { data: sections } } as never);
     vi.mocked(reportsService.get).mockResolvedValue(reply(comparison) as never);
+    vi.mocked(reportsService.examOptions).mockResolvedValue({
+      data: { data: [{ id: "e1", label: "Midterm · Grade 5 · Term 1" }] },
+    } as never);
+  });
+
+  it("will not run an exam report until an exam is chosen, then asks for that exam", async () => {
+    const user = userEvent.setup();
+    renderIt();
+    await screen.findByRole("heading", { name: "Campus comparison" });
+    vi.mocked(reportsService.get).mockClear();
+
+    await choose(user, "Report", "Grade distribution");
+    expect(screen.getByText("Choose an exam to see its grades.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Download PDF" })).toBeDisabled();
+    expect(reportsService.get).not.toHaveBeenCalled();
+
+    await choose(user, "Exam", "Midterm · Grade 5 · Term 1");
+
+    await waitFor(() => expect(reportsService.get).toHaveBeenCalledWith("exams/grade-distribution", { examId: "e1" }));
+    expect(screen.getByRole("button", { name: "Download PDF" })).toBeEnabled();
+  });
+
+  it("lists the exams of the institution being viewed in the platform console", async () => {
+    const user = userEvent.setup();
+    renderIt("inst-1");
+    await screen.findByRole("heading", { name: "Campus comparison" });
+
+    await choose(user, "Report", "Students who did not pass");
+
+    await waitFor(() => expect(reportsService.examOptions).toHaveBeenCalledWith({ institutionId: "inst-1" }));
+  });
+
+  it("asks for a payroll month and a payroll period with the filters chosen", async () => {
+    const user = userEvent.setup();
+    renderIt();
+    await screen.findByRole("heading", { name: "Campus comparison" });
+
+    await choose(user, "Report", "Payroll register");
+    await user.type(screen.getByLabelText("Month"), "2026-10");
+    await waitFor(() => expect(reportsService.get).toHaveBeenLastCalledWith("payroll/register", { month: "2026-10" }));
+
+    await choose(user, "Report", "Payroll cost by month");
+    await user.type(screen.getByLabelText("From"), "2026-08-01");
+    await waitFor(() => expect(reportsService.get).toHaveBeenLastCalledWith("payroll/cost", { from: "2026-08-01" }));
   });
 
   it("opens on the campus comparison with headline figures above the table", async () => {

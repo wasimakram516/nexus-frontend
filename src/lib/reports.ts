@@ -22,18 +22,37 @@ export interface ReportTable {
 }
 
 /** The inputs a report asks for. */
-export type ReportFilter = "date" | "campus" | "period" | "month" | "section" | "groupBy" | "threshold";
+export type ReportFilter = "date" | "campus" | "period" | "month" | "section" | "exam" | "groupBy" | "threshold";
 
 export interface ReportDefinition {
   key: string;
   label: string;
-  group: "Overview" | "Attendance" | "Finance";
+  group: "Overview" | "Attendance" | "Finance" | "Exams" | "Payroll";
   description: string;
   /** The address below /reports. */
   path: string;
   filters: ReportFilter[];
   /** Filters that must be chosen before the report can run. */
   required?: ReportFilter[];
+  /** Shown instead of the report until every required filter is chosen. */
+  prompt?: string;
+}
+
+/** The query field each required filter is sent as. */
+export const REQUIRED_FIELD: Partial<Record<ReportFilter, string>> = { section: "sectionId", exam: "examId" };
+
+/**
+ * Whether a required filter has not been chosen yet.
+ *
+ * @param {ReportDefinition} definition - The report.
+ * @param {Record<string, string>} values - What the person has chosen so far.
+ * @returns {boolean} True while the report cannot run.
+ */
+export function isMissingRequired(definition: ReportDefinition, values: Record<string, string>): boolean {
+  return (definition.required ?? []).some((filter) => {
+    const field = REQUIRED_FIELD[filter];
+    return field ? !values[field] : false;
+  });
 }
 
 export const REPORTS: ReportDefinition[] = [
@@ -53,6 +72,7 @@ export const REPORTS: ReportDefinition[] = [
     path: "attendance/monthly-register",
     filters: ["section", "month"],
     required: ["section"],
+    prompt: "Choose a class and a section to see its register.",
   },
   {
     key: "staff-attendance",
@@ -94,9 +114,55 @@ export const REPORTS: ReportDefinition[] = [
     path: "finance/discounts-and-fines",
     filters: ["campus", "period"],
   },
+  {
+    key: "exam-subject-results",
+    label: "Exam results by subject",
+    group: "Exams",
+    description: "How each paper of an exam went: who sat it, how many passed, the average and the highest and lowest marks.",
+    path: "exams/subject-results",
+    filters: ["exam"],
+    required: ["exam"],
+    prompt: "Choose an exam to see how each paper went.",
+  },
+  {
+    key: "exam-grade-distribution",
+    label: "Grade distribution",
+    group: "Exams",
+    description: "How many students earned each grade in an exam.",
+    path: "exams/grade-distribution",
+    filters: ["exam"],
+    required: ["exam"],
+    prompt: "Choose an exam to see its grades.",
+  },
+  {
+    key: "exam-failed-students",
+    label: "Students who did not pass",
+    group: "Exams",
+    description: "Students who failed an exam overall, with the papers they failed.",
+    path: "exams/failed-students",
+    filters: ["exam"],
+    required: ["exam"],
+    prompt: "Choose an exam to see who did not pass.",
+  },
+  {
+    key: "payroll-register",
+    label: "Payroll register",
+    group: "Payroll",
+    description: "A month's payroll: what each person was paid and how it was worked out, and who is still to be paid.",
+    path: "payroll/register",
+    filters: ["campus", "month"],
+  },
+  {
+    key: "payroll-cost",
+    label: "Payroll cost by month",
+    group: "Payroll",
+    description: "What payroll cost each month: staff paid, salaries, bonuses, deductions and the net total, by campus.",
+    path: "payroll/cost",
+    filters: ["campus", "period"],
+  },
 ];
 
-export const REPORT_GROUPS: ReportDefinition["group"][] = ["Overview", "Attendance", "Finance"];
+export const REPORT_GROUPS: ReportDefinition["group"][] = ["Overview", "Attendance", "Finance", "Exams", "Payroll"];
 
 /** The figures shown as cards above the comparison table. */
 export interface KpiCard {

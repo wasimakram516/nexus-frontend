@@ -19,7 +19,7 @@ import PictureAsPdf from "@mui/icons-material/PictureAsPdf";
 import ReportTableView from "@/components/dashboard/ReportTableView";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
-import { comparisonCards, REPORT_GROUPS, REPORTS, type ReportDefinition, type ReportTable } from "@/lib/reports";
+import { comparisonCards, isMissingRequired, REPORT_GROUPS, REPORTS, type ReportDefinition, type ReportTable } from "@/lib/reports";
 import { academicsService } from "@/services/academics.service";
 import { campusesService } from "@/services/campuses.service";
 import { reportsService } from "@/services/reports.service";
@@ -39,6 +39,10 @@ interface ClassItem extends Named {
 }
 interface SectionItem extends Named {
   classId?: string;
+}
+interface ExamOption {
+  id: string;
+  label: string;
 }
 
 interface ReportsManagerProps {
@@ -63,6 +67,7 @@ export default function ReportsManager({ institutionId }: ReportsManagerProps) {
   const [levels, setLevels] = useState<LevelItem[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [sections, setSections] = useState<SectionItem[]>([]);
+  const [exams, setExams] = useState<ExamOption[]>([]);
   const [table, setTable] = useState<ReportTable | null>(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState<"csv" | "pdf" | null>(null);
@@ -90,6 +95,18 @@ export default function ReportsManager({ institutionId }: ReportsManagerProps) {
     })();
   }, [institutionId, showMessage]);
 
+  const needsExam = definition.filters.includes("exam");
+  useEffect(() => {
+    if (!needsExam) return;
+    (async () => {
+      const { data } = await apiHandler<ExamOption[]>(
+        () => reportsService.examOptions(institutionId ? { institutionId } : {}),
+        { showMessage, silent: true }
+      );
+      setExams(Array.isArray(data) ? data : []);
+    })();
+  }, [needsExam, institutionId, showMessage]);
+
   const set = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }));
 
   const changeReport = (key: string) => {
@@ -114,6 +131,7 @@ export default function ReportsManager({ institutionId }: ReportsManagerProps) {
       }
       if (filter === "month") add("month", values.month);
       if (filter === "section") add("sectionId", values.sectionId);
+      if (filter === "exam") add("examId", values.examId);
       if (filter === "groupBy") add("groupBy", values.groupBy);
       if (filter === "threshold") add("thresholdPercent", values.thresholdPercent);
     }
@@ -121,7 +139,7 @@ export default function ReportsManager({ institutionId }: ReportsManagerProps) {
     return sent;
   }, [definition, values, institutionId]);
 
-  const missing = (definition.required ?? []).some((filter) => filter === "section" && !values.sectionId);
+  const missing = isMissingRequired(definition, values);
 
   const run = useCallback(async () => {
     setLoading(true);
@@ -216,6 +234,15 @@ export default function ReportsManager({ institutionId }: ReportsManagerProps) {
             </Grid>
           </>
         )}
+        {has("exam") && (
+          <Grid size={{ xs: 12, md: 5 }}>
+            <TextField select fullWidth size="small" label="Exam" value={values.examId ?? ""} onChange={(e) => set("examId", e.target.value)} helperText={exams.length === 0 ? "No exams yet" : undefined}>
+              {exams.map((exam) => (
+                <MenuItem key={exam.id} value={exam.id}>{exam.label}</MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+        )}
         {has("month") && (
           <Grid size={{ xs: 6, md: 2 }}>
             <TextField fullWidth size="small" type="month" label="Month" value={values.month ?? ""} onChange={(e) => set("month", e.target.value)} slotProps={{ inputLabel: { shrink: true } }} helperText="Empty is this month" />
@@ -247,7 +274,7 @@ export default function ReportsManager({ institutionId }: ReportsManagerProps) {
       </Box>
 
       {missing ? (
-        <Alert severity="info">Choose a class and a section to see its register.</Alert>
+        <Alert severity="info">{definition.prompt}</Alert>
       ) : loading && !table ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
       ) : table ? (
