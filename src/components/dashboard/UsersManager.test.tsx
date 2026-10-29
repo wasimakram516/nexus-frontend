@@ -89,6 +89,7 @@ describe("UsersManager", () => {
     await user.type(within(dialog).getByLabelText(/full name/i), "Fatima Desk");
     await user.type(within(dialog).getByLabelText(/^email/i), "fatima@test.com");
     await user.type(within(dialog).getByLabelText(/^password/i), "password-1");
+    await user.click(within(dialog).getByRole("tab", { name: "Access" }));
     await user.click(within(dialog).getByRole("combobox", { name: /access role/i }));
     await user.click(await screen.findByRole("option", { name: "Front Desk" }));
     await user.click(within(dialog).getByRole("button", { name: /create user/i }));
@@ -101,6 +102,113 @@ describe("UsersManager", () => {
         role: "STAFF",
         roleId: "role-1",
       })
+    );
+  });
+
+  it("applies permissions changed from the role right after the account is created", async () => {
+    vi.mocked(rolesService.getCatalog).mockResolvedValue({
+      data: { data: [{ key: "students", label: "Students", module: "PEOPLE", actions: ["read"] }] },
+    } as never);
+    vi.mocked(authService.register).mockResolvedValue({ data: { data: { id: "new-1" } } } as never);
+    vi.mocked(usersService.updateUser).mockResolvedValue({ data: { message: "ok", data: {} } } as never);
+    const user = userEvent.setup();
+    renderManager();
+
+    await user.click(await screen.findByRole("button", { name: /add user/i }));
+    const dialog = await screen.findByRole("dialog");
+    await user.type(within(dialog).getByLabelText(/full name/i), "Fatima Desk");
+    await user.type(within(dialog).getByLabelText(/^email/i), "fatima@test.com");
+    await user.type(within(dialog).getByLabelText(/^password/i), "password-1");
+    await user.click(within(dialog).getByRole("tab", { name: "Access" }));
+    await user.click(await within(dialog).findByLabelText("Students Read"));
+    await user.click(within(dialog).getByRole("button", { name: /create user/i }));
+
+    await waitFor(() =>
+      expect(usersService.updateUser).toHaveBeenCalledWith("new-1", { permissionOverrides: { students: { read: "allow" } } })
+    );
+  });
+
+  it("lets an administrator change the name, email and password of an existing account", async () => {
+    vi.mocked(usersService.updateUser).mockResolvedValue({ data: { message: "ok", data: {} } } as never);
+    const user = userEvent.setup();
+    renderManager();
+
+    const row = (await screen.findByText("Sam Staff")).closest("tr")!;
+    await user.click(within(row).getByTestId("EditIcon").closest("button")!);
+    const dialog = await screen.findByRole("dialog");
+    const name = within(dialog).getByLabelText(/full name/i);
+    await user.clear(name);
+    await user.type(name, "Samira Staff");
+    const email = within(dialog).getByLabelText(/^email/i);
+    await user.clear(email);
+    await user.type(email, "samira@test.com");
+    await user.type(within(dialog).getByLabelText(/new password/i), "fresh-pass-1");
+    await user.click(within(dialog).getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() =>
+      expect(usersService.updateUser).toHaveBeenCalledWith(
+        "user-2",
+        expect.objectContaining({ name: "Samira Staff", email: "samira@test.com", password: "fresh-pass-1" })
+      )
+    );
+  });
+
+  it("does not send credentials that were left alone", async () => {
+    vi.mocked(usersService.updateUser).mockResolvedValue({ data: { message: "ok", data: {} } } as never);
+    const user = userEvent.setup();
+    renderManager();
+
+    const row = (await screen.findByText("Sam Staff")).closest("tr")!;
+    await user.click(within(row).getByTestId("EditIcon").closest("button")!);
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => expect(usersService.updateUser).toHaveBeenCalled());
+    const payload = vi.mocked(usersService.updateUser).mock.calls[0][1];
+    expect(payload).not.toHaveProperty("name");
+    expect(payload).not.toHaveProperty("email");
+    expect(payload).not.toHaveProperty("password");
+  });
+
+  it("refuses a new password shorter than eight characters", async () => {
+    const user = userEvent.setup();
+    renderManager();
+
+    const row = (await screen.findByText("Sam Staff")).closest("tr")!;
+    await user.click(within(row).getByTestId("EditIcon").closest("button")!);
+    const dialog = await screen.findByRole("dialog");
+    await user.type(within(dialog).getByLabelText(/new password/i), "short");
+
+    expect(within(dialog).getByRole("button", { name: "Save Changes" })).toBeDisabled();
+  });
+
+  it("stores a personal change to the role's permissions as the difference only", async () => {
+    vi.mocked(rolesService.list).mockResolvedValue({
+      data: { data: [{ id: "role-1", name: "Front Desk", permissions: { students: { read: true } } }] },
+    } as never);
+    vi.mocked(rolesService.getCatalog).mockResolvedValue({
+      data: { data: [{ key: "students", label: "Students", module: "PEOPLE", actions: ["read", "update"] }] },
+    } as never);
+    vi.mocked(usersService.getAll).mockResolvedValue({
+      data: { data: { items: [{ ...staffRow, roleId: "role-1" }], total: 1 } },
+    } as never);
+    vi.mocked(usersService.updateUser).mockResolvedValue({ data: { message: "ok", data: {} } } as never);
+    const user = userEvent.setup();
+    renderManager();
+
+    const row = (await screen.findByText("Sam Staff")).closest("tr")!;
+    await user.click(within(row).getByTestId("EditIcon").closest("button")!);
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("tab", { name: "Access" }));
+    expect(await within(dialog).findByLabelText("Students Read")).toBeChecked();
+    await user.click(within(dialog).getByLabelText("Students Update"));
+    await user.click(within(dialog).getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() =>
+      expect(usersService.updateUser).toHaveBeenCalledWith(
+        "user-2",
+        expect.objectContaining({ roleId: "role-1", permissionOverrides: { students: { update: "allow" } } })
+      )
     );
   });
 

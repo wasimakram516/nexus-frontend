@@ -1,20 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Box,
   Button,
   Chip,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  Grid,
   IconButton,
   InputAdornment,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -30,33 +23,21 @@ import Delete from "@mui/icons-material/Delete";
 import Edit from "@mui/icons-material/Edit";
 import Search from "@mui/icons-material/Search";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
-import CustomFieldInputs from "@/components/dashboard/CustomFieldInputs";
 import DataTableCard from "@/components/shared/DataTableCard";
 import TableHeaderCell from "@/components/shared/TableHeaderCell";
+import UserAccountDialog, { AccountRole, AccountUser } from "@/components/dashboard/UserAccountDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCustomFieldForm } from "@/hooks/useCustomFieldForm";
 import { useMessage } from "@/contexts/MessageContext";
-import { PermissionAction, PermissionCatalogFeature } from "@/contexts/RuntimeConfigContext";
+import { PermissionCatalogFeature } from "@/contexts/RuntimeConfigContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
-import { authService } from "@/services/auth.service";
-import AccessRoleSelect from "@/components/shared/AccessRoleSelect";
+import { countStoredOverrides } from "@/lib/permissionOverrides";
 import { rolesService } from "@/services/roles.service";
 import { usersService } from "@/services/users.service";
 
-type OverrideEffect = "allow" | "deny";
-type Overrides = Record<string, Partial<Record<PermissionAction, OverrideEffect>>>;
-type PermissionMap = Record<string, Partial<Record<PermissionAction, boolean>>>;
-
-interface UserRow {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
+interface UserRow extends AccountUser {
   institutionId?: string | null;
-  roleId?: string | null;
-  permissionOverrides?: Overrides | null;
   assignedRole?: { name: string } | null;
   customFields?: Record<string, unknown>;
   createdAt: string;
@@ -67,12 +48,6 @@ interface PaginatedUsers {
   total: number;
 }
 
-interface Role {
-  id: string;
-  name: string;
-  permissions: PermissionMap;
-}
-
 interface UsersManagerProps {
   /** When set (superadmin context), all data is scoped to this institution. */
   institutionId?: string;
@@ -81,23 +56,8 @@ interface UsersManagerProps {
 const ADMIN_CREATABLE_ROLES = ["STAFF", "STUDENT", "GUARDIAN"];
 const SUPERADMIN_CREATABLE_ROLES = ["ADMIN", ...ADMIN_CREATABLE_ROLES];
 
-/** Admin-level accounts already have full access, so they take no access role. */
-const isAdminLevel = (role: string) => role === "ADMIN" || role === "SUPERADMIN";
-const STATUSES = ["ACTIVE", "RESIGNED", "SUSPENDED"];
 /** Roles that can be assigned a custom Role + overrides; ADMIN/SUPERADMIN always have full access. */
 const CONFIGURABLE_ROLES = new Set(["STAFF", "STUDENT", "GUARDIAN"]);
-
-const ALL_ACTIONS: PermissionAction[] = ["create", "read", "update", "delete"];
-const ACTION_LABELS: Record<PermissionAction, string> = {
-  create: "Create", read: "Read", update: "Update", delete: "Delete",
-};
-const ADMINISTRATIVE_LABEL = "Administrative";
-
-/** Mirrors the backend's self-service defaults for STUDENT/GUARDIAN when no Role is assigned. */
-const SELF_SERVICE_DEFAULTS: Record<string, PermissionMap> = {
-  STUDENT: { attendance: { read: true } },
-  GUARDIAN: { attendance: { read: true } },
-};
 
 const ROLE_COLORS: Record<string, "primary" | "secondary" | "info" | "warning" | "default"> = {
   ADMIN: "primary",
@@ -128,25 +88,19 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(true);
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [roles, setRoles] = useState<AccountRole[]>([]);
   const [catalog, setCatalog] = useState<PermissionCatalogFeature[]>([]);
   // Fetched from GET /roles/module-catalog (single source of truth) instead
   // of a hand-typed label map — see InstitutionEntitlementsTab.tsx for the
   // same fix and why it matters.
   const [moduleLabels, setModuleLabels] = useState<Record<string, string>>({});
 
-  const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "", email: "", password: "", role: "STAFF", roleId: "" });
-  const [creating, setCreating] = useState(false);
-
-  const [editing, setEditing] = useState<UserRow | null>(null);
-  const [editForm, setEditForm] = useState({ role: "", status: "", roleId: "" });
-  const [overrides, setOverrides] = useState<Overrides>({});
-  const [editSaving, setEditSaving] = useState(false);
-
+  /** "new" opens the create form; a row opens that account for editing. */
+  const [dialog, setDialog] = useState<"new" | UserRow | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<UserRow | null>(null);
 
-  const creatableRoles = isSuperadminScope ? SUPERADMIN_CREATABLE_ROLES : ADMIN_CREATABLE_ROLES;
+  const accountTypes = isSuperadminScope ? SUPERADMIN_CREATABLE_ROLES : ADMIN_CREATABLE_ROLES;
+  const canManageCredentials = currentUser?.role === "ADMIN" || currentUser?.role === "SUPERADMIN";
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -177,7 +131,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
   useEffect(() => {
     const loadAccessData = async () => {
       const [rolesRes, catalogRes, moduleCatalogRes] = await Promise.all([
-        apiHandler<Role[]>(() => rolesService.list(institutionId), { showMessage, silent: true }),
+        apiHandler<AccountRole[]>(() => rolesService.list(institutionId), { showMessage, silent: true }),
         apiHandler<PermissionCatalogFeature[]>(() => rolesService.getCatalog(), { showMessage, silent: true }),
         apiHandler<Array<{ key: string; label: string }>>(
           () => rolesService.getModuleCatalog(),
@@ -202,76 +156,9 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
     return () => clearTimeout(handle);
   }, [searchInput]);
 
-  const handleCreate = async () => {
-    setCreating(true);
-    const { success } = await apiHandler(
-      () =>
-        authService.register({
-          name: createForm.name,
-          email: createForm.email,
-          password: createForm.password,
-          role: createForm.role,
-          ...(createForm.roleId && !isAdminLevel(createForm.role) && { roleId: createForm.roleId }),
-          ...(institutionId && { institutionId }),
-        }),
-      { showMessage, successMessage: "User account created." }
-    );
-    setCreating(false);
-    if (success) {
-      setCreateOpen(false);
-      setCreateForm({ name: "", email: "", password: "", role: "STAFF", roleId: "" });
-      load();
-    }
-  };
-
   const openEdit = (row: UserRow) => {
-    setEditing(row);
-    setEditForm({
-      role: row.role,
-      status: row.status,
-      roleId: row.roleId ?? "",
-    });
-    setOverrides(row.permissionOverrides ?? {});
+    setDialog(row);
     void custom.load("update", row.customFields ?? {});
-  };
-
-  const customValid = !custom.loading && !custom.error && !custom.missingRequired;
-
-  const handleEdit = async () => {
-    if (!editing) return;
-    if (!customValid) return;
-    setEditSaving(true);
-
-    const isConfigurable = CONFIGURABLE_ROLES.has(editForm.role);
-    const cleanedOverrides: Overrides = {};
-    for (const [featureKey, entry] of Object.entries(overrides)) {
-      const cleaned: Overrides[string] = {};
-      for (const action of ALL_ACTIONS) {
-        if (entry[action]) cleaned[action] = entry[action];
-      }
-      if (Object.keys(cleaned).length > 0) cleanedOverrides[featureKey] = cleaned;
-    }
-
-    const payload: Record<string, unknown> = {
-      role: editForm.role,
-      status: editForm.status,
-      customFields: custom.values,
-    };
-    if (isConfigurable) {
-      payload.roleId = editForm.roleId || null;
-      payload.permissionOverrides =
-        Object.keys(cleanedOverrides).length > 0 ? cleanedOverrides : null;
-    }
-
-    const { success } = await apiHandler(
-      () => usersService.updateUser(editing.id, payload),
-      { showMessage, successMessage: "User updated." }
-    );
-    setEditSaving(false);
-    if (success) {
-      setEditing(null);
-      load();
-    }
   };
 
   const handleDelete = async () => {
@@ -290,89 +177,6 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
     return !isSuperadminScope && row.role === "ADMIN";
   };
 
-  // --- Access editor helpers -------------------------------------------------
-
-  const selectedRole = useMemo(
-    () => roles.find((r) => r.id === editForm.roleId) ?? null,
-    [roles, editForm.roleId]
-  );
-
-  const groupedCatalog = useMemo(() => {
-    const byModule = new Map<string, PermissionCatalogFeature[]>();
-    for (const feature of catalog) {
-      const key = feature.module ?? ADMINISTRATIVE_LABEL;
-      const list = byModule.get(key) ?? [];
-      list.push(feature);
-      byModule.set(key, list);
-    }
-    return Array.from(byModule.entries());
-  }, [catalog]);
-
-  /** Base permission for a feature/action: selected role if set, else self-service defaults. */
-  const baseFor = (featureKey: string, action: PermissionAction): boolean => {
-    if (selectedRole) {
-      return Boolean(selectedRole.permissions?.[featureKey]?.[action]);
-    }
-    return Boolean(SELF_SERVICE_DEFAULTS[editForm.role]?.[featureKey]?.[action]);
-  };
-
-  /** Cycles a cell: inherit -> allow -> deny -> inherit. */
-  const cycleOverride = (featureKey: string, action: PermissionAction) => {
-    setOverrides((prev) => {
-      const entry = { ...(prev[featureKey] ?? {}) };
-      const current = entry[action];
-      if (current === undefined) entry[action] = "allow";
-      else if (current === "allow") entry[action] = "deny";
-      else delete entry[action];
-      const next = { ...prev, [featureKey]: entry };
-      if (Object.keys(entry).length === 0) delete next[featureKey];
-      return next;
-    });
-  };
-
-  const effectiveFor = (featureKey: string, action: PermissionAction) => {
-    const override = overrides[featureKey]?.[action];
-    if (override) return override === "allow";
-    return baseFor(featureKey, action);
-  };
-
-  const overrideCount = Object.values(overrides).reduce(
-    (count, entry) => count + Object.values(entry).filter(Boolean).length,
-    0
-  );
-
-  const renderPermissionCell = (featureKey: string, action: PermissionAction) => {
-    const override = overrides[featureKey]?.[action];
-    const base = baseFor(featureKey, action);
-    const effective = effectiveFor(featureKey, action);
-
-    return (
-      <Tooltip
-        title={
-          override
-            ? `Override: ${override}. Click to ${override === "allow" ? "deny" : "reset to inherited"}.`
-            : `Inherited: ${base ? "allowed" : "denied"}. Click to override.`
-        }
-      >
-        <Chip
-          label={override ? (override === "allow" ? "Allow" : "Deny") : base ? "On" : "Off"}
-          size="small"
-          onClick={() => cycleOverride(featureKey, action)}
-          color={override ? (override === "allow" ? "success" : "error") : "default"}
-          variant={override ? "filled" : "outlined"}
-          sx={{
-            minWidth: 56,
-            fontWeight: override ? 700 : 400,
-            opacity: !override && !effective ? 0.55 : 1,
-            cursor: "pointer",
-          }}
-        />
-      </Tooltip>
-    );
-  };
-
-  const editingIsConfigurable = CONFIGURABLE_ROLES.has(editForm.role);
-
   return (
     <>
       <Box sx={{ display: "flex", gap: 2, mb: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
@@ -388,7 +192,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
             },
           }}
         />
-        <Button variant="contained" startIcon={<Add />} onClick={() => setCreateOpen(true)}>
+        <Button variant="contained" startIcon={<Add />} onClick={() => setDialog("new")}>
           Add User
         </Button>
       </Box>
@@ -420,12 +224,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
                 ) : (
                   rows.map((row) => {
                     const locked = isProtected(row);
-                    const rowOverrideCount = row.permissionOverrides
-                      ? Object.values(row.permissionOverrides).reduce(
-                          (count, entry) => count + Object.values(entry).filter(Boolean).length,
-                          0
-                        )
-                      : 0;
+                    const rowOverrideCount = countStoredOverrides(row.permissionOverrides ?? {});
                     return (
                       <TableRow key={row.id} hover>
                         <TableCell sx={{ fontWeight: 600 }}>
@@ -461,7 +260,7 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
                         </TableCell>
                         <TableCell>{formatDate(row.createdAt)}</TableCell>
                         <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                          <Tooltip title={locked ? "This account cannot be edited here" : "Edit access & permissions"}>
+                          <Tooltip title={locked ? "This account cannot be edited here" : "Edit account, role & permissions"}>
                             <span>
                               <IconButton size="small" disabled={locked} onClick={() => openEdit(row)}>
                                 <Edit fontSize="small" />
@@ -505,164 +304,24 @@ export default function UsersManager({ institutionId }: UsersManagerProps) {
         onCancel={() => setConfirmDelete(null)}
       />
 
-      {/* Create dialog */}
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>New User Account</DialogTitle>
-        <DialogContent sx={{ pt: "16px !important" }}>
-          <Grid container spacing={2.5}>
-            <Grid size={{ xs: 12 }}>
-              <TextField label="Full Name *" value={createForm.name} onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))} fullWidth slotProps={{ htmlInput: { autoComplete: "off", name: "new-user-name" } }} />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <TextField label="Email *" type="email" value={createForm.email} onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))} fullWidth slotProps={{ htmlInput: { autoComplete: "off", name: "new-user-email" } }} />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <TextField label="Password *" type="password" value={createForm.password} onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))} fullWidth helperText="At least 8 characters." slotProps={{ htmlInput: { autoComplete: "new-password", name: "new-user-password" } }} />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <TextField select label="Role *" value={createForm.role} onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value }))} fullWidth>
-                {creatableRoles.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
-              </TextField>
-            </Grid>
-            {!isAdminLevel(createForm.role) && (
-              <Grid size={{ xs: 12 }}>
-                <AccessRoleSelect
-                  roles={roles}
-                  value={createForm.roleId}
-                  onChange={(roleId) => setCreateForm((p) => ({ ...p, roleId }))}
-                  isStaff={createForm.role === "STAFF"}
-                />
-              </Grid>
-            )}
-          </Grid>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={handleCreate}
-            disabled={creating || !createForm.name || !createForm.email || createForm.password.length < 8}
-          >
-            {creating ? <CircularProgress size={16} color="inherit" /> : "Create User"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Edit access & permissions dialog */}
-      <Dialog open={!!editing} onClose={() => setEditing(null)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Edit Access — {editing?.name}</DialogTitle>
-        <DialogContent sx={{ pt: "16px !important" }}>
-          <Grid container spacing={2.5}>
-            <Grid size={{ xs: 6 }}>
-              <TextField select label="Role" value={editForm.role} onChange={(e) => setEditForm((p) => ({ ...p, role: e.target.value }))} fullWidth>
-                {creatableRoles.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 6 }}>
-              <TextField select label="Status" value={editForm.status} onChange={(e) => setEditForm((p) => ({ ...p, status: e.target.value }))} fullWidth>
-                {STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-              </TextField>
-            </Grid>
-
-            {editingIsConfigurable ? (
-              <>
-                <Grid size={{ xs: 12 }}>
-                  <Divider />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Permissions</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Base access comes from the assigned role (or self-service defaults for students/guardians —
-                    a STAFF user with no role has zero access). Click a cell to override it: inherit → allow → deny.
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <TextField
-                    select
-                    label="Role (base)"
-                    value={editForm.roleId}
-                    onChange={(e) => setEditForm((p) => ({ ...p, roleId: e.target.value }))}
-                    fullWidth
-                    helperText={roles.length === 0 ? "No roles yet — create them on the Roles page." : undefined}
-                  >
-                    <MenuItem value="">No role (self-service defaults only)</MenuItem>
-                    {roles.map((r) => (
-                      <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  {groupedCatalog.map(([moduleKey, features]) => (
-                    <Box key={moduleKey} sx={{ mb: 2 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, display: "block", mb: 0.5 }}>
-                        {moduleLabels[moduleKey] ?? moduleKey}
-                      </Typography>
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableHeaderCell>Feature</TableHeaderCell>
-                            {ALL_ACTIONS.map((action) => (
-                              <TableHeaderCell key={action} align="center">{ACTION_LABELS[action]}</TableHeaderCell>
-                            ))}
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {features.map((feature) => (
-                            <TableRow key={feature.key}>
-                              <TableCell>{feature.label}</TableCell>
-                              {ALL_ACTIONS.map((action) => (
-                                <TableCell key={action} align="center">
-                                  {feature.actions.includes(action)
-                                    ? renderPermissionCell(feature.key, action)
-                                    : <Typography variant="caption" color="text.disabled">—</Typography>}
-                                </TableCell>
-                              ))}
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </Box>
-                  ))}
-                  {overrideCount > 0 && (
-                    <Box sx={{ mt: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Typography variant="caption" color="secondary">
-                        {overrideCount} override{overrideCount !== 1 ? "s" : ""} applied on top of the base.
-                      </Typography>
-                      <Button size="small" onClick={() => setOverrides({})}>Clear overrides</Button>
-                    </Box>
-                  )}
-                </Grid>
-              </>
-            ) : (
-              <Grid size={{ xs: 12 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Admin-level accounts always have full institution access — roles do not apply.
-                </Typography>
-              </Grid>
-            )}
-
-            <Grid size={{ xs: 12 }}>
-              <Divider />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              {custom.loading && <Typography role="status">Loading additional fields…</Typography>}
-              {custom.error && <Typography role="alert" color="error">{custom.error}</Typography>}
-              <CustomFieldInputs
-                definitions={custom.definitions} onBusyChange={custom.setUploading}
-                values={custom.values}
-                disabled={editSaving || custom.loading}
-                onChange={(key, value) => custom.setValues((previous) => ({ ...previous, [key]: value }))}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={() => setEditing(null)}>Cancel</Button>
-          <Button variant="contained" onClick={handleEdit} disabled={editSaving || !customValid}>
-            {editSaving ? <CircularProgress size={16} color="inherit" /> : "Save Changes"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {dialog && (
+        <UserAccountDialog
+          key={dialog === "new" ? "new" : dialog.id}
+          user={dialog === "new" ? null : dialog}
+          institutionId={institutionId}
+          accountTypes={accountTypes}
+          roles={roles}
+          catalog={catalog}
+          moduleLabels={moduleLabels}
+          canManageCredentials={canManageCredentials}
+          custom={custom}
+          onClose={() => setDialog(null)}
+          onSaved={() => {
+            setDialog(null);
+            load();
+          }}
+        />
+      )}
     </>
   );
 }
