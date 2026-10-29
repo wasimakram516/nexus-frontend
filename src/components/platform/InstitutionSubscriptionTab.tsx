@@ -18,10 +18,12 @@ import {
   Typography,
 } from "@mui/material";
 import Edit from "@mui/icons-material/Edit";
+import SwapVert from "@mui/icons-material/SwapVert";
 import RocketLaunch from "@mui/icons-material/RocketLaunch";
 import { useMessage } from "@/contexts/MessageContext";
 import { apiHandler } from "@/lib/apiHandler";
 import { formatDate } from "@/lib/dateFormat";
+import PlanChangeDialog, { type PlanOption } from "@/components/platform/PlanChangeDialog";
 import { platformService } from "@/services/platform.service";
 
 interface Props {
@@ -30,12 +32,6 @@ interface Props {
   /** When it is not shared hosting, there is no subscription to bill. */
   deploymentMode?: string;
   onSaved?: () => void;
-}
-
-interface Plan {
-  id: string;
-  key: string;
-  name: string;
 }
 
 const STATUS_COLOR: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
@@ -64,8 +60,9 @@ export default function InstitutionSubscriptionTab({ institutionId, runtimeConfi
   // Read once via a lazy initializer instead of calling Date.now() during render
   // (impure) — a trial-expiry check only needs "now as of this mount."
   const [now] = useState(() => Date.now());
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plans, setPlans] = useState<PlanOption[]>([]);
   const [editOpen, setEditOpen] = useState(false);
+  const [changeOpen, setChangeOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     planId: "",
@@ -80,7 +77,7 @@ export default function InstitutionSubscriptionTab({ institutionId, runtimeConfi
   });
 
   useEffect(() => {
-    apiHandler<Plan[]>(() => platformService.getPlans(), { showMessage, silent: true }).then(
+    apiHandler<PlanOption[]>(() => platformService.getPlans(), { showMessage, silent: true }).then(
       ({ data }) => setPlans(Array.isArray(data) ? data : [])
     );
   }, [showMessage]);
@@ -161,9 +158,16 @@ export default function InstitutionSubscriptionTab({ institutionId, runtimeConfi
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1.5, gap: 2 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Subscription</Typography>
-              <Button size="small" variant="outlined" startIcon={<Edit />} onClick={openEdit} sx={{ flexShrink: 0 }}>
-                Edit
-              </Button>
+              <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
+                {!!subscription?.planId && (
+                  <Button size="small" variant="outlined" startIcon={<SwapVert />} onClick={() => setChangeOpen(true)}>
+                    Change plan
+                  </Button>
+                )}
+                <Button size="small" variant="outlined" startIcon={<Edit />} onClick={openEdit}>
+                  Edit
+                </Button>
+              </Box>
             </Box>
 
             {subscription ? (
@@ -228,13 +232,30 @@ export default function InstitutionSubscriptionTab({ institutionId, runtimeConfi
         </Card>
       </Grid>
 
+      {changeOpen && (
+        <PlanChangeDialog
+          institutionId={institutionId}
+          currentPlanId={String(subscription?.planId ?? "")}
+          plans={plans}
+          onClose={() => setChangeOpen(false)}
+          onChanged={() => {
+            setChangeOpen(false);
+            onSaved?.();
+          }}
+        />
+      )}
+
       {/* Edit subscription dialog */}
       <Dialog open={editOpen} onClose={() => (saving ? undefined : setEditOpen(false))} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 700 }}>Edit Subscription</DialogTitle>
         <DialogContent>
           <Grid container spacing={2.5} sx={{ pt: 1 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField select label="Plan *" size="small" value={form.planId} onChange={(e) => f("planId", e.target.value)} fullWidth>
+              <TextField
+                select label="Plan *" size="small" value={form.planId} onChange={(e) => f("planId", e.target.value)} fullWidth
+                disabled={!!subscription?.planId}
+                helperText={subscription?.planId ? "Use Change plan to move to another plan." : undefined}
+              >
                 {plans.map((p) => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
               </TextField>
             </Grid>

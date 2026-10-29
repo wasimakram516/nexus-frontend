@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   updateEntitlements: vi.fn(),
   getPlans: vi.fn(),
   updateSubscription: vi.fn(),
+  previewPlanChange: vi.fn(),
+  changePlan: vi.fn(),
 }));
 
 vi.mock("@/contexts/MessageContext", () => ({ useMessage: () => ({ showMessage: mocks.showMessage }) }));
@@ -16,6 +18,8 @@ vi.mock("@/services/platform.service", () => ({
     updateEntitlements: mocks.updateEntitlements,
     getPlans: mocks.getPlans,
     updateSubscription: mocks.updateSubscription,
+    previewPlanChange: mocks.previewPlanChange,
+    changePlan: mocks.changePlan,
   },
 }));
 
@@ -154,6 +158,50 @@ describe("InstitutionSubscriptionTab", () => {
       planId: "p1", status: "ACTIVE", autoRenew: true, agreedPrice: 7000, currency: "USD",
       endsAt: new Date("2027-05-01").toISOString(),
     });
+  });
+
+  it("keeps the plan fixed in the edit dialog and points to Change plan", async () => {
+    render(<InstitutionSubscriptionTab institutionId="i1" runtimeConfig={{ subscription: { status: "ACTIVE", planId: "p1", autoRenew: true } }} />);
+    await waitFor(() => expect(mocks.getPlans).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: /^Edit/ }));
+    const dialog = await screen.findByRole("dialog");
+
+    expect(within(dialog).getByText("Use Change plan to move to another plan.")).toBeInTheDocument();
+    expect(within(dialog).getByRole("combobox", { name: /Plan/ })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("opens the plan change from the subscription, and refreshes once the plan has changed", async () => {
+    mocks.previewPlanChange.mockImplementation(() => ok({
+      currentPlan: { id: "p1", key: "starter", name: "Starter" },
+      targetPlan: { id: "p2", key: "pro", name: "Pro" },
+      direction: "UPGRADE",
+      modules: { enable: [], disable: [], unchanged: [] },
+      limits: [],
+      price: { currency: "PKR", current: null, next: 75000 },
+      blockers: [],
+      canApply: true,
+    }));
+    mocks.changePlan.mockImplementation(() => ok());
+    const onSaved = vi.fn();
+    render(<InstitutionSubscriptionTab institutionId="i1" runtimeConfig={{ subscription: { status: "ACTIVE", planId: "p1", autoRenew: true } }} onSaved={onSaved} />);
+    await waitFor(() => expect(mocks.getPlans).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Change plan" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.mouseDown(within(dialog).getByLabelText("Move to"));
+    fireEvent.click(await screen.findByRole("option", { name: "Pro" }));
+    await screen.findByText("Starter to Pro");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Change plan" }));
+
+    await waitFor(() => expect(mocks.changePlan).toHaveBeenCalledWith("i1", { planId: "p2", agreedPrice: 75000 }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+  });
+
+  it("offers Change plan only once there is a plan to change from", async () => {
+    render(<InstitutionSubscriptionTab institutionId="i1" runtimeConfig={null} />);
+    await waitFor(() => expect(mocks.getPlans).toHaveBeenCalled());
+
+    expect(screen.queryByRole("button", { name: "Change plan" })).not.toBeInTheDocument();
   });
 
   it("warns and does not save when no plan is selected", async () => {

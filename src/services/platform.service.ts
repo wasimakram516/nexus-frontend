@@ -32,6 +32,11 @@ export const platformService = {
     apiClient.put(`/platform/institutions/${id}/entitlements`, payload),
   updateSubscription: (id: string, payload: Record<string, unknown>) =>
     apiClient.put(`/platform/institutions/${id}/subscription`, payload),
+  // Moving a school to another plan: see what would change, then do it.
+  previewPlanChange: (id: string, payload: Record<string, unknown>) =>
+    apiClient.post(`/platform/institutions/${id}/subscription/plan-change/preview`, payload),
+  changePlan: (id: string, payload: Record<string, unknown>) =>
+    apiClient.post(`/platform/institutions/${id}/subscription/plan-change`, payload),
 
   // Roles have moved to services/roles.service.ts (institution-scoped
   // /roles for ADMIN, /platform/institutions/:id/roles for superadmin).
